@@ -1,0 +1,42 @@
+===============================================================
+Tag name:  rtm1_0_01
+Originator(s): mvertens (Mariana Vertenstein)
+Date: Mon Aug 4
+One-line Summary: First commit of rtm as a separate component
+
+Purpose of changes:
+
+First commit of rtm as a separate component
+
+Requirements for tag:
+    Requirements: test on bluefire (CESM)
+
+Test level of tag: std-test
+
+Bugs fixed (include bugzilla ID):
+
+Known bugs (include bugzilla ID):
+	
+Known Limitations:
+	
+Describe any changes made to build system: 
+   New introductin of cesm build scripts
+	
+Describe any changes made to the namelist: Yes!
+   New introductin of namelist scripts
+
+Describe any substantial timing or memory changes: No
+
+Code reviewed by: self
+
+List all files eliminated: None
+
+List all files added and what they do:
+
+List all existing files that have been modified, and describe the changes:
+
+CESM or CLM tag used for the baseline comparison tests if applicable: 
+
+Changes answers relative to baseline: Yes
+
+===============================================================
