@@ -14,6 +14,7 @@ module rof_comp_esmf
                                 shr_file_getLogUnit, shr_file_getLogLevel, &
                                 shr_file_getUnit, shr_file_setIO
   use shr_const_mod    , only : SHR_CONST_REARTH
+  use shr_sys_mod
   use seq_timemgr_mod  , only : seq_timemgr_EClockGetData, seq_timemgr_StopAlarmIsOn, &
                                 seq_timemgr_RestartAlarmIsOn, seq_timemgr_EClockDateInSync
   use seq_infodata_mod , only : seq_infodata_start_type_cont, &
@@ -27,11 +28,12 @@ module rof_comp_esmf
   use RtmVar           , only : rtmlon, rtmlat, ice_runoff, iulog, &
                                 nsrStartup, nsrContinue, nsrBranch, & 
                                 inst_index, inst_suffix, inst_name, RtmVarSet
-  use RtmSpmd          , only : masterproc, mpicom_rof, iam, RtmSpmdInit
+  use RtmSpmd          , only : masterproc, iam, RtmSpmdInit
   use RtmMod           , only : Rtmini, Rtmrun
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep 
   use rtm_cpl_indices  , only : rtm_cpl_indices_set, nt_rtm, rtm_tracers, &
-                                index_r2x_Forr_roff, index_r2x_Forr_ioff, index_r2x_Flrr_flood
+                                index_r2x_Forr_roff, index_r2x_Forr_ioff, index_r2x_Flrr_flood, &
+                                index_x2r_Flrl_rofliq, index_x2r_Flrl_rofice
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
 !
 ! !PUBLIC MEMBER FUNCTIONS:
@@ -57,7 +59,7 @@ module rof_comp_esmf
   private :: rof_import_esmf          ! Import data from the CESM coupler to the river runoff model
   private :: rof_export_esmf          ! Export the river runoff model data to the CESM coupler
 !
-! PRIVATE DATA MEMBERS:
+! ! PRIVATE DATA MEMBERS:
   real(r8), pointer :: totrunin(:,:)   ! cell tracer lnd forcing on rtm grid (mm/s)
 !
 
@@ -111,10 +113,11 @@ contains
     integer, intent(out) :: rc              ! Return code
     !
     ! !LOCAL VARIABLES:
-    logical              :: rof_prognostic           ! identical to rof_prognostic
+    logical              :: rof_prognostic           ! flag
+    logical              :: flood_present            ! flag
     integer              :: mpicom_rof, mpicom_vm, gsize
-    type(ESMF_DistGrid)  :: distgrid_r
-    type(ESMF_Array)     :: dom_r, x2r, r2x
+    type(ESMF_DistGrid)  :: distgrid
+    type(ESMF_Array)     :: dom, x2r, r2x
     type(ESMF_VM)        :: vm
     integer              :: ROFID	             ! rof identifyer
     integer :: lsize                                 ! size of attribute vector
@@ -248,62 +251,67 @@ contains
 
     ! Initialize rtm and determine if rtm will be active
 
-    call Rtmini(rtm_active=rof_prognostic)
+    call Rtmini(rtm_active=rof_prognostic,flood_active=flood_present)
 
     ! If rtm not active then exit out of initialization !??? TODO
 
-    if ( .not. rof_prognostic ) then
-       call ESMF_AttributeSet(export_state, name="rof_present", value=.false., rc=rc)
-       if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+    if ( rof_prognostic ) then
 
-       call ESMF_AttributeSet(export_state, name="rof_prognostic", value=.false., rc=rc)
-       if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+       begr = runoff%begr
+       endr = runoff%endr
+       allocate(totrunin(begr:endr,nt_rtm))
 
-       RETURN 
-    else
-       call ESMF_AttributeSet(export_state, name="rof_present", value=.true., rc=rc)
-       if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+       ! Initialize rof distgrid and domain
 
-       call ESMF_AttributeSet(export_state, name="rof_prognostic", value=.true., rc=rc)
-       if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+       distgrid = rof_DistGrid_esmf(gsize, rc=rc)
+       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-    end if
-
-    ! Initialize rof distgrid and domain
-
-    distgrid_r = rof_DistGrid_esmf(gsize, rc=rc)
-    if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-
-    call ESMF_AttributeSet(export_state, name="gsize_rof", value=gsize, rc=rc)
-    if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+       call ESMF_AttributeSet(export_state, name="gsize", value=gsize, rc=rc)
+       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
     
-    dom_r = mct2esmf_init(distgrid_r, attname=seq_flds_dom_fields, name="domain_r", rc=rc)
+       dom = mct2esmf_init(distgrid, attname=seq_flds_dom_fields, name="domain", rc=rc)
+       if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+    
+       call rof_domain_esmf( dom, rc=rc)
+       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+       ! Initialize rof import and export states
+
+       r2x = mct2esmf_init(distgrid, attname=seq_flds_r2x_fields, name="r2x", rc=rc)
+       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+       x2r = mct2esmf_init(distgrid, attname=seq_flds_x2r_fields, name="x2r", rc=rc)
+       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+       call ESMF_StateAdd(export_state, (/dom/), rc=rc)
+       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+       call ESMF_StateAdd(import_state, (/x2r/), rc=rc)
+       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+       call ESMF_StateAdd(export_state, (/r2x/), rc=rc)
+       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+       ! Create river runoff export state 
+
+       call rof_export_esmf(r2x, rc=rc)
+       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+    endif  ! rof_prognostic
+
+    call ESMF_AttributeSet(export_state, name="rof_present", value=rof_prognostic, rc=rc)
+    if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+    call ESMF_AttributeSet(export_state, name="rof_prognostic", value=rof_prognostic, rc=rc)
+    if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+    call ESMF_AttributeSet(export_state, name="rof_nx", value=rtmlon, rc=rc)
     if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-    
-    call rof_domain_esmf( dom_r, rc=rc)
-    if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-    ! Initialize rof import and export states
+    call ESMF_AttributeSet(export_state, name="rof_ny", value=rtmlat, rc=rc)
+    if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-    r2x = mct2esmf_init(distgrid_r, attname=seq_flds_r2x_fields, name="r2x", rc=rc)
-    if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-
-    x2r = mct2esmf_init(distgrid_r, attname=seq_flds_x2r_fields, name="x2r", rc=rc)
-    if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-
-    call ESMF_StateAdd(export_state, (/dom_r/), rc=rc)
-    if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-
-    call ESMF_StateAdd(import_state, (/x2r/), rc=rc)
-    if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-
-    call ESMF_StateAdd(export_state, (/r2x/), rc=rc)
-    if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-
-    ! Create river runoff export state 
-
-    call rof_export_esmf(r2x, rc=rc)
-    if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+    call ESMF_AttributeSet(export_state, name="flood_present", value=flood_present, rc=rc)
+    if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
     ! Reset shr logging to original values
 
@@ -328,18 +336,18 @@ contains
     call ESMF_AttributeSet(comp, "ShortName", "RTM", &
                            convention=convCIM, purpose=purpComp, rc=rc)
     call ESMF_AttributeSet(comp, "LongName", &
-                           "River Runoff of the Community Land Model", &
+                           "River Runoff from RTM", &
                            convention=convCIM, purpose=purpComp, rc=rc)
     call ESMF_AttributeSet(comp, "Description", &
-                  "The RTM component of Community Land Model version 4.0 is " // &
-                  "the river runoff model used in the CESM1.0.  " // &
+                  "The RTM component is " // &
+                  "the river runoff model used in the CESM1.1.  " // &
                   "More information on the RTM project " // &
                   "and access to previous RTM model versions and " // &
                   "documentation can be found via the RTM Web Page.", &
                            convention=convCIM, purpose=purpComp, rc=rc)
-    call ESMF_AttributeSet(comp, "ReleaseDate", "2010", &
+    call ESMF_AttributeSet(comp, "ReleaseDate", "2012", &
                            convention=convCIM, purpose=purpComp, rc=rc)
-    call ESMF_AttributeSet(comp, "ModelType", "Land", &
+    call ESMF_AttributeSet(comp, "ModelType", "Runoff", &
                            convention=convCIM, purpose=purpComp, rc=rc)
 
     !    call ESMF_AttributeSet(comp, "Name", "Sam Levis", &
@@ -369,8 +377,7 @@ contains
     integer, intent(out) :: rc              ! Return code
     !
     ! !LOCAL VARIABLES:
-    type(ESMF_Array)  :: x2r, r2x, dom_r
-    real(R8), pointer :: fptr(:, :)
+    type(ESMF_Array)  :: x2r, r2x, dom
     integer :: ymd_sync                   ! Sync date (YYYYMMDD)
     integer :: yr_sync                    ! Sync current year
     integer :: mon_sync                   ! Sync current month
@@ -389,30 +396,9 @@ contains
     integer :: begg, endg                 ! Beginning and ending gridcell index numbers
     integer :: lbnum                      ! input to memory diagnostic
     integer :: g,i,kf                     ! counters
-    logical,save :: first_call = .true.   ! first call work
     character(len=32)            :: rdate ! date char string for restart file names
     character(len=32), parameter :: sub = "rof_run_esmf"
     !---------------------------------------------------------------------------
-
-    ! Determine runoff%frac_fr_land from dom_r
-
-    if (first_call) then 
-       call ESMF_StateGet(export_state, itemName="domain_r", array=dom_r, rc=rc)
-       if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-
-       call ESMF_ArrayGet(dom_r, localDe=0, farrayPtr=fptr, rc=rc)
-       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-
-       kf = esmfshr_util_ArrayGetIndex(dom_r,'frac2',rc=rc)
-       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-
-       do g = runoff%begr,runoff%endr
-          i = 1 + (g - runoff%begr)
-          runoff%frac_fr_land(g) = fptr(kf,i)
-       end do
-
-       first_call = .false.
-    endif
 
     call t_startf ('lc_rof_run1')
     rc = ESMF_SUCCESS
@@ -434,16 +420,11 @@ contains
          curr_ymd=ymd, curr_tod=tod_sync,  &
          curr_yr=yr_sync, curr_mon=mon_sync, curr_day=day_sync)
 
-    write(rdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr_sync,mon_sync,day_sync,tod_sync
-    nlend_sync = seq_timemgr_StopAlarmIsOn( EClock )
-    rstwr_sync = seq_timemgr_RestartAlarmIsOn( EClock )
-
     ! Map ESMF to rtm input (rof) data type
 
     call t_startf ('lc_rof_import')
     call ESMF_StateGet(import_state, itemName="x2r", array=x2r, rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-
     call rof_import_esmf( x2r, totrunin=totrunin, rc=rc )
     call t_stopf ('lc_rof_import')
 
@@ -459,7 +440,6 @@ contains
     call t_startf ('lc_rof_export')
     call ESMF_StateGet(export_state, itemName="r2x", array=r2x, rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-
     call rof_export_esmf( r2x, rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
     call t_stopf ('lc_rof_export')
@@ -495,8 +475,6 @@ contains
     endif
 #endif
 
-    first_call = .false.
-
   end subroutine rof_run_esmf
 
 !===============================================================================
@@ -519,7 +497,7 @@ contains
     rc = ESMF_SUCCESS
     
     ! Destroy ESMF objects
-    call esmfshr_util_StateArrayDestroy(export_state,'domain_r',rc=rc)
+    call esmfshr_util_StateArrayDestroy(export_state,'domain',rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
     
     call esmfshr_util_StateArrayDestroy(export_state,'r2x',rc=rc)
@@ -583,7 +561,7 @@ contains
     ! Determine rof  distgrid
     allocate(gindex(lsize),stat=ier)
     ni = 0
-    do n = runoff%begr,runoff%endr
+    do n = begr,endr
        ni = ni + 1
        gindex(ni) = runoff%gindex(n)
     end do
@@ -671,22 +649,34 @@ contains
     !
     ! LOCAL VARIABLES
     real(R8), pointer :: fptr(:, :)
-    integer :: ni, n, nt, begr, endr
+    integer :: ni, n, nt, nliq, nfrz
     character(len=32), parameter :: sub = 'rof_import_mct'
     !---------------------------------------------------------------------------
     
     rc = ESMF_SUCCESS
 
+    nliq = 0
+    nfrz = 0
+    do nt = 1,nt_rtm
+       if (trim(rtm_tracers(nt)) == 'LIQ') then
+          nliq = nt
+       endif
+       if (trim(rtm_tracers(nt)) == 'ICE') then
+          nfrz = nt
+       endif
+    enddo
+    if (nliq == 0 .or. nfrz == 0) then
+       write(iulog,*) sub,': ERROR in rtm_tracers LIQ ICE ',nliq,nfrz,rtm_tracers
+       call shr_sys_abort()
+    endif
+
     call ESMF_ArrayGet(x2r_array, localDe=0, farrayPtr=fptr, rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
     
-    begr = runoff%begr
-    endr = runoff%endr
-    do nt = 1,nt_rtm
-       do n = begr,endr
-          ni = n - begr + 1
-          totrunin(n,nt) = fptr(ni,nt)
-       enddo
+    do n = runoff%begr,runoff%endr
+       ni = n - runoff%begr + 1
+       totrunin(n,nliq) = fptr(index_x2r_Flrl_rofliq,ni)
+       totrunin(n,nfrz) = fptr(index_x2r_Flrl_rofice,ni)
     enddo
 
   end subroutine rof_import_esmf
@@ -730,14 +720,18 @@ contains
        call shr_sys_abort()
     endif
 
+    fptr(:,:) = 0._r8
+
     ni = 0
     if ( ice_runoff )then
        do n = runoff%begr,runoff%endr
+          ni = ni + 1
           if (runoff%mask(n) == 2) then
-             ni = ni + 1
              ! liquid and ice runoff are treated separately
-             fptr(index_r2x_Forr_roff,ni) = runoff%runoff(n,nliq)/(runoff%area(n)*1.0e-6_r8*1000._r8)
-             fptr(index_r2x_Forr_ioff,ni) = runoff%runoff(n,nfrz)/(runoff%area(n)*1.0e-6_r8*1000._r8)
+             fptr(index_r2x_Forr_roff,ni) = &
+                 runoff%runoff(n,nliq)/(runoff%area(n)*1.0e-6_r8*1000._r8)
+             fptr(index_r2x_Forr_ioff,ni) = &
+                 runoff%runoff(n,nfrz)/(runoff%area(n)*1.0e-6_r8*1000._r8)
              if (ni > runoff%lnumr) then
                 write(iulog,*) sub, ' : ERROR runoff count',n,ni
                 call shr_sys_abort( sub//' : ERROR runoff > expected' )
@@ -746,8 +740,8 @@ contains
        end do
     else
        do n = runoff%begr,runoff%endr
+          ni = ni + 1
           if (runoff%mask(n) == 2) then
-             ni = ni + 1
              ! liquid and ice runoff are bundled together to liquid runoff, and then ice runoff set to zero
              fptr(index_r2x_Forr_roff,ni) =   &
                (runoff%runoff(n,nfrz)+runoff%runoff(n,nliq))/(runoff%area(n)*1.0e-6_r8*1000._r8)
@@ -760,11 +754,12 @@ contains
        end do
     end if
 
-    ! Flooding back to land
+    ! Flooding back to land, sign convention is positive in land->rof direction
+    ! so if water is sent from rof to land, the flux must be negative.
     ni = 0
     do n = runoff%begr, runoff%endr
        ni = ni + 1
-       fptr(index_r2x_Flrr_flood,ni) = runoff%flood(n)
+       fptr(index_r2x_Flrr_flood,ni) = -runoff%flood(n)
     end do
 
   end subroutine rof_export_esmf

@@ -39,8 +39,6 @@ module RunoffMod
      real(r8), pointer :: fluxout(:,:)     ! RTM cell tracer outlflux (m3/s)
      real(r8), pointer :: fthresh(:)       ! RTM water flood threshold
      real(r8), pointer :: flood(:)         ! RTM water (flood) sent back to clm
-     real(r8), pointer :: frac_fr_land(:)  ! land fraction*ascale mapped to runoff grid
-     real(r8), pointer :: frac_to_land(:)  ! land fraction needed for reverse mapping  
 
      !    - global 
      integer , pointer :: mask(:)          ! mask of cell 0=none, 1=lnd, 2=ocn
@@ -106,8 +104,6 @@ contains
              runoff%gindex(begr:endr),            &
              runoff%fthresh(begr:endr),           &
              runoff%flood(begr:endr),             &
-             runoff%frac_to_land(begr:endr),      &
-             runoff%frac_fr_land(begr:endr),      &
              stat=ier)
     if (ier /= 0) then
        write(iulog,*)'Rtmini ERROR allocation of runoff local arrays'
@@ -122,6 +118,7 @@ contains
     runoff%dvolrdtocn(:,:) = spval
     runoff%volr(:,:)       = 0._r8
     runoff%volrlnd(:,:)    = spval
+    runoff%flood(:)        = 0._r8
 
   end subroutine RunoffInit
 

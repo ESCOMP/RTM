@@ -143,15 +143,15 @@ contains
     ! Initial PIO
     !
     ! !USES:
-    use seq_io_mod      , only : seq_io_getiosys, seq_io_getiotype
+    use shr_pio_mod, only : shr_pio_getiosys, shr_pio_getiotype
     ! !ARGUMENTS:
     implicit none
     ! !LOCAL VARIABLES:
     character(len=*),parameter :: subname='ncd_pio_init' ! subroutine name
     !-----------------------------------------------------------------------
 
-    PIO_subsystem => seq_io_getiosys(inst_name)
-    io_type       =  seq_io_getiotype(inst_name)
+    PIO_subsystem => shr_pio_getiosys(inst_name)
+    io_type       =  shr_pio_getiotype(inst_name)
 
   end subroutine ncd_pio_init
 

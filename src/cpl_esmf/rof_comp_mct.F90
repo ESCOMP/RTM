@@ -8,9 +8,11 @@ module rof_comp_mct
    use seq_comm_mct, only: seq_comm_getcompstates
    use seq_cdata_mod
    use seq_infodata_mod
+   use shr_sys_mod
 
    use esmfshr_mod
    use rof_comp_esmf
+   use RtmVar, only : iulog
 
    implicit none
 
@@ -61,7 +63,7 @@ contains
 
 !===============================================================================
 
-  subroutine rof_init_mct( EClock, cdata_r, x2r, r2x, NLFilename )
+  subroutine rof_init_mct( EClock, cdata, x2r, r2x, NLFilename )
 
    !----------------------------------------------------------
    
@@ -69,7 +71,7 @@ contains
 
    !----- arguments -----
    type(ESMF_Clock),intent(inout)              :: EClock
-   type(seq_cdata), intent(inout)              :: cdata_r
+   type(seq_cdata), intent(inout)              :: cdata
    type(mct_aVect), intent(inout)              :: x2r   
    type(mct_aVect), intent(inout)              :: r2x   
    character(len=*), optional,   intent(in)    :: NLFilename ! Namelist filename
@@ -77,14 +79,14 @@ contains
    !----- local -----
    integer(IN)                           :: ROFID
    integer(IN)                           :: mpicom
-   type(mct_gsMap)             , pointer :: gsmap_r
-   type(mct_gGrid)             , pointer :: dom_r
+   type(mct_gsMap)             , pointer :: gsmap
+   type(mct_gGrid)             , pointer :: dom
    type(seq_infodata_type), pointer      :: infodata
-   integer(IN)                           :: gsize_r
+   integer(IN)                           :: gsize
    integer                               :: rc, urc
    integer(IN)                           :: phase
 
-   type(ESMF_Array)                      :: x2ra, r2xa, domra
+   type(ESMF_Array)                      :: x2ra, r2xa, doma
    type(ESMF_State)                      :: import_state, export_state
    type(ESMF_GridComp)                   :: rof_comp
 
@@ -93,9 +95,9 @@ contains
    
    ! Determine cdata points
 
-   call seq_cdata_setptrs(cdata_r, ID=ROFID, mpicom=mpicom, &
-        gsMap=gsmap_r, dom=dom_r, infodata=infodata)
-   call seq_cdata_setptrs(cdata_r, gsMap=gsmap_r, dom=dom_r)
+   call seq_cdata_setptrs(cdata, ID=ROFID, mpicom=mpicom, &
+        gsMap=gsmap, dom=dom, infodata=infodata)
+   call seq_cdata_setptrs(cdata, gsMap=gsmap, dom=dom)
    call seq_comm_getcompstates(ROFID, rof_comp, import_state, export_state)
    call seq_infodata_GetData(infodata, rof_phase=phase)
 
@@ -123,7 +125,7 @@ contains
    if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
    if (phase == 1) then
-      call ESMF_StateGet(export_state, itemName="domain_r", array=domra, rc=rc)
+      call ESMF_StateGet(export_state, itemName="domain", array=doma, rc=rc)
       if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
       call ESMF_StateGet(export_state, itemName="r2x", array=r2xa, rc=rc)
@@ -132,15 +134,15 @@ contains
       call ESMF_StateGet(import_state, itemName="x2r", array=x2ra, rc=rc)
       if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-      call ESMF_AttributeGet(export_state, name="gsize_rof", value=gsize_r, rc=rc)
+      call ESMF_AttributeGet(export_state, name="gsize", value=gsize, rc=rc)
       if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-      call esmf2mct_init(r2xa, ROFID, gsmap_r, mpicom, gsize=gsize_r, rc=rc)
+      call esmf2mct_init(r2xa, ROFID, gsmap, mpicom, gsize=gsize, rc=rc)
       if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-      call esmf2mct_init(domra, dom_r, rc=rc)
+      call esmf2mct_init(doma, dom, rc=rc)
       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-      call esmf2mct_copy(domra, dom_r%data, rc=rc)
+      call esmf2mct_copy(doma, dom%data, rc=rc)
       if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
       call esmf2mct_init(r2xa, r2x, rc=rc)
@@ -162,27 +164,30 @@ end subroutine rof_init_mct
 
 !===============================================================================
 
-subroutine rof_run_mct( EClock, cdata_r, x2r, r2x)
+subroutine rof_run_mct( EClock, cdata, x2r, r2x)
 
    implicit none
 
    !----- arguments -----
    type(ESMF_Clock)  ,intent(inout) :: EClock
-   type(seq_cdata)   ,intent(inout) :: cdata_r
+   type(seq_cdata)   ,intent(inout) :: cdata
    type(mct_aVect)   ,intent(inout) :: x2r
    type(mct_aVect)   ,intent(inout) :: r2x
 
    !----- local -----
    type(seq_infodata_type), pointer :: infodata
-   type(ESMF_Array)                 :: r2xa,x2ra,domra  
-   type(mct_gGrid), pointer         :: dom_r
+   type(ESMF_Array)                 :: r2xa,x2ra,doma  
+   type(mct_gGrid), pointer         :: dom
    integer(IN)                      :: ROFID
    integer(IN)                      :: rc, urc
    type(ESMF_State)                 :: import_state, export_state
    type(ESMF_GridComp)              :: rof_comp
    !----------------------------------------------------------------------------
 
-   call t_startf('rcm_run1')
+   call seq_cdata_setptrs(cdata, ID=ROFID, infodata=infodata)
+   call seq_comm_getcompstates(ROFID, rof_comp, import_state, export_state)
+
+   call t_startf('rtm_run1')
    call esmfshr_infodata_infodata2state(infodata, export_state, ID=ROFID, rc=rc)
    if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
@@ -191,16 +196,16 @@ subroutine rof_run_mct( EClock, cdata_r, x2r, r2x)
    if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
    call mct2esmf_copy(x2r, x2ra, rc=rc)
    if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-   call t_stopf('rcm_run1')
+   call t_stopf('rtm_run1')
 
-   call t_startf('rcm_gcrun')
+   call t_startf('rtm_gcrun')
    call ESMF_GridCompRun(rof_comp, importState=import_state, exportState=export_state, &
         clock=EClock, userRc=urc, rc=rc)
    if(urc /= ESMF_SUCCESS) call ESMF_Finalize(rc=urc, endflag=ESMF_END_ABORT)
    if(rc  /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc,  endflag=ESMF_END_ABORT)
-   call t_stopf('rcm_gcrun')
+   call t_stopf('rtm_gcrun')
 
-   call t_startf('rcm_run2')
+   call t_startf('rtm_run2')
    ! convert state back to infodata, the new nextsw_cday is updated in infodata
    call esmfshr_infodata_state2infodata(export_state, infodata, rc=rc)
    if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
@@ -211,20 +216,20 @@ subroutine rof_run_mct( EClock, cdata_r, x2r, r2x)
    call esmf2mct_copy(r2xa, r2x, rc=rc)
    if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-   call t_stopf('rcm_run2')
+   call t_stopf('rtm_run2')
 
 end subroutine rof_run_mct
 
 !===============================================================================
 
-subroutine rof_final_mct( EClock, cdata_r, x2r, r2x)
+subroutine rof_final_mct( EClock, cdata, x2r, r2x)
 
     implicit none
 
     !----- arguments -----
 
     type(ESMF_Clock)            ,intent(inout) :: EClock     ! clock
-    type(seq_cdata)             ,intent(inout) :: cdata_r
+    type(seq_cdata)             ,intent(inout) :: cdata
     type(mct_aVect)             ,intent(inout) :: x2r
     type(mct_aVect)             ,intent(inout) :: r2x
 
@@ -236,7 +241,7 @@ subroutine rof_final_mct( EClock, cdata_r, x2r, r2x)
     !----------------------------------------------------------------------------
     ! Finalize routine 
     !----------------------------------------------------------------------------
-    call seq_cdata_setptrs(cdata_r, ID=COMPID)
+    call seq_cdata_setptrs(cdata, ID=COMPID)
     call seq_comm_getcompstates(COMPID, rof_comp, import_state, export_state)
 
     call ESMF_GridCompFinalize(rof_comp, importState=import_state, exportState=export_state, userRc=urc, rc=rc)

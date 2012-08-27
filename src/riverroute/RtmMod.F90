@@ -42,14 +42,13 @@ module RtmMod
   private
 !
 ! !PUBLIC MEMBER FUNCTIONS:
-  public Rtmini          ! Initialize RTM grid and land mask
+  public Rtmini          ! Initialize RTM grid
   public Rtmrun          ! River routing model (based on U. Texas code)
 !
 ! !REVISION HISTORY:
 ! Author: Sam Levis
 !
 ! !PRIVATE MEMBER FUNCTIONS:
-  private :: RtmAddtoOcnmask
   private :: RtmFloodInit
 
 ! !PRIVATE TYPES:
@@ -101,7 +100,7 @@ contains
 ! !IROUTINE: Rtmini
 !
 ! !INTERFACE:
-  subroutine Rtmini(rtm_active)
+  subroutine Rtmini(rtm_active,flood_active)
 !
 ! !DESCRIPTION:
 ! Initialize RTM grid, mask, decomp
@@ -111,6 +110,7 @@ contains
 ! !ARGUMENTS:
     implicit none
     logical, intent(out) :: rtm_active
+    logical, intent(out) :: flood_active
 !
 ! !CALLED FROM:
 ! subroutine initialize in module initializeMod
@@ -161,7 +161,6 @@ contains
     integer  :: pid,np,npmin,npmax,npint      ! log loop control
     integer  :: na,nb,ns                      ! mct sizes
     integer  :: ni,no,go                      ! tmps
-    real(r8),pointer  :: frac_to_land(:)      ! land frac needed to send flooding back
     integer ,pointer  :: rgdc2glo(:)          ! temporary for initialization
     integer ,pointer  :: rglo2gdc(:)          ! temporary for initialization
     integer ,pointer  :: gmask(:)             ! global mask
@@ -302,15 +301,16 @@ contains
        endif
     end do
 
+    rtm_active = do_rtm
+    flood_active = do_rtmflood
+    
     if (do_rtm) then
-       rtm_active = .true.
        if (frivinp_rtm == ' ') then
           call shr_sys_abort( subname//' error: do_rtm TRUE, but frivinp_rtm NOT set' )
        else
           write(iulog,*) '   RTM river data       = ',trim(frivinp_rtm)
        end if
     else
-       rtm_active = .false.
        write(iulog,*)'RTM will not be active '
        RETURN
     end if
@@ -382,13 +382,11 @@ contains
              runoff%rlon(rtmlon),          &
              runoff%rlat(rtmlat),          &
              rdirc(rtmlon*rtmlat),         &
-             frac_to_land(rtmlon*rtmlat),  &
              stat=ier)
     if (ier /= 0) then
-       write(iulog,*)'Rtmgridini: Allocation error for rdirc and frac_to_land'
+       write(iulog,*)'Rtmgridini: Allocation error for rdirc'
        call shr_sys_abort
     end if
-    frac_to_land(:) = 0.
 
     allocate(tempr(rtmlon,rtmlat))  
     call ncd_io(ncid=ncid, varname='RTM_FLOW_DIRECTION', flag='read', data=tempr, readvar=found)
@@ -476,15 +474,9 @@ contains
        call shr_sys_abort
     end if
 
-    ! Initialize gmask over ALL values where downstream index is non-zero to 2
+    ! Initialize gmask to 2 everywhere, then compute land cells
 
-    gmask(:) = 0                 ! assume neither land nor ocn
-    do n=1,rtmlon*rtmlat         ! set downstream value first
-       nr = dwnstrm_index(n)
-       if (nr /= 0) then         ! assume downstream cell is ocn
-          gmask(nr) = 2
-       end if
-    enddo
+    gmask(:) = 2
 
     do n=1,rtmlon*rtmlat         ! override downstream setting from local info
        nr = dwnstrm_index(n)
@@ -496,12 +488,8 @@ contains
           end if
        end if
     enddo
+
     deallocate(rdirc)
-
-    ! Set gmask to 2 if no dwnstrm_index and some overlapping land fraction
-    ! Also compute global frac_to_land
-
-    call RtmAddtoOcnmask(fatmlndfrc, dwnstrm_index, gmask, frac_to_land)
 
     !-------------------------------------------------------
     ! Compute river basins, actually compute ocean outlet gridcell
@@ -592,8 +580,6 @@ contains
              !   find min pe (implemented but scales poorly)
              !   use increasing thresholds (implemented, ok load balance for l2r or calc)
              !   distribute basins using above methods but work from max to min basin size
-             !   distribute basins to minimize l2r time, basins put on pes associated 
-             !      with lnd forcing, need to know l2r map and lnd decomp
              !
              !--------------
              ! find min pe
@@ -892,12 +878,10 @@ contains
           runoff%dsi(nr) = rglo2gdc(dwnstrm_index(n))
        endif
 
-       runoff%frac_to_land(nr) = frac_to_land(n)
     enddo
     deallocate(dwnstrm_index)
     deallocate(rglo2gdc)
     deallocate(rgdc2glo)
-    deallocate(frac_to_land)
 
     !-------------------------------------------------------
     ! Determine downstream distance 
@@ -1043,7 +1027,7 @@ contains
           if (runoff%volr(nr,nt) > runoff%fthresh(nr)) then 
              ! determine flux that is sent back to the land
              ! need to convert to mm/s to be consistent with totrunin units
-             runoff%flood(nr) = runoff%frac_to_land(nr) * &
+             runoff%flood(nr) = &
                   1000._r8*(runoff%volr(nr,nt)-runoff%fthresh(nr)) / &
                   (delt_rtm*runoff%area(nr))
 
@@ -1203,213 +1187,6 @@ contains
     endif
 
   end subroutine Rtmrun
-
-!-----------------------------------------------------------------------
-
-  subroutine RtmAddtoOcnmask(fatmlndfrc, dwnstrm_index, gmask, frac_to_land)
-
-    implicit none
-#include <netcdf.inc>
-
-    !-----------------------------------------------------------------------
-    ! Input variables
-    character(len=*), intent(in) :: fatmlndfrc
-    integer , pointer :: dwnstrm_index(:) ! downstream index (intent in)
-    integer , pointer :: gmask(:)         ! global rtm mask (intent out)
-    real(r8), pointer :: frac_to_land(:)  ! needed for reverse mapping (intent out)  
-
-    ! Local variables
-    integer :: ier        ! netCDF routine return code
-    integer :: ncid       ! netCDF file      ID
-    integer :: vid        ! netCDF variable  ID
-    integer :: did        ! netCDF dimension ID
-    integer :: i,j,n,m    ! generic loop indicies
-    integer :: ni,nj,ns   ! grid size, number of non-zero elements in matrix
-    integer :: nr,nc      ! row,column indices
-    integer :: rbuf_size  ! arbitrary size of read buffer
-    integer :: rsize      ! size of read buffer
-    integer :: start(1)   ! netcdf read
-    integer :: count(1)   ! netcdf read
-    integer :: nread      ! number of reads 
-    logical :: isgrid2d   ! true => grid is 2d
-    logical :: readvar    ! read variable in or not
-    real(r8) , pointer     :: lfrac(:)  ! global clm land fraction
-    integer  , allocatable :: Rbuf(:)   ! int smap rows
-    integer  , allocatable :: Cbuf(:)   ! int smap cols
-    real(r8) , allocatable :: Sbuf(:)   ! overlap weight 
-    real(r8) , allocatable :: rdata2d(:,:)
-    character(len=256) :: locfn    ! local file name
-    type(file_desc_t)  :: ncidpio  ! netcdf id
-    character(len=256) :: fmap_lnd2rof
-    character(len=256) :: fmap_rof2lnd
-    character(*),parameter :: subName = '(add_ocnlnd_mask) '
-    !-----------------------------------------------------------------------
-
-    ! Determine land fraction on land grid
-    call getfil(fatmlndfrc, locfn, 0 )
-    call ncd_pio_openfile (ncidpio, trim(locfn), 0)
-    call ncd_inqfdims(ncidpio, isgrid2d, ni, nj, ns)
-    write(iulog,*)'RTM lat/lon grid flag (isgrid2d) is ',isgrid2d
-    call shr_sys_flush(iulog)
-    allocate(lfrac(ns))
-    lfrac(:) = 1
-    if (isgrid2d) then
-       allocate(rdata2d(ni,nj))
-       rdata2d(:,:) = 1.	
-       call ncd_io(ncid=ncidpio, varname='LANDFRAC', data=rdata2d, flag='read', readvar=readvar)
-       if (.not. readvar) then
-          call ncd_io(ncid=ncidpio, varname='frac' , data=rdata2d, flag='read', readvar=readvar)
-       end if
-       if (readvar) then
-          do j = 1,nj
-          do i = 1,ni
-             n = (j-1)*ni + i	
-             lfrac(n) = rdata2d(i,j)
-          enddo
-          enddo
-       end if
-       deallocate(rdata2d)
-    else
-       call ncd_io(ncid=ncidpio, varname='LANDFRAC', data=lfrac, flag='read', readvar=readvar)
-       if (.not. readvar) then
-          call ncd_io(ncid=ncidpio, varname='frac' , data=lfrac, flag='read', readvar=readvar)
-       end if
-    end if
-    if (.not. readvar) then
-       call shr_sys_abort( trim(subname)//' ERROR: landfrac land domain file' )
-    end if
-    call ncd_pio_closefile(ncidpio)
-
-    ! Determine land fraction on rtm grid
-
-    call I90_allLoadF('seq_maps.rc',0,mpicom_rof,ier)
-    if (ier /= 0) then
-       write(iulog,*)"Cannot find config file seq_maps.rc"
-       call mct_die("File Not Found")
-    endif
-    call i90_label('lnd2rofFmapname:',ier)
-    if (ier /= 0) then
-       write(iulog,*)"Cannot find label lnd2rofFmapname:"
-       call mct_die("Label Not Found")
-    endif
-    call i90_gtoken(fmap_lnd2rof,ier)
-    if (ier /= 0) then
-       write(iulog,*)"Error reading token fmap_lnd2rof"
-       call mct_die("Error on read")
-    endif
-    call i90_label('rof2lndFmapname:',ier)
-    if (ier /= 0) then
-       write(iulog,*)"Cant find label rof2lndFmapname:"
-       call mct_die("Label Not Found")
-    endif
-    call i90_gtoken(fmap_rof2lnd,ier)
-    if (ier /= 0) then
-       write(iulog,*)"Error reading token fmap_rof2lnd"
-       call mct_die("Error on read")
-    endif
-    call I90_Release(ier)
-    
-    if (masterproc) then
-       call getfil(fmap_lnd2rof, locfn, 0 )
-       ier = nf_open(locfn, NF_NOWRITE ,ncid)
-       if (ier /= NF_NOERR) then 
-          print *,'Failed to open file ',trim(locfn)
-          call shr_sys_abort(trim(subName)//nf_strerror(ier))
-       end if
-
-       ier = nf_inq_dimid (ncid, 'n_s', did)  ! size of sparse matrix
-       ier = nf_inq_dimlen(ncid, did  , ns)
-       rbuf_size = 100000
-       rsize = min(rbuf_size,ns)              ! size of i/o chunks
-       if (ns == 0) then
-          nread = 0
-       else
-          nread = (ns-1)/rsize + 1            ! num of reads to do
-       endif
-
-       ! Note - the following assumes that Rbuf,Sbuf will always start at 1
-       ! This assumes that the array chunk on the file will be read in from
-       ! start->count, but will fill in Rbuf, Cbuf from 1->count - this
-       ! should be rewritten to be more flexible 
-       allocate(Rbuf(rsize),Cbuf(rsize),Sbuf(rsize),stat=ier)
-       if (ier /= 0) call shr_sys_abort(subName // ':: allocate Rbuf and Cbuf')
-       do n = 1,nread
-          start(1) = (n-1)*rsize + 1
-          count(1) = min(rsize,ns-start(1)+1)
-          ier = nf_inq_varid(ncid,'row',vid)
-          ier = nf_get_vara_int(ncid,vid,start,count,Rbuf)
-          ier = nf_inq_varid(ncid,'col',vid)
-          ier = nf_get_vara_int(ncid,vid,start,count,Cbuf)
-          ier = nf_inq_varid(ncid,'S',vid)
-          ier = nf_get_vara_double(ncid,vid,start,count,Sbuf)
-          do m = 1, count(1)
-             nr = Rbuf(m)
-             nc = Cbuf(m)
-             ! Set gmask to ocn if no dwnstrm_index and some 
-             ! overlapping land fraction
-             if (lfrac(nc) > 0._r8) then
-                if (dwnstrm_index(nr) == 0) then 
-                   gmask(nr) = 2
-                end if
-             end if
-          end do
-       end do
-       deallocate(Rbuf,Cbuf,Sbuf)
-       ier = nf_close(ncid)
-    end if
-    call mpi_bcast(gmask,size(gmask),MPI_INTEGER,0,mpicom_rof,ier)
-
-    ! Determine frac_to_land
-
-    if (masterproc) then
-       call getfil(fmap_rof2lnd, locfn, 0 )
-       ier = nf_open(locfn, NF_NOWRITE ,ncid)
-       if (ier /= NF_NOERR) then 
-          print *,'Failed to open file ',trim(locfn)
-          call shr_sys_abort(trim(subName)//nf_strerror(ier))
-       end if
-
-       ier = nf_inq_dimid (ncid, 'n_s', did)  ! size of sparse matrix
-       ier = nf_inq_dimlen(ncid, did  , ns)
-       rbuf_size = 100000
-       rsize = min(rbuf_size,ns)              ! size of i/o chunks
-       if (ns == 0) then
-          nread = 0
-       else
-          nread = (ns-1)/rsize + 1            ! num of reads to do
-       endif
-
-       ! Note - the following assumes that Rbuf,Sbuf will always start at 1
-       ! This assumes that the array chunk on the file will be read in from
-       ! start->count, but will fill in Rbuf, Cbuf from 1->count - this
-       ! should be rewritten to be more flexible 
-       allocate(Cbuf(rsize),Rbuf(rsize),Sbuf(rsize),stat=ier)
-       if (ier /= 0) call shr_sys_abort(subName // ':: allocate Rbuf and Cbuf')
-       do n = 1,nread
-          start(1) = (n-1)*rsize + 1
-          count(1) = min(rsize,ns-start(1)+1)
-          ier = nf_inq_varid(ncid,'row',vid)
-          ier = nf_get_vara_int(ncid,vid,start,count,Rbuf)
-          ier = nf_inq_varid(ncid,'col',vid)
-          ier = nf_get_vara_int(ncid,vid,start,count,Cbuf)
-          ier = nf_inq_varid(ncid,'S',vid)
-          ier = nf_get_vara_double(ncid,vid,start,count,Sbuf)
-          do m = 1, count(1)
-             nr = Cbuf(m)
-             nc = Rbuf(m)
-             if (lfrac(nc) > 0._r8) then
-                frac_to_land(nr) = frac_to_land(nr) + Sbuf(m)
-             end if
-          end do
-       end do
-       deallocate(Cbuf,Rbuf,Sbuf)
-       ier = nf_close(ncid)
-    end if
-    call mpi_bcast(frac_to_land,size(frac_to_land),MPI_REAL8,0,mpicom_rof,ier)
-
-    deallocate(lfrac)  ! deallocate global array on land grid
-
-  end subroutine RtmAddtoOcnmask
 
 !-----------------------------------------------------------------------
 

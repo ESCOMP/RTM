@@ -28,7 +28,8 @@ module rof_comp_mct
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep 
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
   use rtm_cpl_indices  , only : rtm_cpl_indices_set, nt_rtm, rtm_tracers, &
-                                index_r2x_Forr_roff, index_r2x_Forr_ioff, index_r2x_Flrr_flood
+                                index_x2r_Flrl_rofliq, index_x2r_Flrl_rofice, &
+                                index_r2x_Forr_roff,   index_r2x_Forr_ioff,   index_r2x_Flrr_flood
   use mct_mod
   use ESMF
 !
@@ -76,7 +77,8 @@ contains
     character(len=*), optional, intent(in)    :: NLFilename ! Namelist filename to read
     !
     ! !LOCAL VARIABLES:
-    logical :: rof_prognostic                        ! identical to rof_prognostic
+    logical :: rof_prognostic                        ! flag
+    logical :: flood_present                         ! flag
     integer :: ROFID	                             ! rof identifyer
     integer :: mpicom_rof                            ! mpi communicator
     type(mct_gsMap),         pointer :: gsMap_rof    ! runoff model MCT GS map
@@ -180,7 +182,7 @@ contains
                    hostname_in=hostname, username_in=username)
 
     ! Read namelist, grid and surface data
-    call Rtmini(rtm_active=rof_prognostic)
+    call Rtmini(rtm_active=rof_prognostic,flood_active=flood_present)
 
     if (rof_prognostic) then
        ! Initialize memory for input state
@@ -210,6 +212,7 @@ contains
     ! Fill in infodata
     call seq_infodata_PutData( infodata, rof_present=rof_prognostic, rof_nx = rtmlon, rof_ny = rtmlat, &
          rof_prognostic=rof_prognostic)
+    call seq_infodata_PutData( infodata, flood_present=flood_present)
 
     ! Reset shr logging to original values
     call shr_file_setLogUnit (shrlogunit)
@@ -257,23 +260,8 @@ contains
     type(seq_infodata_type),pointer :: infodata ! CESM information from the driver
     real(r8),               pointer :: data(:)  ! temporary
     character(len=32)               :: rdate    ! date char string for restart file names
-    logical :: first_call = .true.
     character(len=32), parameter    :: sub = "rof_run_mct"
     !-------------------------------------------------------
-
-    ! Determine runoff%frac_fr_land from dom_r
-    if (first_call) then
-       call seq_cdata_setptrs(cdata_r, dom=dom_r)
-       lsize = mct_gGrid_lsize(dom_r)
-       allocate(data(lsize))
-       call mct_gGrid_exportRattr(dom_r,"frac2",data,lsize) 
-       do g = runoff%begr,runoff%endr
-          i = 1 + (g - runoff%begr)
-          runoff%frac_fr_land(g) = data(i)
-       end do
-       deallocate(data)
-       first_call = .false.
-    endif
 
 #if (defined _MEMTRACE)
     if(masterproc) then
@@ -517,19 +505,33 @@ contains
     real(r8)       , pointer       :: totrunin(:,:) 
     !
     ! LOCAL VARIABLES
-    integer :: n2, n, nt, begr, endr
+    integer :: n2, n, nt, begr, endr, nliq, nfrz
     character(len=32), parameter :: sub = 'rof_import_mct'
     !---------------------------------------------------------------------------
     
     ! Note that totrunin is a flux
 
+    nliq = 0
+    nfrz = 0
+    do nt = 1,nt_rtm
+       if (trim(rtm_tracers(nt)) == 'LIQ') then
+          nliq = nt
+       endif
+       if (trim(rtm_tracers(nt)) == 'ICE') then
+          nfrz = nt
+       endif
+    enddo
+    if (nliq == 0 .or. nfrz == 0) then
+       write(iulog,*) trim(sub),': ERROR in rtm_tracers LIQ ICE ',nliq,nfrz,rtm_tracers
+       call shr_sys_abort()
+    endif
+
     begr = runoff%begr
     endr = runoff%endr
-    do nt = 1,nt_rtm
-       do n = begr,endr
-          n2 = n - begr + 1
-          totrunin(n,nt) = x2r_r%rAttr(nt,n2)
-       enddo
+    do n = begr,endr
+       n2 = n - begr + 1
+       totrunin(n,nliq) = x2r_r%rAttr(index_x2r_Flrl_rofliq,n2)
+       totrunin(n,nfrz) = x2r_r%rAttr(index_x2r_Flrl_rofice,n2)
     enddo
 
   end subroutine rof_import_mct
@@ -563,7 +565,7 @@ contains
        endif
     enddo
     if (nliq == 0 .or. nfrz == 0) then
-       write(iulog,*)'RtmUpdateInput: ERROR in rtm_tracers LIQ ICE ',nliq,nfrz,rtm_tracers
+       write(iulog,*) trim(sub),': ERROR in rtm_tracers LIQ ICE ',nliq,nfrz,rtm_tracers
        call shr_sys_abort()
     endif
 
@@ -610,11 +612,12 @@ contains
        end do
     end if
 
-    ! Flooding back to land
+    ! Flooding back to land, sign convention is positive in land->rof direction
+    ! so if water is sent from rof to land, the flux must be negative.
     ni = 0
     do n = runoff%begr, runoff%endr
        ni = ni + 1
-       r2x_r%rattr(index_r2x_Flrr_flood,ni) = runoff%flood(n)
+       r2x_r%rattr(index_r2x_Flrr_flood,ni) = -runoff%flood(n)
     end do
 
   end subroutine rof_export_mct
