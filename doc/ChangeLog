@@ -1,4 +1,14 @@
 ===============================================================
+Tag name:  rtm1_0_03
+Originator(s): tcraig
+Date: Mon Sep 4, 2012
+One-line Summary: add budget check, minor cleanup
+
+M       src/cpl_mct/rof_comp_mct.F90
+M       src/riverroute/RtmMod.F90
+M       src/riverroute/RunoffMod.F90
+	
+===============================================================
 Tag name:  rtm1_0_02
 Originator(s): tcraig
 Date: Mon Aug 27, 2012

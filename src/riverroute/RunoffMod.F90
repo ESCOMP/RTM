@@ -38,12 +38,13 @@ module RunoffMod
      real(r8), pointer :: volrlnd(:,:)     ! RTM storage masked for land (m**3)
      real(r8), pointer :: fluxout(:,:)     ! RTM cell tracer outlflux (m3/s)
      real(r8), pointer :: fthresh(:)       ! RTM water flood threshold
-     real(r8), pointer :: flood(:)         ! RTM water (flood) sent back to clm
+     real(r8), pointer :: flood(:)         ! RTM water (flood) sent back to clm (mm/s)
 
      !    - global 
      integer , pointer :: mask(:)          ! mask of cell 0=none, 1=lnd, 2=ocn
      real(r8), pointer :: rlon(:)          ! rtm longitude list, 1d
      real(r8), pointer :: rlat(:)          ! rtm latitude list, 1d
+     real(r8)          :: totarea          ! global area
      integer           :: numr             ! rtm gdc global number of cells
      integer           :: numrl            ! rtm gdc global number of lnd cells
      integer           :: numro            ! rtm gdc global number of ocn cells

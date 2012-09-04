@@ -22,7 +22,7 @@ module RtmMod
                                nsrContinue, nsrBranch, nsrStartup, nsrest, &
                                inst_index, inst_suffix, inst_name
   use RtmFileUtils    , only : getfil, getavu, relavu
-  use RtmTimeManager  , only : timemgr_init, get_nstep
+  use RtmTimeManager  , only : timemgr_init, get_nstep, get_curr_date
   use RtmHistFlds     , only : RtmHistFldsInit, RtmHistFldsSet 
   use RtmHistFile     , only : RtmHistUpdateHbuf, RtmHistHtapesWrapup, RtmHistHtapesBuild, &
                                rtmhist_ndens, rtmhist_mfilt, rtmhist_nhtfrq,     &
@@ -63,17 +63,17 @@ module RtmMod
   character(len=256) :: nrevsn = ' '      ! restart data file name for branch run
 
 ! RTM constants
-  real(r8) :: delt_rtm_max              ! RTM max timestep
+  real(r8),save :: delt_rtm_max              ! RTM max timestep
   real(r8) :: cfl_scale = 0.1_r8        ! cfl scale factor, must be <= 1.0
 
 !global (glo)
   integer , pointer :: dwnstrm_index(:)! downstream index
 
 !local (gdc)
-  real(r8), pointer :: ddist(:)        ! downstream dist (m)
-  real(r8), pointer :: evel(:,:)       ! effective tracer velocity (m/s)
-  real(r8), pointer :: sfluxin(:,:)    ! cell tracer influx (m3/s)
-  real(r8), pointer :: fluxout(:,:)    ! cell tracer outlflux (m3/s)
+  real(r8), save, pointer :: ddist(:)        ! downstream dist (m)
+  real(r8), save, pointer :: evel(:,:)       ! effective tracer velocity (m/s)
+  real(r8), save, pointer :: sfluxin(:,:)    ! cell tracer influx (m3/s)
+  real(r8), save, pointer :: fluxout(:,:)    ! cell tracer outlflux (m3/s)
 
 ! global rtm grid
   real(r8),pointer :: rlatc(:)    ! latitude of 1d grid cell (deg)
@@ -134,6 +134,7 @@ contains
     real(r8) :: deg2rad                       ! pi/180
     real(r8) :: dx,dx1,dx2,dx3                ! lon dist. betn grid cells (m)
     real(r8) :: dy                            ! lat dist. betn grid cells (m)
+    real(r8) :: lrtmarea                      ! tmp local sum of area
     real(r8),allocatable :: tempr(:,:)        ! temporary buffer
     integer ,allocatable :: rdirc(:)          ! temporary buffer
     integer ,allocatable :: iocn(:)           ! downstream ocean cell
@@ -177,7 +178,7 @@ contains
     integer,parameter :: dbug = 1             ! 0 = none, 1=normal, 2=much, 3=max
     logical :: lexist                         ! File exists
     character(len= 7) :: runtyp(4)            ! run type
-    character(len=32) :: subname = 'Rtmini'   ! subroutine name
+    character(*),parameter :: subname = '(Rtmini) '
 !-----------------------------------------------------------------------
 
     !-------------------------------------------------------
@@ -283,15 +284,17 @@ contains
     runtyp(nsrContinue + 1) = 'restart'
     runtyp(nsrBranch   + 1) = 'branch '
 
-    write(iulog,*) 'define run:'
-    write(iulog,*) '   run type              = ',runtyp(nsrest+1)
-    !write(iulog,*) '   case title            = ',trim(ctitle)
-    !write(iulog,*) '   username              = ',trim(username)
-    !write(iulog,*) '   hostname              = ',trim(hostname)
-    if (nsrest == nsrStartup .and. finidat_rtm /= ' ') then
-       write(iulog,*) '   RTM initial data   = ',trim(finidat_rtm)
-    end if
-    write(iulog,*) '   RTM land frac data = ',trim(fatmlndfrc)
+    if (masterproc) then
+       write(iulog,*) 'define run:'
+       write(iulog,*) '   run type              = ',runtyp(nsrest+1)
+       !write(iulog,*) '   case title            = ',trim(ctitle)
+       !write(iulog,*) '   username              = ',trim(username)
+       !write(iulog,*) '   hostname              = ',trim(hostname)
+       if (nsrest == nsrStartup .and. finidat_rtm /= ' ') then
+          write(iulog,*) '   RTM initial data   = ',trim(finidat_rtm)
+       end if
+       write(iulog,*) '   RTM land frac data = ',trim(fatmlndfrc)
+    endif
 
     do i = 1, max_tapes
        if (rtmhist_nhtfrq(i) == 0) then
@@ -308,10 +311,14 @@ contains
        if (frivinp_rtm == ' ') then
           call shr_sys_abort( subname//' error: do_rtm TRUE, but frivinp_rtm NOT set' )
        else
-          write(iulog,*) '   RTM river data       = ',trim(frivinp_rtm)
+          if (masterproc) then
+             write(iulog,*) '   RTM river data       = ',trim(frivinp_rtm)
+          endif
        end if
     else
-       write(iulog,*)'RTM will not be active '
+       if (masterproc) then
+          write(iulog,*)'RTM will not be active '
+       endif
        RETURN
     end if
        
@@ -838,7 +845,8 @@ contains
        rlone(i-1) = rlonw(i)
     end do
 
-    ! Determine runoff datatype varaibles
+    ! Determine runoff datatype variables
+    lrtmarea = 0.0_r8
     do nr = begr,endr
        runoff%gindex(nr) = rgdc2glo(nr)
        n = rgdc2glo(nr)
@@ -867,6 +875,7 @@ contains
        dx = (rlone(i) - rlonw(i)) * deg2rad
        dy = sin(rlatn(j)*deg2rad) - sin(rlats(j)*deg2rad)
        runoff%area(nr) = 1.e6_r8 * dx*dy*re*re
+       lrtmarea = lrtmarea + runoff%area(nr)
        if (dwnstrm_index(n) == 0) then
           runoff%dsi(nr) = 0
        else
@@ -882,6 +891,9 @@ contains
     deallocate(dwnstrm_index)
     deallocate(rglo2gdc)
     deallocate(rgdc2glo)
+    call shr_mpi_sum(lrtmarea,runoff%totarea,mpicom_rof,'rtm totarea',all=.true.)
+    if (masterproc) write(iulog,*) 'Rtmini earth area',4.0_r8*shr_const_pi*1.0e6_r8*re*re
+    if (masterproc) write(iulog,*) 'Rtmini rtm area  ',runoff%totarea
 
     !-------------------------------------------------------
     ! Determine downstream distance 
@@ -997,7 +1009,13 @@ contains
     real(r8) :: dvolrdt                     ! change in storage in discharge units (m3/s)
     real(r8) :: sumfin(nt_rtm),sumfex(nt_rtm)
     real(r8) :: sumrin(nt_rtm),sumdvt(nt_rtm)
+    real(r8) :: budget1(nt_rtm)             ! budget check in m3/s
+    real(r8) :: budget_global(nt_rtm)       ! global budget sum
+    logical  :: budget_check                ! do global budget check
+    real(r8),parameter :: budget_tolerance = 1.0e-6   ! budget tolerance, m3/day
+    logical  :: abort                       ! abort flag
     real(r8) :: sum1,sum2
+    integer  :: yr, mon, day, ymd, tod      ! time information
     integer  :: nsub                        ! subcyling for cfl
     real(r8) :: delt                        ! delt associated with subcycling
     real(r8) :: delt_rtm                    ! real value of rtm_tstep
@@ -1006,19 +1024,48 @@ contains
     logical , save :: first_time = .true.   ! first time flag (for backwards compatibility)
     character(len=256) :: filer             ! restart file name
     integer,parameter  :: dbug = 1          ! local debug flag
+    character(*),parameter :: subname = '(Rtmrun) '
 !-----------------------------------------------------------------------
+
+    call t_startf('RTMrun')
+    call shr_sys_flush(iulog)
+
+    call get_curr_date(yr, mon, day, tod)
+    ymd = yr*10000 + mon*100 + day
+    if (tod == 0 .and. masterproc) then
+       write(iulog,*) ' '
+       write(iulog,*) trim(subname),' model date is',ymd,tod
+    endif
 
     delt_rtm = rtm_tstep*1.0_r8
     if (first_time) then
-       write(iulog,*) 'rtm act timestep ~ ',delt_rtm
+       if (masterproc) write(iulog,*) trim(subname),': rtm act timestep ~ ',delt_rtm
        first_time = .false.
     end if
+
+    budget_check = .false.
+    if (day == 1 .and. mon == 1) budget_check = .true.
+
+    ! BUDGET per water tracer, in m3/s = totrunin + (volr_i - volr_f)/dt - flood - runoff ~ 0.0
+    ! BUDGET, totrunin input, add initial volume, final volume removed later
+    if (budget_check) then
+       call t_startf('RTMbudget')
+       budget1 = 0.0_r8
+       do nt = 1,nt_rtm
+       do nr = runoff%begr,runoff%endr
+          budget1(nt) = budget1(nt) + totrunin(nr,nt)*runoff%area(nr)*0.001_r8 &
+                                    + runoff%volr(nr,nt)/delt_rtm
+       enddo
+       enddo
+       call t_stopf('RTMbudget')
+    endif
 
     ! Remove water from rtm and send back to clm
     ! Just consider land points and only remove liquid water 
     ! runoff%flood needs to be a flux - in units of mm/s
     ! totrunin is a flux (mm/s)
 
+    call t_startf('RTMflood')
     nt = 1 
     do nr = runoff%begr,runoff%endr
        ! initialize runoff%flood to zero
@@ -1033,18 +1080,38 @@ contains
 
              ! runoff%flood will be sent back to land - so must subtract this 
              ! from the input runoff from land
+             ! tcraig, comment - this seems like an odd approach, you
+             !   might create negative forcing.  why not take it out of
+             !   the volr directly?  it's also odd to compute this
+             !   at the initial time of the time loop.  why not do
+             !   it at the end or even during the run loop as the
+             !   new volume is computed.  fluxout depends on volr, so
+             !   how this is implemented does impact the solution.
              totrunin(nr,nt)= totrunin(nr,nt) - runoff%flood(nr)
           endif
        endif
     enddo
+    call t_stopf('RTMflood')
     
+    ! BUDGET, flood out, just liquid water term
+    if (budget_check) then
+       call t_startf('RTMbudget')
+       nt = 1
+       do nr = runoff%begr,runoff%endr
+          budget1(nt) = budget1(nt) - runoff%flood(nr)*runoff%area(nr)*0.001_r8
+       enddo
+       call t_stopf('RTMbudget')
+    endif
+
     ! Subcycling
+
+    call t_startf('RTMsubcycling')
 
     nsub = int(delt_rtm/delt_rtm_max) + 1
     delt = delt_rtm/float(nsub)
     if (delt /= delt_save) then
        if (masterproc) then
-          write(iulog,*) 'rtm delt update from/to',delt_save,delt,nsub_save,nsub
+          write(iulog,*) trim(subname),': rtm delt update from/to',delt_save,delt,nsub_save,nsub
        end if
     endif
 
@@ -1069,7 +1136,7 @@ contains
           nr = runoff%dsi(n)
           if (abs(runoff%mask(n)) == 1) then
              if (nr < runoff%begr .or. nr > runoff%endr) then
-                write(iulog,*) 'Rtm ERROR: non-local communication ',n,nr
+                write(iulog,*) trim(subname),':Rtm ERROR: non-local communication ',n,nr
                 call shr_sys_abort()
              endif
              do nt = 1,nt_rtm
@@ -1088,7 +1155,7 @@ contains
              enddo
              if (abs(sum1+sum2) > 0.0_r8) then
              if (abs(sum1-sum2)/(sum1+sum2) > 1.0e-12) then
-                write(iulog,*) 'RTM Warning: fluxin = ',sum1,&
+                write(iulog,*) trim(subname),':RTM Warning: fluxin = ',sum1,&
                      ' not equal to fluxout = ',sum2,' for tracer ',nt
              endif
              endif
@@ -1127,6 +1194,10 @@ contains
              runoff%runoff(n,nt) = runoff%runoff(n,nt) + fluxout(n,nt)
           elseif (runoff%mask(n) == 2) then
              runoff%runoff(n,nt) = runoff%runoff(n,nt) + dvolrdt
+          elseif (dvolrdt /= 0.0_r8) then
+             ! this water has no where to go.....
+             write(iulog,*) subname,' runoff dvolrdt ERROR ',nt,n,runoff%mask(n),dvolrdt
+             call shr_sys_abort(subname//' runoff dvolrdt ERROR')
           endif
           ! Convert local dvolrdt (in m3/s) to output dvolrdt (in mm/s)
           runoff%dvolrdt(n,nt) = runoff%dvolrdt(n,nt) + 1000._r8*dvolrdt/runoff%area(n)
@@ -1156,6 +1227,42 @@ contains
        endif
     enddo
 
+    call t_stopf('RTMsubcycling')
+
+    ! BUDGET, runoff out (only ocean points), subtract final volume out
+    if (budget_check) then
+       call t_startf('RTMbudget')
+       do nt = 1,nt_rtm
+       do nr = runoff%begr,runoff%endr
+          if (runoff%mask(nr) == 2) then
+             budget1(nt) = budget1(nt) - runoff%runoff(nr,nt)
+          endif
+          budget1(nt) = budget1(nt) - runoff%volr(nr,nt)/delt_rtm
+       enddo
+       enddo
+       call t_stopf('RTMbudget')
+    endif
+
+    ! BUDGET, compute global sums and check
+    if (budget_check) then
+       call t_startf('RTMbudget')
+       call shr_mpi_sum(budget1,budget_global,mpicom_rof,'rtm global budget',all=.false.)
+       if (masterproc) then
+          write(iulog,*) ' '
+          abort = .false.
+          do nt = 1,nt_rtm
+             budget_global(nt) = budget_global(nt) * 1000._r8 / runoff%totarea * 1.0e6_r8   ! convert from m3/s to kg/m2s*1e6
+             write(iulog,'(2a,i10,i6,i4,g20.12)') trim(subname),':BUDGET check (kg/m2s*1e6)= ',ymd,tod,nt,budget_global(nt)
+             if (abs(budget_global(nt)) > budget_tolerance) abort = .true.
+          enddo
+          if (abort) then
+             write(iulog,*) trim(subname),':BUDGET abort balance too large ',budget_tolerance
+             call shr_sys_abort(trim(subname)//':rtm budget error')
+          endif
+       endif
+       call t_stopf('RTMbudget')
+    endif
+
     ! Write out RTM history and restart file
     call t_startf('RTMhbuf')
     call RtmHistFldsSet()
@@ -1178,13 +1285,15 @@ contains
        do nt = 1,nt_rtm
        if (abs(sumdvt(nt)+sumrin(nt)) > 0.0_r8) then
        if (abs((sumdvt(nt)-sumrin(nt))/(sumdvt(nt)+sumrin(nt))) > 1.0e-6) then
-          write(iulog,*) 'RTM Warning: water balance nt,dvt,rin,fin,fex = ', &
+          write(iulog,*) trim(subname),':RTM Warning: water balance nt,dvt,rin,fin,fex = ', &
              nt,sumdvt(nt),sumrin(nt),sumfin(nt),sumfex(nt)
           !call shr_sys_abort
        endif
        endif
        enddo
     endif
+    call shr_sys_flush(iulog)
+    call t_stopf('RTMrun')
 
   end subroutine Rtmrun
 
@@ -1233,7 +1342,7 @@ contains
     call pio_seterrorhandling(ncid, PIO_BCAST_ERROR)
     ier = pio_inq_varid(ncid, name='SLOPE', vardesc=vardesc)
     if (ier /= PIO_noerr) then
-       write(iulog,*) subname//': variable SLOPE is not on dataset'
+       if (masterproc) write(iulog,*) subname//': variable SLOPE is not on dataset'
        readvar = .false.
     else
        readvar = .true.

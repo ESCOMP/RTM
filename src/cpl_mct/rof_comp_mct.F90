@@ -572,11 +572,13 @@ contains
     r2x_r%rattr(:,:) = 0._r8
 
     if (first_time) then
+       if (masterproc) then
        if ( ice_runoff )then
           write(iulog,*)'Snow capping will flow out in frozen river runoff'
        else
           write(iulog,*)'Snow capping will flow out in liquid river runoff'
-       end if
+       endif
+       endif
        first_time = .false.
     end if
 
