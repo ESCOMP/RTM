@@ -1,4 +1,12 @@
 ===============================================================
+Tag name:  rtm1_0_04
+Originator(s): tcraig
+Date: Sep 13, 2012
+One-line Summary: updates from clm4_0_44 to clm4_0_46 for rtm
+
+M       bld/namelist_files/namelist_defaults_rtm.xml
+M       src/riverroute/RtmMod.F90
+===============================================================
 Tag name:  rtm1_0_03
 Originator(s): tcraig
 Date: Mon Sep 4, 2012

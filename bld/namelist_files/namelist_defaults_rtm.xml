@@ -26,5 +26,6 @@ for the CLM data in the CESM distribution
 <!-- River Transport Model river routing file (relative to {csmdata}) -->
 
 <frivinp_rtm rof_grid="r05" >lnd/clm2/rtmdata/rdirc_0.5x0.5_simyr2000_c101124.nc</frivinp_rtm>
+<frivinp_rtm rof_grid="r01" >lnd/clm2/rtmdata/rdirc_0.1x0.1_simyr2000_c110712.nc</frivinp_rtm>
 
 </namelist_defaults>
