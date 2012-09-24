@@ -523,7 +523,7 @@ contains
              n = dwnstrm_index(n)
              g = g + 1
           end do
-          if (gmask(n) == 2) then           ! found ocean outlet TODO
+          if (gmask(n) == 2) then           ! found ocean outlet 
              iocn(nr) = n                   ! set ocean outlet or nr to n
              nocn(n) = nocn(n) + 1          ! one more land cell for n
           elseif (abs(gmask(n)) == 1) then  ! no ocean outlet, warn user, ignore cell

@@ -1,4 +1,16 @@
 ===============================================================
+Tag name:  rtm1_0_05
+Originator(s): mvertens
+Date: Sep 23, 2012
+One-line Summary: bugfix for rtm history restarts files using pnetcdf
+
+fixed reference to finc and fexcl - plus other minor cleanups	
+
+M       src/riverroute/RtmMod.F90
+M       src/riverroute/RtmHistFile.F90
+M       src/cpl_esmf/rof_comp_esmf.F90
+	
+===============================================================
 Tag name:  rtm1_0_04
 Originator(s): tcraig
 Date: Sep 13, 2012

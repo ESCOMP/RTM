@@ -53,12 +53,12 @@ module RtmHistFile
   character(len=max_namlen+2), public :: rtmhist_fincl3(max_flds) = ' '
 
   ! list of fields to remove
-  character(len=max_namlen), public :: rtmhist_fexcl1(max_flds) = ' ' 
-  character(len=max_namlen), public :: rtmhist_fexcl2(max_flds) = ' ' 
-  character(len=max_namlen), public :: rtmhist_fexcl3(max_flds) = ' ' 
+  character(len=max_namlen+2), public :: rtmhist_fexcl1(max_flds) = ' ' 
+  character(len=max_namlen+2), public :: rtmhist_fexcl2(max_flds) = ' ' 
+  character(len=max_namlen+2), public :: rtmhist_fexcl3(max_flds) = ' ' 
 
   ! equivalence list of fields to add/remove
-  character(len=max_namlen)  , public :: fexcl(max_flds,max_tapes)         
+  character(len=max_namlen+2), public :: fexcl(max_flds,max_tapes)         
   character(len=max_namlen+2), public :: fincl(max_flds,max_tapes)         
 
 !! Restart
@@ -1310,8 +1310,8 @@ contains
           call ncd_inqvid(ncid_hist(t), 'units',          varid, units_desc)
           call ncd_inqvid(ncid_hist(t), 'avgflag',        varid, avgflag_desc)
 
-!TODO          call ncd_io(varname='fincl', data=fincl(:,t), ncid=ncid_hist(t), flag='write')
-!TODO          call ncd_io(varname='fexcl', data=fexcl(:,t), ncid=ncid_hist(t), flag='write')
+          call ncd_io(varname='fincl'     , data=fincl(:,t)        , ncid=ncid_hist(t), flag='write')
+          call ncd_io(varname='fexcl'     , data=fexcl(:,t)        , ncid=ncid_hist(t), flag='write')
           call ncd_io(varname='is_endhist', data=tape(t)%is_endhist, ncid=ncid_hist(t), flag='write')
 
           itemp2d(:,:) = 0

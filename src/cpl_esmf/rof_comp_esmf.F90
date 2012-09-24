@@ -253,10 +253,7 @@ contains
 
     call Rtmini(rtm_active=rof_prognostic,flood_active=flood_present)
 
-    ! If rtm not active then exit out of initialization !??? TODO
-
     if ( rof_prognostic ) then
-
        begr = runoff%begr
        endr = runoff%endr
        allocate(totrunin(begr:endr,nt_rtm))
