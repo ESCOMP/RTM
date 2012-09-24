@@ -58,7 +58,7 @@ module RtmMod
 ! RTM naemlists
   integer :: rtm_tstep                    ! RTM time step
   character(len=256) :: finidat           ! CLM initial conditions file name
-  character(len=256) :: fatmlndfrc        ! CLM land frac file 
+  character(len=256) :: fatmlndfrc        ! CLM land frac file (NO LONGER NEEDED)
   character(len=256) :: nrevsn            ! restart data file name for branch run
 
 ! RTM constants
@@ -260,7 +260,6 @@ contains
     call mpi_bcast (rtm_tstep,   1, MPI_INTEGER, 0, mpicom_rof, ier)
 
     call mpi_bcast (finidat_rtm,  len(finidat_rtm), MPI_CHARACTER, 0, mpicom_rof, ier)
-    call mpi_bcast (fatmlndfrc,   len(fatmlndfrc) , MPI_CHARACTER, 0, mpicom_rof, ier)  
     call mpi_bcast (frivinp_rtm,  len(frivinp_rtm), MPI_CHARACTER, 0, mpicom_rof, ier)
     call mpi_bcast (nrevsn_rtm ,  len(nrevsn_rtm) , MPI_CHARACTER, 0, mpicom_rof, ier)
 
@@ -295,7 +294,6 @@ contains
        if (nsrest == nsrStartup .and. finidat_rtm /= ' ') then
           write(iulog,*) '   RTM initial data   = ',trim(finidat_rtm)
        end if
-       write(iulog,*) '   RTM land frac data = ',trim(fatmlndfrc)
     endif
 
     rtm_active = do_rtm

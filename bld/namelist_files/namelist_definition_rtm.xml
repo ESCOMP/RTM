@@ -13,14 +13,17 @@
        category="rtm"
        group="rtm_inparm" 
        valid_values="" >
-RTM time step
+RTM time step (sec).
+Default: 10800
+Can ONLY be set by modifying the value of the xml variable ROF_NCPL in env_run.xml.
 </entry>
 
 <entry id="ice_runoff" 
        type="logical" 
        category="rtm"
        group="rtm_inparm">
-If TRUE, river runoff will be split up into liquid and ice streams,
+Default: .true.
+If .true., river runoff will be split up into liquid and ice streams,
 otherwise ice runoff will be zero and all runoff directed to liquid
 stream.
 </entry>
@@ -30,7 +33,12 @@ stream.
        category="rtm"
        group="rtm_inparm" 
        valid_values="" >
-If TRUE, turn on rtm river routing
+If .true., turn on rtm river routing
+Default: .true.
+If the value of the xml variable ROF GRID in env_build.xml is set to 'null', then
+the RTM build-namelist will set do_rtm to .false.
+If do_rtm is set to .false., then RTM will send a flag of rof_prognostic = .false.
+back to the coupler on initialization. 
 </entry>
 
 <entry id="do_rtmflood" 
@@ -38,18 +46,9 @@ If TRUE, turn on rtm river routing
        category="rtm"
        group="rtm_inparm" 
        valid_values="" >
-If TRUE, turn on rtm flooding back to clm
-</entry>
-
-
-<entry id="finidat_rtm" 
-       type="char*256" 
-       category="rtm"
-       input_pathname="abs" 
-       group="rtm_inparm" 
-       valid_values="" >
-Full pathname of initial rtm file 
-Default: ' '
+If .true., turn on rtm flooding back to clm
+Default: .false.
+Note that rtm flood is not supported in CESM1.1
 </entry>
 
 <entry id="finidat_rtm" 
@@ -69,7 +68,7 @@ Default: ' '
        group="rtm_inparm" 
        valid_values="" >
 Full pathname of master restart file for a branch run. (only used if RUN_TYPE=branch)
-(Set with RUN_REFCASE and RUN_REFDATE)
+(Set with xml variables RUN_REFCASE and RUN_REFDATE in env_run.xml)
 </entry>
 
 <entry id="frivinp_rtm" 
@@ -87,6 +86,7 @@ Full pathname of input datafile for RTM.
        group="rtm_inparm" 
        valid_values="" >
 Fields to exclude from history tape series 1.
+Default: ' '
 </entry>
 
 <entry id="rtmhist_fexcl2" 
@@ -95,6 +95,7 @@ Fields to exclude from history tape series 1.
        group="rtm_inparm" 
        valid_values="" >
 Fields to exclude from history tape series  2.
+Default: ' '
 </entry>
 
 <entry id="rtmhist_fexcl3" 
@@ -103,6 +104,7 @@ Fields to exclude from history tape series  2.
        group="rtm_inparm" 
        valid_values="" >
 Fields to exclude from history tape series  3.
+Default: ' '
 </entry>
 
 <entry id="rtmhist_fincl1" 
@@ -111,6 +113,7 @@ Fields to exclude from history tape series  3.
        group="rtm_inparm" 
        valid_values="" >
 Fields to add to history tape series  1.
+Default: ' '
 </entry>
 
 <entry id="rtmhist_fincl2" 
@@ -119,6 +122,7 @@ Fields to add to history tape series  1.
        group="rtm_inparm" 
        valid_values="" >
 Fields to add to history tape series  2.
+Default: ' '
 </entry>
 
 <entry id="rtmhist_fincl3" 
@@ -127,6 +131,7 @@ Fields to add to history tape series  2.
        group="rtm_inparm" 
        valid_values="" >
 Fields to add to history tape series  3.
+Default: ' '
 </entry>
 
 <entry id="rtmhist_mfilt" 
@@ -135,6 +140,7 @@ Fields to add to history tape series  3.
        group="rtm_inparm" 
        valid_values="" >
 Per tape series  maximum number of time samples.
+Default: 1,30,30
 </entry>
 
 <entry id="rtmhist_ndens" 

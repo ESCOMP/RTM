@@ -1,4 +1,17 @@
 ===============================================================
+Tag name:  rtm1_0_07
+Originator(s): mvertens
+Date: Sep 24, 2012
+One-line Summary: update documentation in config_definition.xml
+	          and user_nl_rtm
+
+M       bld/user_nl_rtm
+M       bld/namelist_files/namelist_definition_rtm.xml
+	
+M       src/riverroute/RtmMod.F90
+        - no longer output fatmlndfrc to standard out
+
+===============================================================
 Tag name:  rtm1_0_06
 Originator(s): tcraig
 Date: Sep 24, 2012
