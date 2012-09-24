@@ -16,9 +16,8 @@ module RtmMod
   use rtm_cpl_indices , only : nt_rtm, rtm_tracers 
   use RtmSpmd         , only : masterproc, npes, iam, mpicom_rof, &
                                MPI_REAL8,MPI_INTEGER,MPI_CHARACTER,MPI_LOGICAL,MPI_MAX
-  use RtmVar          , only : re, spval, rtmlon, rtmlat, iulog, &
-                               frivinp_rtm, ice_runoff, &
-                               finidat_rtm, nrevsn_rtm, &
+  use RtmVar          , only : re, spval, rtmlon, rtmlat, iulog, ice_runoff, &
+                               frivinp_rtm, finidat_rtm, nrevsn_rtm, &
                                nsrContinue, nsrBranch, nsrStartup, nsrest, &
                                inst_index, inst_suffix, inst_name
   use RtmFileUtils    , only : getfil, getavu, relavu
@@ -58,9 +57,9 @@ module RtmMod
 
 ! RTM naemlists
   integer :: rtm_tstep                    ! RTM time step
-  character(len=256) :: finidat = ' '     ! CLM initial conditions file name
-  character(len=256) :: fatmlndfrc = ' '  ! CLM land frac file 
-  character(len=256) :: nrevsn = ' '      ! restart data file name for branch run
+  character(len=256) :: finidat           ! CLM initial conditions file name
+  character(len=256) :: fatmlndfrc        ! CLM land frac file 
+  character(len=256) :: nrevsn            ! restart data file name for branch run
 
 ! RTM constants
   real(r8),save :: delt_rtm_max              ! RTM max timestep
@@ -197,15 +196,18 @@ contains
     ! Preset values
     do_rtm      = .true.
     do_rtmflood = .false.
+    ice_runoff  = .true.
     finidat_rtm = ' '
     finidat     = ' '
     nrevsn_rtm  = ' '
     nrevsn      = ' '
+    fatmlndfrc  = ' '
+    rtm_tstep   = -1
 
     nlfilename_rof = "rof_in" // trim(inst_suffix)
     inquire (file = trim(nlfilename_rof), exist = lexist)
     if ( .not. lexist ) then
-       write(iulog,*) subname // ' error: nlfilename_rof does NOT exist:'&
+       write(iulog,*) subname // ' ERROR: nlfilename_rof does NOT exist:'&
             //trim(nlfilename_rof)
        call shr_sys_abort()
     end if
@@ -226,7 +228,7 @@ contains
     nlfilename_lnd = "lnd_in" // trim(inst_suffix)
     inquire (file = trim(nlfilename_lnd), exist = lexist)
     if (.not. lexist) then
-       write(iulog,*) subname // ' error: nlfilename_lnd does NOT exist:'&
+       write(iulog,*) subname // ' ERROR: nlfilename_lnd does NOT exist:'&
             //trim(nlfilename_lnd)
        call shr_sys_abort()
     end if
@@ -296,20 +298,12 @@ contains
        write(iulog,*) '   RTM land frac data = ',trim(fatmlndfrc)
     endif
 
-    do i = 1, max_tapes
-       if (rtmhist_nhtfrq(i) == 0) then
-          rtmhist_mfilt(i) = 1
-       else if (rtmhist_nhtfrq(i) < 0) then
-          rtmhist_nhtfrq(i) = nint(-rtmhist_nhtfrq(i)*SHR_CONST_CDAY/(24._r8*rtm_tstep))
-       endif
-    end do
-
     rtm_active = do_rtm
     flood_active = do_rtmflood
     
     if (do_rtm) then
        if (frivinp_rtm == ' ') then
-          call shr_sys_abort( subname//' error: do_rtm TRUE, but frivinp_rtm NOT set' )
+          call shr_sys_abort( subname//' ERROR: do_rtm TRUE, but frivinp_rtm NOT set' )
        else
           if (masterproc) then
              write(iulog,*) '   RTM river data       = ',trim(frivinp_rtm)
@@ -321,7 +315,20 @@ contains
        endif
        RETURN
     end if
+
+    if (rtm_tstep <= 0) then
+       write(iulog,*) subname,': ERROR rtm step invalid',rtm_tstep
+       call shr_sys_abort( subname//' ERROR: rtm_tstep invalid' )
+    endif
        
+    do i = 1, max_tapes
+       if (rtmhist_nhtfrq(i) == 0) then
+          rtmhist_mfilt(i) = 1
+       else if (rtmhist_nhtfrq(i) < 0) then
+          rtmhist_nhtfrq(i) = nint(-rtmhist_nhtfrq(i)*SHR_CONST_CDAY/(24._r8*rtm_tstep))
+       endif
+    end do
+
     !-------------------------------------------------------
     ! Initialize rtm time manager 
     !-------------------------------------------------------
@@ -391,8 +398,8 @@ contains
              rdirc(rtmlon*rtmlat),         &
              stat=ier)
     if (ier /= 0) then
-       write(iulog,*)'Rtmgridini: Allocation error for rdirc'
-       call shr_sys_abort
+       write(iulog,*)'Rtmgridini: Allocation ERROR for rdirc'
+       call shr_sys_abort()
     end if
 
     allocate(tempr(rtmlon,rtmlat))  
@@ -436,8 +443,8 @@ contains
 
     allocate (dwnstrm_index(rtmlon*rtmlat), stat=ier)
     if (ier /= 0) then
-       write(iulog,*)'Rtmgridini: Allocation error for dwnstrm_index'
-       call shr_sys_abort
+       write(iulog,*)'Rtmgridini: Allocation ERROR for dwnstrm_index'
+       call shr_sys_abort()
     end if
 
     dwnstrm_index(:) = 0
@@ -477,8 +484,8 @@ contains
 
     allocate (gmask(rtmlon*rtmlat), stat=ier)
     if (ier /= 0) then
-       write(iulog,*)'Rtmgridini: Allocation error for gmask'
-       call shr_sys_abort
+       write(iulog,*)'Rtmgridini: Allocation ERROR for gmask'
+       call shr_sys_abort()
     end if
 
     ! Initialize gmask to 2 everywhere, then compute land cells
@@ -507,9 +514,9 @@ contains
 
     allocate(iocn(rtmlon*rtmlat),nocn(rtmlon*rtmlat),stat=ier)
     if (ier /= 0) then
-       write(iulog,*)'Rtmgridini: Allocation error for ',&
+       write(iulog,*)'Rtmgridini: Allocation ERROR for ',&
             'iocn,nocn'
-       call shr_sys_abort
+       call shr_sys_abort()
     end if
 
     call t_startf('rtmi_dec_basins')
@@ -606,7 +613,7 @@ contains
              enddo
              !--------------
              if (baspe > npes-1 .or. baspe < 0) then
-                write(iulog,*) 'error in decomp for rtm ',nr,npes,baspe
+                write(iulog,*) 'ERROR in decomp for rtm ',nr,npes,baspe
                 call shr_sys_abort()
              endif
              nop(baspe) = nop(baspe) + nocn(nr)
@@ -765,9 +772,9 @@ contains
               evel    (begr:endr,nt_rtm), &
               sfluxin (begr:endr,nt_rtm), stat=ier)
     if (ier /= 0) then
-       write(iulog,*)'Rtmgridini: Allocation error for ',&
+       write(iulog,*)'Rtmgridini: Allocation ERROR for ',&
             'volr, fluxout, ddist'
-       call shr_sys_abort
+       call shr_sys_abort()
     end if
     fluxout(:,:) = 0._r8
     ddist(:)     = 0._r8
@@ -802,7 +809,7 @@ contains
     allocate(rgdc2glo(numr), stat=ier)
     if (ier /= 0) then
        write(iulog,*)'Rtmini ERROR allocation of runoff%gcd2glo'
-       call shr_sys_abort
+       call shr_sys_abort()
     end if
 
     ! Set map from local to global index space
@@ -906,8 +913,8 @@ contains
        if (g == 0) then
           ddist(nr) = 0._r8
        elseif (g < begr .or. g > endr) then
-          write(iulog,*) 'Rtmini: error in ddist calc ',nr,g,begr,endr
-          call shr_sys_abort
+          write(iulog,*) 'Rtmini: ERROR in ddist calc ',nr,g,begr,endr
+          call shr_sys_abort()
        else
           dy  = deg2rad * abs(runoff%latc(nr)-runoff%latc(g)) * re*1000._r8
           dx  = runoff%lonc(nr)-runoff%lonc(g)
@@ -943,8 +950,8 @@ contains
     if (dtovermax > 0._r8) then
        delt_rtm_max = (1.0_r8/dtovermax)*cfl_scale
     else
-       write(iulog,*) 'rtmini error in delt_rtm_max ',delt_rtm_max,dtover
-       call shr_sys_abort
+       write(iulog,*) 'rtmini ERROR in delt_rtm_max ',delt_rtm_max,dtover
+       call shr_sys_abort()
     endif
     if (masterproc) write(iulog,*) 'rtm max timestep = ',delt_rtm_max,' (sec) for cfl_scale = ',cfl_scale
 
@@ -1258,7 +1265,7 @@ contains
           enddo
           if (abort) then
              write(iulog,*) trim(subname),':BUDGET abort balance too large ',budget_tolerance
-             call shr_sys_abort(trim(subname)//':rtm budget error')
+             call shr_sys_abort(trim(subname)//':rtm budget ERROR')
           endif
        endif
        call t_stopf('RTMbudget')
@@ -1281,14 +1288,14 @@ contains
        call t_stopf('RTMrest')
     end if
 
-    ! Global water balance calculation and error check
+    ! Global water balance calculation and ERROR check
     if (dbug > 1) then
        do nt = 1,nt_rtm
        if (abs(sumdvt(nt)+sumrin(nt)) > 0.0_r8) then
        if (abs((sumdvt(nt)-sumrin(nt))/(sumdvt(nt)+sumrin(nt))) > 1.0e-6) then
           write(iulog,*) trim(subname),':RTM Warning: water balance nt,dvt,rin,fin,fex = ', &
              nt,sumdvt(nt),sumrin(nt),sumfin(nt),sumfex(nt)
-          !call shr_sys_abort
+          !call shr_sys_abort()
        endif
        endif
        enddo
@@ -1333,7 +1340,7 @@ contains
     !-----------------------------------------------------------------------
 
     allocate(rslope(begr:endr), max_volr(begr:endr), stat=ier)
-    if (ier /= 0) call shr_sys_abort(subname // ':: allocation error')
+    if (ier /= 0) call shr_sys_abort(subname // ':: allocation ERROR')
 
     ! Assume that if SLOPE is on river input dataset so is MAX_VOLR and that
     ! both have the same io descriptor

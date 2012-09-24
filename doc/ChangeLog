@@ -1,4 +1,11 @@
 ===============================================================
+Tag name:  rtm1_0_06
+Originator(s): tcraig
+Date: Sep 24, 2012
+One-line Summary: fix rtm_nsteps usage when rtm if off
+
+M       src/riverroute/RtmMod.F90
+===============================================================
 Tag name:  rtm1_0_05
 Originator(s): mvertens
 Date: Sep 23, 2012
