@@ -1,4 +1,13 @@
 ===============================================================
+Tag name:  rtm1_0_08
+Originator(s): mvertens
+Date: Sep 24, 2012
+One-line Summary: removed references to finidat, fatmlndfrc and nrevsn
+                  and clm_rtm_inparm   
+
+M       riverroute/RtmMod.F90
+	
+===============================================================
 Tag name:  rtm1_0_07
 Originator(s): mvertens
 Date: Sep 24, 2012

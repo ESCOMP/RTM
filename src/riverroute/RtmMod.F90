@@ -57,9 +57,6 @@ module RtmMod
 
 ! RTM naemlists
   integer :: rtm_tstep                    ! RTM time step
-  character(len=256) :: finidat           ! CLM initial conditions file name
-  character(len=256) :: fatmlndfrc        ! CLM land frac file (NO LONGER NEEDED)
-  character(len=256) :: nrevsn            ! restart data file name for branch run
 
 ! RTM constants
   real(r8),save :: delt_rtm_max              ! RTM max timestep
@@ -191,17 +188,12 @@ contains
          rtmhist_fexcl1,  rtmhist_fexcl2, rtmhist_fexcl3, &
          rtmhist_avgflag_pertape
 
-    namelist /clm_rtm_inparm/ fatmlndfrc, finidat, nrevsn
-
     ! Preset values
     do_rtm      = .true.
     do_rtmflood = .false.
     ice_runoff  = .true.
     finidat_rtm = ' '
-    finidat     = ' '
     nrevsn_rtm  = ' '
-    nrevsn      = ' '
-    fatmlndfrc  = ' '
     rtm_tstep   = -1
 
     nlfilename_rof = "rof_in" // trim(inst_suffix)
@@ -223,38 +215,6 @@ contains
           endif
        end do
        call relavu( unitn )
-    end if
-
-    nlfilename_lnd = "lnd_in" // trim(inst_suffix)
-    inquire (file = trim(nlfilename_lnd), exist = lexist)
-    if (.not. lexist) then
-       write(iulog,*) subname // ' ERROR: nlfilename_lnd does NOT exist:'&
-            //trim(nlfilename_lnd)
-       call shr_sys_abort()
-    end if
-    if (masterproc) then
-       unitn = getavu()
-       write(iulog,*) 'Read in clm_rtm_inparm namelist from: ', trim(nlfilename_lnd)
-       open( unitn, file=trim(nlfilename_lnd), status='old' )
-       ier = 1
-       do while ( ier /= 0 )
-          read(unitn, clm_rtm_inparm, iostat=ier)
-          if (ier < 0) then
-             call shr_sys_abort( subname//' encountered end-of-file on clm_rtm_inparm read' )
-          endif
-       end do
-       call relavu( unitn )
-    end if
-
-    ! If finidat_rtm or nrevsn_rtm not input in rtm_inparm, use values from clm_rtm_inparm
-    ! This is done for backwards compatibility
-    if (masterproc) then
-       if (finidat_rtm == 'use_clm_restart') then
-          finidat_rtm = finidat
-       end if
-       if (nrevsn_rtm == 'use_clm_restart') then
-          nrevsn_rtm = nrevsn
-       end if
     end if
 
     call mpi_bcast (rtm_tstep,   1, MPI_INTEGER, 0, mpicom_rof, ier)
