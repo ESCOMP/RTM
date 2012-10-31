@@ -1,4 +1,15 @@
 ===============================================================
+Tag name:  rtm1_0_09
+Originator(s): mvertens
+Date: Sep 24, 2012
+One-line Summary: fixed bug when RTM ran on different processors
+	          from CLM
+
+M       src/riverroute/RtmHistFile.F90
+A       src/riverroute/RtmDateTime.F90
+M       src/riverroute/RtmRestFile.F90
+
+===============================================================
 Tag name:  rtm1_0_08
 Originator(s): mvertens
 Date: Sep 24, 2012

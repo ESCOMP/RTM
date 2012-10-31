@@ -17,6 +17,7 @@ module RtmHistFile
                              get_prev_time, get_prev_date, is_last_step
   use RtmSpmd       , only : masterproc
   use RtmIO
+  use RtmDateTime
 
   implicit none
   save

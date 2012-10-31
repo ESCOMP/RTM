@@ -22,6 +22,7 @@ module RtmRestFile
   use RtmTimeManager, only : timemgr_restart, get_nstep, get_curr_date, is_last_step
   use RunoffMod     , only : runoff
   use RtmIO       
+  use RtmDateTime
   use rtm_cpl_indices , only : nt_rtm, rtm_tracers 
 !
 ! !PUBLIC TYPES:
