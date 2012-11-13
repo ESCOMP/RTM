@@ -258,6 +258,14 @@ contains
 
     rtm_active = do_rtm
     flood_active = do_rtmflood
+
+    if (masterproc) then
+      if (do_rtmflood) then
+         write(iulog,*) '   RTM flooding is on '
+      else
+         write(iulog,*) '   RTM flooding is off '
+      endif
+    endif
     
     if (do_rtm) then
        if (frivinp_rtm == ' ') then
@@ -744,26 +752,6 @@ contains
 
     call RunoffInit(begr, endr, numr)
 
-    !-------------------------------------------------------
-    ! Initialize rtm flood - runoff%fthresh and evel
-    !-------------------------------------------------------
-
-    if (do_rtmflood) then
-       call RtmFloodInit (frivinp_rtm, begr, endr, runoff%fthresh, evel)
-    else
-       effvel(:) = effvel  ! downstream velocity (m/s)
-       runoff%fthresh(:) = spval
-       do nt = 1,nt_rtm
-          do nr = begr,endr
-             evel(nr,nt) = effvel(nt)
-          enddo
-       enddo
-    end if
-
-    !-------------------------------------------------------
-    ! Initialize runoff data type
-    !-------------------------------------------------------
-
     allocate(rgdc2glo(numr), stat=ier)
     if (ier /= 0) then
        write(iulog,*)'Rtmini ERROR allocation of runoff%gcd2glo'
@@ -783,6 +771,26 @@ contains
        endif
     end do
     end do
+
+    !-------------------------------------------------------
+    ! Initialize rtm flood - runoff%fthresh and evel
+    !-------------------------------------------------------
+    if (do_rtmflood) then
+       call RtmFloodInit (frivinp_rtm, begr, endr, runoff%fthresh, evel,rgdc2glo)
+    else
+       effvel(:) = effvel  ! downstream velocity (m/s)
+       runoff%fthresh(:) = spval
+       do nt = 1,nt_rtm
+          do nr = begr,endr
+             evel(nr,nt) = effvel(nt)
+          enddo
+       enddo
+    end if
+
+    !-------------------------------------------------------
+    ! Initialize runoff data type
+    !-------------------------------------------------------
+
     if (numr /= runoff%numr) then
        write(iulog,*) 'Rtmini ERROR numr and runoff%numr are different ',numr,runoff%numr
        call shr_sys_abort()
@@ -937,7 +945,10 @@ contains
     end if
     call RtmHistFldsSet()
 
+    if (masterproc) write(iulog,*) subname //':: Success '
+
   end subroutine Rtmini
+  !=======================================================================
 
 !-----------------------------------------------------------------------
 !BOP
@@ -1043,7 +1054,6 @@ contains
              runoff%flood(nr) = &
                   1000._r8*(runoff%volr(nr,nt)-runoff%fthresh(nr)) / &
                   (delt_rtm*runoff%area(nr))
-
              ! runoff%flood will be sent back to land - so must subtract this 
              ! from the input runoff from land
              ! tcraig, comment - this seems like an odd approach, you
@@ -1219,7 +1229,7 @@ contains
           do nt = 1,nt_rtm
              budget_global(nt) = budget_global(nt) * 1000._r8 / runoff%totarea * 1.0e6_r8   ! convert from m3/s to kg/m2s*1e6
              write(iulog,'(2a,i10,i6,i4,g20.12)') trim(subname),':BUDGET check (kg/m2s*1e6)= ',ymd,tod,nt,budget_global(nt)
-             if (abs(budget_global(nt)) > budget_tolerance) abort = .true.
+             !if (abs(budget_global(nt)) > budget_tolerance) abort = .true.
           enddo
           if (abort) then
              write(iulog,*) trim(subname),':BUDGET abort balance too large ',budget_tolerance
@@ -1263,78 +1273,104 @@ contains
 
   end subroutine Rtmrun
 
-!-----------------------------------------------------------------------
+  !=======================================================================
+  !
+  !=======================================================================
+  subroutine RtmFloodInit(frivinp, begr, endr, fthresh, evel, rgdc2glo )
 
-  subroutine RtmFloodInit(frivinp, begr, endr, fthresh, evel )
+  !-----------------------------------------------------------------------
+  ! RtmFloodInit:  Reads rdirc file for SLOPE and MAX_VOLR and
+  ! calculates fthresh and evel
+  !
+  !        output args :  fthresh and evel
+  !
+  !-----------------------------------------------------------------------
 
-    !-----------------------------------------------------------------------
-    ! Uses
-    use pio
+    ! subroutine arguments
+    character(len=*), intent(in)  :: frivinp ! rdirc file name
+    integer ,         intent(in)  :: begr, endr 
+    real(r8),         intent(out) :: fthresh(begr:endr)
+    real(r8),         intent(out) :: evel(begr:endr,nt_rtm) 
+    integer ,         intent(in)  :: rgdc2glo(:) ! for decomp of rslope and max_volr
 
-    ! Input variables
-    character(len=*), intent(in) :: frivinp
-    integer , intent(in)  :: begr, endr
-    real(r8), intent(out) :: fthresh(begr:endr)
-    real(r8), intent(out) :: evel(begr:endr,nt_rtm) 
+    ! Local dynamically alloc'd variables
+    real(r8) , allocatable :: rslope(:)   
+    real(r8) , allocatable :: max_volr(:)
+    real(r8) , allocatable :: tempr1(:,:),tempr2(:,:) ! temporary buffer for netcdf read
 
-    ! Local variables
-    real(r8) , pointer :: rslope(:)   
-    real(r8) , pointer :: max_volr(:)
-    integer, pointer   :: compdof(:) ! computational degrees of freedom for pio 
-    integer :: nt,n,cnt              ! indices
-    logical :: readvar               ! read variable in or not
-    integer :: ier                   ! status variable
-    integer :: dids(2)               ! variable dimension ids 
+    ! Local static variables
+    integer            :: nt,n,nr    ! indices
+    integer            :: i,j        ! loop indices
+    logical            :: found      ! if variable found on rdirc file
+    integer            :: ier        ! status variable
+    integer            :: dimid      ! netcdf dimension identifier
     type(file_desc_t)  :: ncid       ! pio file desc
-    type(var_desc_t)   :: vardesc    ! pio variable desc 
-    type(io_desc_t)    :: iodesc     ! pio io desc
     character(len=256) :: locfn      ! local file name
 
-    !Rtm Flood variables for spatially varying celerity
-    real(r8) :: effvel(nt_rtm) = 0.7_r8   ! downstream velocity (m/s)
-    real(r8) :: min_ev(nt_rtm) = 0.35_r8  ! minimum downstream velocity (m/s)
-    real(r8) :: fslope = 1.0_r8           ! maximum slope for which flooding can occur
+    !Rtm Flood constants for spatially varying celerity
+    real(r8),parameter :: effvel(nt_rtm) = 0.7_r8   ! downstream velocity (m/s)
+    real(r8),parameter :: min_ev(nt_rtm) = 0.35_r8  ! minimum downstream velocity (m/s)
+
+    ! name of this subroutine for logging
     character(*),parameter :: subname = '(RtmFloodInit) '
     !-----------------------------------------------------------------------
 
-    allocate(rslope(begr:endr), max_volr(begr:endr), stat=ier)
-    if (ier /= 0) call shr_sys_abort(subname // ':: allocation ERROR')
+    call getfil(frivinp_rtm, locfn, 0 )
+    if (masterproc) then
+       write(iulog,*) subname//':: read RTM file name for SLOPE and MAX_VOLR: ',trim(frivinp_rtm)
+       call shr_sys_flush(iulog)
+    endif
 
-    ! Assume that if SLOPE is on river input dataset so is MAX_VOLR and that
-    ! both have the same io descriptor
-
-    call getfil(frivinp, locfn, 0 )
     call ncd_pio_openfile (ncid, trim(locfn), 0)
-    call pio_seterrorhandling(ncid, PIO_BCAST_ERROR)
-    ier = pio_inq_varid(ncid, name='SLOPE', vardesc=vardesc)
-    if (ier /= PIO_noerr) then
-       if (masterproc) write(iulog,*) subname//': variable SLOPE is not on dataset'
-       readvar = .false.
-    else
-       readvar = .true.
-    end if
-    call pio_seterrorhandling(ncid, PIO_INTERNAL_ERROR)
-    if (readvar) then
-       ier = pio_inq_vardimid(ncid, vardesc, dids)
-       allocate(compdof(runoff%lnumr))
-       cnt = 0
-       do n = runoff%begr,runoff%endr
-          cnt = cnt + 1
-          compDOF(cnt) = runoff%gindex(n)
-       enddo
-       call pio_initdecomp(pio_subsystem, pio_double, dids, compDOF, iodesc)
-       deallocate(compdof)
-       call pio_read_darray(ncid, vardesc, iodesc, rslope, ier)
-       call pio_read_darray(ncid, vardesc, iodesc, max_volr, ier)
-       call pio_freedecomp(ncid, iodesc)
-    else
-       rslope(:)   = 1._r8
-       max_volr(:) = spval
-    end if
-    call pio_closefile(ncid)
+    call ncd_inqdid(ncid,'ni',dimid)
+    call ncd_inqdlen(ncid,dimid,rtmlon)
+    call ncd_inqdid(ncid,'nj',dimid)
+    call ncd_inqdlen(ncid,dimid,rtmlat)
+
+    if (masterproc) then
+       write(iulog,*) subname//':: Values for rtmlon/rtmlat: ',rtmlon,rtmlat
+       write(iulog,*) subname//':: Successfully read RTM dimensions for SLOPE and MAX_VOLR'
+       call shr_sys_flush(iulog)
+    endif
+
+    found=.false.
+
+    allocate(rslope(begr:endr), stat=ier)
+    if (ier /= 0) call shr_sys_abort(subname //':: alloc ERROR rslope')
+
+    allocate(max_volr(begr:endr), stat=ier)
+    if (ier /= 0) call shr_sys_abort(subname //':: alloc ERROR max_volr')
+
+    allocate(tempr1(rtmlon,rtmlat),tempr2(rtmlon,rtmlat))  
+    if (ier /= 0) call shr_sys_abort(subname //':: alloc ERROR tempr1 and tempr2')
+
+    call ncd_io(ncid=ncid, varname='SLOPE', flag='read', data=tempr1, readvar=found)
+    if ( .not. found ) call shr_sys_abort( trim(subname)//':: ERROR SLOPE not on rdirc file' )
+
+    ! if we get here, now check if MAX_VOLR is in rdirc file
+    found=.false.
+
+    call ncd_io(ncid=ncid, varname='MAX_VOLR', flag='read', data=tempr2, readvar=found)
+    if ( .not. found ) call shr_sys_abort( trim(subname)//':: ERROR MAX_VOLR not on rdirc file' )
+    call ncd_pio_closefile(ncid)
+
+    if (masterproc) write(iulog,*) subname //':: copy SLOPE and MAX_VOLR from global to local '
+    do nr = begr, endr
+       n = rgdc2glo(nr)
+       i = mod(n-1,rtmlon) + 1
+       j = (n-1)/rtmlon + 1
+       if (n <= 0 .or. n > rtmlon*rtmlat) then
+          write(iulog,*) trim(subname)//':: ERROR in use of gdc2glo, nr,n= ',nr,n
+          call shr_sys_abort()
+       endif
+       rslope(nr)   = tempr1(i,j)
+       max_volr(nr) = tempr2(i,j)
+    enddo
+
+    deallocate(tempr1,tempr2)             
 
     do nt = 1,nt_rtm
-       do n = runoff%begr, runoff%endr
+       do n = begr, endr
           fthresh(n) = 0.95*max_volr(n)*max(1._r8,rslope(n))
           ! modify velocity based on gridcell average slope (Manning eqn)
           evel(n,nt) = max(min_ev(nt),effvel(nt_rtm)*sqrt(max(0._r8,rslope(n)))) 
@@ -1343,9 +1379,9 @@ contains
 
     deallocate(rslope, max_volr)
 
-  end subroutine RtmFloodInit 
+    if (masterproc) write(iulog,*) subname //':: Success '
 
-!-----------------------------------------------------------------------
+  end subroutine RtmFloodInit 
+  !=======================================================================
 
 end module RtmMod
-
