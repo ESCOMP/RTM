@@ -1,4 +1,22 @@
 ===============================================================
+Tag name:  rtm1_0_11
+Originator(s): mvertens
+Date: Nov 23, 2012
+One-line Summary: Rewrite RtmFloodInit to use pio_darray not
+	global arrays  
+	
+M       src/riverroute/RtmMod.F90
+	- rewrite rtmfloodinit to remove use of global arrays
+	
+M       src/cpl_mct/rof_comp_mct.F90
+M       src/riverroute/RtmVar.F90
+	- introduced rtm_active and flood_active in RtmVar.F90 
+	  to be consistent with changes coming into rtm1_0_12
+
+	verified that results were bit-for-bit with rtm1_0_10
+	with and without flooding on
+
+===============================================================
 Tag name:  rtm1_0_10
 Originator(s): muszala
 Date: Nov 13, 2012

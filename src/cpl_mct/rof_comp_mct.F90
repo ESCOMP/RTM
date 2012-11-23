@@ -22,7 +22,8 @@ module rof_comp_mct
   use RunoffMod        , only : runoff
   use RtmVar           , only : rtmlon, rtmlat, ice_runoff, iulog, &
                                 nsrStartup, nsrContinue, nsrBranch, & 
-                                inst_index, inst_suffix, inst_name, RtmVarSet
+                                inst_index, inst_suffix, inst_name, RtmVarSet, &
+                                rtm_active, flood_active
   use RtmSpmd          , only : masterproc, mpicom_rof, iam, RtmSpmdInit
   use RtmMod           , only : Rtmini, Rtmrun
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep 
@@ -77,8 +78,6 @@ contains
     character(len=*), optional, intent(in)    :: NLFilename ! Namelist filename to read
     !
     ! !LOCAL VARIABLES:
-    logical :: rof_prognostic                        ! flag
-    logical :: flood_present                         ! flag
     integer :: ROFID	                             ! rof identifyer
     integer :: mpicom_rof                            ! mpi communicator
     type(mct_gsMap),         pointer :: gsMap_rof    ! runoff model MCT GS map
@@ -182,9 +181,9 @@ contains
                    hostname_in=hostname, username_in=username)
 
     ! Read namelist, grid and surface data
-    call Rtmini(rtm_active=rof_prognostic,flood_active=flood_present)
+    call Rtmini()
 
-    if (rof_prognostic) then
+    if (rtm_active) then
        ! Initialize memory for input state
        begr = runoff%begr
        endr = runoff%endr
@@ -210,9 +209,9 @@ contains
     end if
 
     ! Fill in infodata
-    call seq_infodata_PutData( infodata, rof_present=rof_prognostic, rof_nx = rtmlon, rof_ny = rtmlat, &
-         rof_prognostic=rof_prognostic)
-    call seq_infodata_PutData( infodata, flood_present=flood_present)
+    call seq_infodata_PutData( infodata, rof_present=rtm_active, &
+         rof_prognostic=rtm_active, rof_nx = rtmlon, rof_ny = rtmlat)
+    call seq_infodata_PutData( infodata, flood_present=flood_active)
 
     ! Reset shr logging to original values
     call shr_file_setLogUnit (shrlogunit)
@@ -269,6 +268,8 @@ contains
        call memmon_dump_fort('memmon.out','rof_run_mct:start::',lbnum)
     endif
 #endif
+
+    if (.not.rtm_active) return
 
     ! Reset shr logging to my log file
     call shr_file_getLogUnit (shrlogunit)
