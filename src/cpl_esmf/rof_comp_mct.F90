@@ -85,6 +85,7 @@ contains
    integer(IN)                           :: gsize
    integer                               :: rc, urc
    integer(IN)                           :: phase
+   logical                               :: rof_present
 
    type(ESMF_Array)                      :: x2ra, r2xa, doma
    type(ESMF_State)                      :: import_state, export_state
@@ -123,6 +124,9 @@ contains
    ! copy export_state to infodata
    call esmfshr_infodata_state2infodata(export_state, infodata, rc=rc)
    if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+   call seq_infodata_GetData(infodata, rof_present=rof_present)
+   if (.not. rof_present) return
 
    if (phase == 1) then
       call ESMF_StateGet(export_state, itemName="domain", array=doma, rc=rc)
@@ -182,9 +186,13 @@ subroutine rof_run_mct( EClock, cdata, x2r, r2x)
    integer(IN)                      :: rc, urc
    type(ESMF_State)                 :: import_state, export_state
    type(ESMF_GridComp)              :: rof_comp
+   logical                          :: rof_present
    !----------------------------------------------------------------------------
 
    call seq_cdata_setptrs(cdata, ID=ROFID, infodata=infodata)
+   call seq_infodata_GetData(infodata, rof_present=rof_present)
+   if (.not. rof_present) return
+
    call seq_comm_getcompstates(ROFID, rof_comp, import_state, export_state)
 
    call t_startf('rtm_run1')
@@ -235,13 +243,18 @@ subroutine rof_final_mct( EClock, cdata, x2r, r2x)
 
     !----- local -----
     integer                                    :: rc, urc, COMPID
+    type(seq_infodata_type), pointer           :: infodata
     type(ESMF_State)                           :: import_state, export_state
     type(ESMF_GridComp)                        :: rof_comp
+    logical                                    :: rof_present
 
     !----------------------------------------------------------------------------
     ! Finalize routine 
     !----------------------------------------------------------------------------
-    call seq_cdata_setptrs(cdata, ID=COMPID)
+    call seq_cdata_setptrs(cdata, ID=COMPID, infodata=infodata)
+    call seq_infodata_GetData(infodata, rof_present=rof_present)
+    if (.not. rof_present) return
+
     call seq_comm_getcompstates(COMPID, rof_comp, import_state, export_state)
 
     call ESMF_GridCompFinalize(rof_comp, importState=import_state, exportState=export_state, userRc=urc, rc=rc)

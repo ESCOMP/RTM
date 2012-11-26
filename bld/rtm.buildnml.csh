@@ -25,10 +25,9 @@ cd $CASEBUILD/rtmconf
 if (-e $CASEBUILD/rtm.input_data_list) rm $CASEBUILD/rtm.input_data_list
 
 set lnd_grid = $LND_GRID
-
 set rof_grid = $ROF_GRID
+
 if ("$PTS_MODE" == TRUE ) set rof_grid = "null"
-if ("$CCSM_COMPSET" =~ P* || "$CCSM_COMPSET" =~ R* ) set rof_grid = "null"
 
 # The following is for backwards compatibility when runoff restart data was on clm restart files
 set finidat_rtm = ""

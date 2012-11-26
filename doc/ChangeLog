@@ -1,4 +1,23 @@
 ===============================================================
+Tag name:  rtm1_0_12
+Originator(s): tcraig
+Date: Nov 25, 2012
+One-line Summary: fix esmf coupling, update rtm and flood active logic
+ - fix esmf coupling
+ - modify rtm and flood active logic for better reuse and robustness
+ - add rtm_mode and flood_mode to namelist, remove do_rtm and do_rtmflood
+ - remove some redundant command line arguments to rtm build-namelist
+
+M       bld/rtm.buildnml.csh
+M       bld/build-namelist
+M       bld/user_nl_rtm
+M       bld/namelist_files/namelist_definition_rtm.xml
+M       doc/ChangeLog
+M       src/riverroute/RtmMod.F90
+M       src/cpl_esmf/rof_comp_mct.F90
+M       src/cpl_esmf/rof_comp_esmf.F90
+
+===============================================================
 Tag name:  rtm1_0_11
 Originator(s): mvertens
 Date: Nov 23, 2012

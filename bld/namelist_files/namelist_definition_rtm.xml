@@ -28,26 +28,23 @@ otherwise ice runoff will be zero and all runoff directed to liquid
 stream.
 </entry>
 
-<entry id="do_rtm" 
-       type="logical" 
+<entry id="rtm_mode" 
+       type="char*256" 
        category="rtm"
        group="rtm_inparm" 
-       valid_values="" >
-If .true., turn on rtm river routing
-Default: .true.
-If the value of the xml variable ROF GRID in env_build.xml is set to 'null', then
-the RTM build-namelist will set do_rtm to .false.
-If do_rtm is set to .false., then RTM will send a flag of rof_prognostic = .false.
-back to the coupler on initialization. 
+       valid_values="ACTIVE,NULL" >
+If ACTIVE, turn on rtm river routing
+Default: ACTIVE
+If the value rtm_mode is NULL, then rof_present will be set to false at runtime
 </entry>
 
-<entry id="do_rtmflood" 
-       type="logical" 
+<entry id="flood_mode" 
+       type="char*256" 
        category="rtm"
        group="rtm_inparm" 
-       valid_values="" >
-If .true., turn on rtm flooding back to clm
-Default: .false.
+       valid_values="ACTIVE,NULL" >
+If ACTIVE, turn on rtm flooding back to clm
+Default: NULL
 Note that rtm flood is not supported in CESM1.1
 </entry>
 

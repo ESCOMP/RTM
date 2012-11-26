@@ -80,8 +80,8 @@ module RtmMod
   real(r8),pointer :: rlonw(:)    ! longitude of 1d west grid cell edge (deg)
   real(r8),pointer :: rlone(:)    ! longitude of 1d east grid cell edge (deg)
 
-  logical :: do_rtmflood
-  logical :: do_rtm
+  character(len=256) :: flood_mode
+  character(len=256) :: rtm_mode
 
   character(len=256) :: nlfilename_rof = 'rof_in' 
   character(len=256) :: nlfilename_lnd = 'lnd_in' 
@@ -180,7 +180,7 @@ contains
     ! Read in rtm namelist
     !-------------------------------------------------------
 
-    namelist /rtm_inparm / ice_runoff, do_rtm, do_rtmflood, &
+    namelist /rtm_inparm / ice_runoff, rtm_mode, flood_mode, &
          frivinp_rtm, finidat_rtm, nrevsn_rtm, rtm_tstep, &
          rtmhist_ndens, rtmhist_mfilt, rtmhist_nhtfrq, &
          rtmhist_fincl1,  rtmhist_fincl2, rtmhist_fincl3, &
@@ -188,8 +188,8 @@ contains
          rtmhist_avgflag_pertape
 
     ! Preset values
-    do_rtm      = .true.
-    do_rtmflood = .false.
+    rtm_mode    = 'ACTIVE'
+    flood_mode  = 'NULL'
     ice_runoff  = .true.
     finidat_rtm = ' '
     nrevsn_rtm  = ' '
@@ -221,9 +221,9 @@ contains
     call mpi_bcast (finidat_rtm,  len(finidat_rtm), MPI_CHARACTER, 0, mpicom_rof, ier)
     call mpi_bcast (frivinp_rtm,  len(frivinp_rtm), MPI_CHARACTER, 0, mpicom_rof, ier)
     call mpi_bcast (nrevsn_rtm ,  len(nrevsn_rtm) , MPI_CHARACTER, 0, mpicom_rof, ier)
+    call mpi_bcast (rtm_mode,     len(rtm_mode)   , MPI_CHARACTER, 0, mpicom_rof, ier)
+    call mpi_bcast (flood_mode,   len(flood_mode) , MPI_CHARACTER, 0, mpicom_rof, ier)
 
-    call mpi_bcast (do_rtm,      1, MPI_LOGICAL, 0, mpicom_rof, ier)
-    call mpi_bcast (do_rtmflood, 1, MPI_LOGICAL, 0, mpicom_rof, ier)
     call mpi_bcast (ice_runoff,  1, MPI_LOGICAL, 0, mpicom_rof, ier)
 
     call mpi_bcast (rtmhist_nhtfrq, size(rtmhist_nhtfrq), MPI_INTEGER,   0, mpicom_rof, ier)
@@ -255,8 +255,15 @@ contains
        end if
     endif
 
-    rtm_active   = do_rtm
-    flood_active = do_rtmflood
+    rtm_active = .true.
+    flood_active = .true.
+    if (trim(rtm_mode) == 'NULL') then
+       rtm_active = .false.
+       flood_active = .false.
+    endif
+    if (trim(flood_mode) == 'NULL') then
+       flood_active = .false.
+    endif
     if (masterproc) then
       if (flood_active) then
          write(iulog,*) '   RTM flooding is on '
@@ -880,6 +887,10 @@ contains
 
     !-------------------------------------------------------
     ! Initialize rtm flood - runoff%fthresh and evel
+    ! tcraig - recommend RtmFloodInit be called always here and that
+    !   the flood_active logic be inside rtmfloodinit, not here.
+    !   this will place the fthresh and evel initialization in
+    !   a consistent location for extensibility.
     !-------------------------------------------------------
     if (flood_active) then
        call RtmFloodInit (frivinp_rtm, begr, endr, runoff%fthresh, evel)

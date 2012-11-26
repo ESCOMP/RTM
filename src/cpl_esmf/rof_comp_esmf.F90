@@ -27,7 +27,8 @@ module rof_comp_esmf
   use RunoffMod        , only : runoff
   use RtmVar           , only : rtmlon, rtmlat, ice_runoff, iulog, &
                                 nsrStartup, nsrContinue, nsrBranch, & 
-                                inst_index, inst_suffix, inst_name, RtmVarSet
+                                inst_index, inst_suffix, inst_name, RtmVarSet, &
+                                rtm_active, flood_active
   use RtmSpmd          , only : masterproc, iam, RtmSpmdInit
   use RtmMod           , only : Rtmini, Rtmrun
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep 
@@ -113,8 +114,6 @@ contains
     integer, intent(out) :: rc              ! Return code
     !
     ! !LOCAL VARIABLES:
-    logical              :: rof_prognostic           ! flag
-    logical              :: flood_present            ! flag
     integer              :: mpicom_rof, mpicom_vm, gsize
     type(ESMF_DistGrid)  :: distgrid
     type(ESMF_Array)     :: dom, x2r, r2x
@@ -251,9 +250,9 @@ contains
 
     ! Initialize rtm and determine if rtm will be active
 
-    call Rtmini(rtm_active=rof_prognostic,flood_active=flood_present)
+    call Rtmini()
 
-    if ( rof_prognostic ) then
+    if ( rtm_active ) then
        begr = runoff%begr
        endr = runoff%endr
        allocate(totrunin(begr:endr,nt_rtm))
@@ -293,12 +292,12 @@ contains
 
        call rof_export_esmf(r2x, rc=rc)
        if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-    endif  ! rof_prognostic
+    endif  ! rtm_active
 
-    call ESMF_AttributeSet(export_state, name="rof_present", value=rof_prognostic, rc=rc)
+    call ESMF_AttributeSet(export_state, name="rof_present", value=rtm_active, rc=rc)
     if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-    call ESMF_AttributeSet(export_state, name="rof_prognostic", value=rof_prognostic, rc=rc)
+    call ESMF_AttributeSet(export_state, name="rof_prognostic", value=rtm_active, rc=rc)
     if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
     call ESMF_AttributeSet(export_state, name="rof_nx", value=rtmlon, rc=rc)
@@ -307,7 +306,7 @@ contains
     call ESMF_AttributeSet(export_state, name="rof_ny", value=rtmlat, rc=rc)
     if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-    call ESMF_AttributeSet(export_state, name="flood_present", value=flood_present, rc=rc)
+    call ESMF_AttributeSet(export_state, name="flood_present", value=flood_active, rc=rc)
     if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
     ! Reset shr logging to original values

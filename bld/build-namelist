@@ -46,9 +46,6 @@ OPTIONS
      -caseroot                     CASEROOT directory variable
      -scriptsroot                  SCRIPTSROOT directory variable
      -inst_string                  INST_STRING variable
-     -rtm_grid                     rtm grid
-     -lnd_grid                     lnd grid
-     -r_ncpl "ROF_NCPL"            Number of RTM coupling time-steps in a day.
 
 Note: The precedence for setting the values of namelist variables is (highest to lowest):
       0. namelist values set by specific command-line options
@@ -126,8 +123,8 @@ my $eol = "\n";
 my $CASEROOT    = $opts{'caseroot'}; 
 my $SCRIPTSROOT = $opts{'scriptsroot'};       
 my $INST_STRING = $opts{'inst_string'}; 
-my $rtm_grid    = $opts{'rtm_grid'}; 
-my $lnd_grid    = $opts{'lnd_grid'}; 
+#my $rtm_grid    = $opts{'rtm_grid'}; 
+#my $lnd_grid    = $opts{'lnd_grid'}; 
 
 if ($print>=2) { print "Setting rtm configuration script directory to $cfgdir$eol"; }
 
@@ -301,6 +298,11 @@ foreach my $attr (keys %xmlvars) {
 }
 
 my $DIN_LOC_ROOT    = $xmlvars{'DIN_LOC_ROOT'};
+my $RTM_MODE        = $xmlvars{'RTM_MODE'};
+my $RTM_FLOOD_MODE  = $xmlvars{'RTM_FLOOD_MODE'};
+my $ROF_GRID        = $xmlvars{'ROF_GRID'};
+my $LND_GRID        = $xmlvars{'LND_GRID'};
+my $ROF_NCPL        = $xmlvars{'ROF_NCPL'};
 
 (-d $DIN_LOC_ROOT)  or  die <<"EOF";
 ** $ProgName - CCSM inputdata root is not a directory: \"$DIN_LOC_ROOT\" **
@@ -313,26 +315,31 @@ if ($print>=2) {
 # namelist group: rtm_inparm       #
 ####################################
 
-if ($rtm_grid eq "null") {
-    add_default($nl, 'do_rtm', 'val'=>".false.");
-    if ($print>=2) { print "River Transport Model (RTM) will be off $eol"; }
-} else {
-    add_default($nl, 'do_rtm', 'val'=>".true.");
-    add_default($nl, 'frivinp_rtm' , 'rof_grid'=>$rtm_grid );
-    add_default($nl, 'ice_runoff'  , 'lnd_grid'=>$lnd_grid );
+#if ($PTS_MODE eq "TRUE") {
+#    
+#}
+
+if ($ROF_GRID eq "null") {
+    if ($RTM_MODE ne "NULL") {
+	die "$ProgName ERROR:: ROF_GRID null RTM_MODE not NULL.\n";
+    }
+    add_default($nl, 'rtm_mode', 'val'=>"$RTM_MODE");
+}
+else {
+    add_default($nl, 'rtm_mode', 'val'=>"$RTM_MODE");
+    add_default($nl, 'flood_mode', 'val'=>"$RTM_FLOOD_MODE");
+    add_default($nl, 'frivinp_rtm' , 'rof_grid'=>$ROF_GRID );
+    add_default($nl, 'ice_runoff'  , 'lnd_grid'=>$LND_GRID );
     add_default($nl, 'rtmhist_mfilt');
     add_default($nl, 'rtmhist_nhtfrq');
     add_default($nl, 'rtmhist_ndens');
-    if ( defined($opts{'r_ncpl'}) ) {
-	my $r_ncpl = $opts{'r_ncpl'};
-	my $val = ( 3600 * 24 ) / $r_ncpl;
-	add_default($nl, 'rtm_tstep', 'val'=>$val);
-    } else {
-	die "$ProgName ERROR:: must set -r_ncpl.\n";
+    my $val = ( 3600 * 24 ) / $ROF_NCPL;
+    add_default($nl, 'rtm_tstep', 'val'=>$val);
+    if ($print>=2) { 
+        print "River Transport Model (RTM) mode is $RTM_MODE \n"; 
+        print "  RTM lnd grid is $LND_GRID \n";
+        print "  RTM rof grid is $ROF_GRID \n";
     }
-    print "River Transport Model (RTM) will be on $eol"; 
-    print "  RTM lnd grid is $lnd_grid \n";
-    print "  RTM rof grid is $rtm_grid \n";
 }
 
 #-----------------------------------------------------------------------------------------------
