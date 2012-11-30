@@ -1,4 +1,26 @@
 ===============================================================
+Tag name:  rtm1_0_13
+Originator(s): muszala
+Date: Nov 28, 2012
+One-line Summary:  Add effVel as namelist.  cleanup RtmFloodInit logic
+
+	- Add effective velocity as a namelist variable.
+	- Change rdirc file.
+	- Add RTM tests to test_system batch CLM tests.
+	- Clean up logic in RtmFloodInit so R01 works without SLOPE and MAX_VOLR.
+	- The modification to effvel (for the default case) changes the amount
+	    of runoff (r2x_Forr_roff & r2x_Forr_ioff) in the system and does change climate.
+	    The value is what is in CLM4.5
+   - Change rdirc file to rdirc_0.5x0.5_simyr2000_slpmxvl_c120717.nc which is
+	    correct and contains FLOOD and MAX_VOLR.  This fixes an error in choice
+	    of rdirc file from clm4_0_55 / rtm1_0_10
+
+M    rtm/bld/namelist_files/namelist_defaults_rtm.xml
+M    rtm/bld/namelist_files/namelist_definition_rtm.xml
+M    rtm/src/riverroute/RtmMod.F90
+M    rtm/src/riverroute/RtmVar.F90
+
+===============================================================
 Tag name:  rtm1_0_12
 Originator(s): tcraig
 Date: Nov 25, 2012

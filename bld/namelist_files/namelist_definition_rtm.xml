@@ -48,6 +48,16 @@ Default: NULL
 Note that rtm flood is not supported in CESM1.1
 </entry>
 
+<entry id="rtm_effvel" 
+       type="char*256" 
+       category="rtm"
+       group="rtm_inparm" 
+       valid_values="ACTIVE,NULL" >
+If ACTIVE, calculate the effective velocity using slope.
+Default: NULL
+Note that flood_mode and rtm_effvel are not supported in CESM1.1
+</entry>
+
 <entry id="finidat_rtm" 
        type="char*256" 
        category="rtm"

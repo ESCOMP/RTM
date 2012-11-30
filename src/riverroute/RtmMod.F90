@@ -20,7 +20,7 @@ module RtmMod
                                frivinp_rtm, finidat_rtm, nrevsn_rtm, &
                                nsrContinue, nsrBranch, nsrStartup, nsrest, &
                                inst_index, inst_suffix, inst_name, &
-                               rtm_active, flood_active
+                               rtm_active, flood_active, effvel_active
   use RtmFileUtils    , only : getfil, getavu, relavu
   use RtmTimeManager  , only : timemgr_init, get_nstep, get_curr_date
   use RtmHistFlds     , only : RtmHistFldsInit, RtmHistFldsSet 
@@ -82,6 +82,7 @@ module RtmMod
 
   character(len=256) :: flood_mode
   character(len=256) :: rtm_mode
+  character(len=256) :: rtm_effvel    
 
   character(len=256) :: nlfilename_rof = 'rof_in' 
   character(len=256) :: nlfilename_lnd = 'lnd_in' 
@@ -117,7 +118,8 @@ contains
 !
 ! !LOCAL VARIABLES:
 !EOP
-    real(r8) :: effvel(nt_rtm) = 0.35_r8      ! downstream velocity (m/s)
+
+
     integer  :: ioff(0:8) = (/0,0,1,1,1,0,-1,-1,-1/) !rdirc input to i
     integer  :: joff(0:8) = (/0,1,1,0,-1,-1,-1,0,1/) !rdirc input to j
     real(r8) :: edgen =   90._r8
@@ -180,7 +182,8 @@ contains
     ! Read in rtm namelist
     !-------------------------------------------------------
 
-    namelist /rtm_inparm / ice_runoff, rtm_mode, flood_mode, &
+    namelist /rtm_inparm / &
+         ice_runoff, rtm_mode, flood_mode, rtm_effvel, &
          frivinp_rtm, finidat_rtm, nrevsn_rtm, rtm_tstep, &
          rtmhist_ndens, rtmhist_mfilt, rtmhist_nhtfrq, &
          rtmhist_fincl1,  rtmhist_fincl2, rtmhist_fincl3, &
@@ -188,6 +191,7 @@ contains
          rtmhist_avgflag_pertape
 
     ! Preset values
+    rtm_effvel     = 'NULL'
     rtm_mode    = 'ACTIVE'
     flood_mode  = 'NULL'
     ice_runoff  = .true.
@@ -223,6 +227,7 @@ contains
     call mpi_bcast (nrevsn_rtm ,  len(nrevsn_rtm) , MPI_CHARACTER, 0, mpicom_rof, ier)
     call mpi_bcast (rtm_mode,     len(rtm_mode)   , MPI_CHARACTER, 0, mpicom_rof, ier)
     call mpi_bcast (flood_mode,   len(flood_mode) , MPI_CHARACTER, 0, mpicom_rof, ier)
+    call mpi_bcast (rtm_effvel,   len(rtm_effvel) , MPI_CHARACTER, 0, mpicom_rof, ier)
 
     call mpi_bcast (ice_runoff,  1, MPI_LOGICAL, 0, mpicom_rof, ier)
 
@@ -247,9 +252,6 @@ contains
     if (masterproc) then
        write(iulog,*) 'define run:'
        write(iulog,*) '   run type              = ',runtyp(nsrest+1)
-       !write(iulog,*) '   case title            = ',trim(ctitle)
-       !write(iulog,*) '   username              = ',trim(username)
-       !write(iulog,*) '   hostname              = ',trim(hostname)
        if (nsrest == nsrStartup .and. finidat_rtm /= ' ') then
           write(iulog,*) '   RTM initial data   = ',trim(finidat_rtm)
        end if
@@ -257,18 +259,32 @@ contains
 
     rtm_active = .true.
     flood_active = .true.
+    effvel_active = .false.
+
     if (trim(rtm_mode) == 'NULL') then
        rtm_active = .false.
        flood_active = .false.
+       effvel_active = .false.
     endif
+
     if (trim(flood_mode) == 'NULL') then
        flood_active = .false.
     endif
+
+    if (trim(rtm_effvel) == 'ACTIVE') then
+       effvel_active = .true.
+    endif
+
     if (masterproc) then
       if (flood_active) then
-         write(iulog,*) '   RTM flooding is on '
+         write(iulog,*) '   RTM :: flooding is on '
       else
-         write(iulog,*) '   RTM flooding is off '
+         write(iulog,*) '   RTM :: flooding is off '
+      endif
+      if (effvel_active) then
+         write(iulog,*) '   RTM :: calculate effective velocity with slope (4.5) '
+      else
+         write(iulog,*) '   RTM :: use default effective velocity (4.0) '
       endif
     endif
     
@@ -378,6 +394,12 @@ contains
     if ( .not. found ) call shr_sys_abort( trim(subname)//' ERROR: RTM_FLOW_DIRECTION NOT on rdirc file' )
     do j=1,rtmlat
       do i=1,rtmlon
+         
+         !-------------------------------------------------------
+         ! Put in a check for a negative rdirc value and abort.
+         !-------------------------------------------------------
+         if ( tempr(i,j) .lt. 0 ) call shr_sys_abort( trim(subname)//' ERROR: Found a negative RTM_FLOW_DIRECTION. &
+              This is currently not supported. ' )
          n = (j-1)*rtmlon + i
          rdirc(n) = nint(tempr(i,j))
       enddo
@@ -423,8 +445,8 @@ contains
     do i=1,rtmlon
        n = (j-1)*rtmlon + i
        if (rdirc(n) /= 0) then
-          ir = i + ioff(abs(rdirc(n)))
-          jr = j + joff(abs(rdirc(n)))
+          ir = i + ioff(rdirc(n))
+          jr = j + joff(rdirc(n))
           if (ir < 1     ) ir = ir + rtmlon
           if (ir > rtmlon) ir = ir - rtmlon
           !--- check cross pole flow, etc
@@ -777,6 +799,7 @@ contains
     end do
     end do
 
+
     !-------------------------------------------------------
     ! Initialize runoff data type
     !-------------------------------------------------------
@@ -892,17 +915,8 @@ contains
     !   this will place the fthresh and evel initialization in
     !   a consistent location for extensibility.
     !-------------------------------------------------------
-    if (flood_active) then
-       call RtmFloodInit (frivinp_rtm, begr, endr, runoff%fthresh, evel)
-    else
-       effvel(:) = effvel  ! downstream velocity (m/s)
-       runoff%fthresh(:) = spval
-       do nt = 1,nt_rtm
-          do nr = begr,endr
-             evel(nr,nt) = effvel(nt)
-          enddo
-       enddo
-    end if
+    call RtmFloodInit (frivinp_rtm, begr, endr, runoff%fthresh, evel, &
+        flood_active, effvel_active)
 
     !-------------------------------------------------------
     ! Compute timestep and subcycling number
@@ -1238,7 +1252,7 @@ contains
           do nt = 1,nt_rtm
              budget_global(nt) = budget_global(nt) * 1000._r8 / runoff%totarea * 1.0e6_r8   ! convert from m3/s to kg/m2s*1e6
              write(iulog,'(2a,i10,i6,i4,g20.12)') trim(subname),':BUDGET check (kg/m2s*1e6)= ',ymd,tod,nt,budget_global(nt)
-             !if (abs(budget_global(nt)) > budget_tolerance) abort = .true.
+             if (abs(budget_global(nt)) > budget_tolerance) abort = .true.
           enddo
           if (abort) then
              write(iulog,*) trim(subname),':BUDGET abort balance too large ',budget_tolerance
@@ -1285,24 +1299,33 @@ contains
   !=======================================================================
   !
   !=======================================================================
+  subroutine RtmFloodInit(frivinp, begr, endr, fthresh, evel, &
+                          is_rtmflood_on, is_effvel_on )
 
-  subroutine RtmFloodInit( frivinp, begr, endr, fthresh, evel )
 
     !-----------------------------------------------------------------------
     ! Uses
     use pio
+    use RtmVar, only :  spval 
 
-    ! Input variables
+    ! Subroutine arguments 
+    ! in mode arguments
     character(len=*), intent(in) :: frivinp
-    integer , intent(in)  :: begr, endr
+    integer ,         intent(in) :: begr, endr
+    logical ,         intent(in) :: is_rtmflood_on  !control flooding
+    logical ,         intent(in) :: is_effvel_on    !control eff. velocity 
+
+    ! out mode arguments
     real(r8), intent(out) :: fthresh(begr:endr)
     real(r8), intent(out) :: evel(begr:endr,nt_rtm) 
 
-    ! Local variables
-    real(r8) , pointer :: rslope(:)  ! average topographic slope of gridcell
-    real(r8) , pointer :: max_volr(:)! climatological maximum river water storage
+    ! Local dynamically alloc'd variables
+    real(r8) , allocatable :: rslope(:)   
+    real(r8) , allocatable :: max_volr(:)
+    real(r8) , allocatable :: tempr1(:,:),tempr2(:,:) ! temporary buffer for netcdf read
+
     integer(kind=pio_offset), pointer   :: compdof(:) ! computational degrees of freedom for pio 
-    integer :: nt,n,cnt              ! indices
+    integer :: nt,n,cnt,nr           ! indices
     logical :: readvar               ! read variable in or not
     integer :: ier                   ! status variable
     integer :: dids(2)               ! variable dimension ids 
@@ -1314,69 +1337,105 @@ contains
     character(len=256) :: locfn      ! local file name
 
     !Rtm Flood constants for spatially varying celerity
-    real(r8),parameter :: effvel(nt_rtm) = 0.7_r8   ! downstream velocity (m/s)
-    real(r8),parameter :: min_ev(nt_rtm) = 0.35_r8  ! minimum downstream velocity (m/s)
+    real(r8),parameter :: effvel4_0(nt_rtm) = 0.35_r8   ! downstream velocity (m/s)
+
+    real(r8),parameter :: effvel4_5(nt_rtm) = 1.0_r8   ! downstream velocity (m/s)
+    real(r8),parameter :: min_ev4_5(nt_rtm) = 0.05_r8  ! minimum downstream velocity (m/s)
 
     ! name of this subroutine for logging
     character(*),parameter :: subname = '(RtmFloodInit) '
     !-----------------------------------------------------------------------
 
-    allocate(rslope(begr:endr), max_volr(begr:endr), stat=ier)
-    if (ier /= 0) call shr_sys_abort(subname // ':: allocation ERROR')
+    !----------------------
+    ! only need the read for these two cases.  Additionally, the R01 rdirc
+    ! file does not have SLOPE or MAX_VOLR so R01 must be run with flood and effvel
+    ! off.  This will be addressed in rtm1_0_14 which will be matched with the
+    ! clm4.0/4.5 merge
+    !----------------------
+    if (is_rtmflood_on .or. is_effvel_on) then
 
-    ! Get file
-    call getfil(frivinp, locfn, 0 )
-    if (masterproc) then
-       write(iulog,*) subname//':: reading RTM file name for SLOPE and MAX_VOLR: ',&
-            trim(frivinp_rtm)
-       call shr_sys_flush(iulog)
+       allocate(rslope(begr:endr), max_volr(begr:endr), stat=ier)
+       if (ier /= 0) call shr_sys_abort(subname // ':: allocation ERROR')
+
+       ! Get file
+       call getfil(frivinp, locfn, 0 )
+       if (masterproc) then
+          write(iulog,*) subname//':: reading RTM file name for SLOPE and MAX_VOLR: ',&
+               trim(frivinp_rtm)
+          call shr_sys_flush(iulog)
+       endif
+
+       ! Open file and make sure reuqired variables are in file
+       ! Assume that if SLOPE is on river input dataset so is MAX_VOLR and that
+       ! both have the same io descriptor
+       call ncd_pio_openfile (ncid, trim(locfn), 0)
+       call pio_seterrorhandling(ncid, PIO_BCAST_ERROR)
+       ier = pio_inq_varid(ncid, name='SLOPE', vardesc=vardesc1)
+       if (ier /= PIO_noerr) then
+          call shr_sys_abort( trim(subname)//':: ERROR SLOPE not on rdirc file' )
+       end if
+
+       ier = pio_inq_varid(ncid, name='MAX_VOLR', vardesc=vardesc2)
+       if (ier /= PIO_noerr) then
+          call shr_sys_abort( trim(subname)//':: ERROR MAX_VOLR not on rdirc file' )
+       end if
+       call pio_seterrorhandling(ncid, PIO_INTERNAL_ERROR)
+
+       ! Set iodesc
+       ier = pio_inq_vardimid(ncid, vardesc1, dids)
+       ier = pio_inq_dimlen(ncid, dids(1),dsizes(1))
+       ier = pio_inq_dimlen(ncid, dids(2),dsizes(2))
+       allocate(compdof(runoff%lnumr))
+       cnt = 0
+       do n = runoff%begr,runoff%endr
+          cnt = cnt + 1
+          compdof(cnt) = runoff%gindex(n)
+       enddo
+       call pio_initdecomp(pio_subsystem, pio_double, dsizes, compdof, iodesc)
+       deallocate(compdof)
+   
+       ! Read data
+       call pio_read_darray(ncid, vardesc1, iodesc, rslope, ier)
+       call pio_read_darray(ncid, vardesc2, iodesc, max_volr, ier)
+   
+       ! Cleanup and close file
+       call pio_freedecomp(ncid, iodesc)
+       call pio_closefile(ncid)
+
+    endif
+   
+    ! done reading rdirc file, now set fthresh and effvel
+    if (is_rtmflood_on) then
+       do nt = 1,nt_rtm
+          do n = begr, endr
+             fthresh(n) = max_volr(n)*max(0.005_r8 , 3. * rslope(n))
+          end do
+       end do
+    else
+       runoff%fthresh(:) = spval
     endif
 
-    ! Open file and make sure reuqired variables are in file
-    ! Assume that if SLOPE is on river input dataset so is MAX_VOLR and that
-    ! both have the same io descriptor
-    call ncd_pio_openfile (ncid, trim(locfn), 0)
-    call pio_seterrorhandling(ncid, PIO_BCAST_ERROR)
-    ier = pio_inq_varid(ncid, name='SLOPE', vardesc=vardesc1)
-    if (ier /= PIO_noerr) then
-       call shr_sys_abort( trim(subname)//':: ERROR SLOPE not on rdirc file' )
-    end if
-    ier = pio_inq_varid(ncid, name='MAX_VOLR', vardesc=vardesc2)
-    if (ier /= PIO_noerr) then
-       call shr_sys_abort( trim(subname)//':: ERROR MAX_VOLR not on rdirc file' )
-    end if
-    call pio_seterrorhandling(ncid, PIO_INTERNAL_ERROR)
-
-    ! Set iodesc
-    ier = pio_inq_vardimid(ncid, vardesc1, dids)
-    ier = pio_inq_dimlen(ncid, dids(1),dsizes(1))
-    ier = pio_inq_dimlen(ncid, dids(2),dsizes(2))
-    allocate(compdof(runoff%lnumr))
-    cnt = 0
-    do n = runoff%begr,runoff%endr
-       cnt = cnt + 1
-       compDOF(cnt) = runoff%gindex(n)
-    enddo
-    call pio_initdecomp(pio_subsystem, pio_double, dsizes, compDOF, iodesc)
-    deallocate(compdof)
-
-    ! Read data
-    call pio_read_darray(ncid, vardesc1, iodesc, rslope, ier)
-    call pio_read_darray(ncid, vardesc2, iodesc, max_volr, ier)
-
-    ! Cleanup and close file
-    call pio_freedecomp(ncid, iodesc)
-    call pio_closefile(ncid)
-
-    do nt = 1,nt_rtm
-       do n = begr, endr
-          fthresh(n) = 0.95*max_volr(n)*max(1._r8,rslope(n))
-          ! modify velocity based on gridcell average slope (Manning eqn)
-          evel(n,nt) = max(min_ev(nt),effvel(nt_rtm)*sqrt(max(0._r8,rslope(n)))) 
+    if (is_effvel_on) then
+       if (masterproc) write(iulog,*) subname //':: using effvel4_5 '
+       do nt = 1,nt_rtm
+          do n = begr, endr
+             ! modify velocity based on gridcell average slope (Manning eqn)
+             evel(n,nt) = max(min_ev4_5(nt),effvel4_5(nt)*sqrt(max(0._r8,rslope(n)))) 
+          end do
        end do
-    end do
+    else
+       if (masterproc) write(iulog,*) subname //':: using effvel4_0 '
+       do nt = 1,nt_rtm
+          do nr = begr,endr
+             evel(nr,nt) = effvel4_0(nt)
+          enddo
+       enddo
+    endif
 
-    deallocate(rslope, max_volr)
+    !clean up and exit subroutine
+    if (is_rtmflood_on .or. is_effvel_on) then
+       deallocate(rslope, max_volr)
+    endif
 
     if (masterproc) write(iulog,*) subname //':: Success '
 

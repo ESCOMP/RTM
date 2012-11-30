@@ -47,9 +47,10 @@ module RtmVar
   character(len=256), public :: frivinp_rtm  = ' '   ! RTM input data file name
   logical,            public :: ice_runoff = .true.  ! true => runoff is split into liquid and ice, 
                                                      ! otherwise just liquid
-  logical,            public :: rtm_active = .true.  ! true => rtm on
-  logical,            public :: flood_active = .false.  ! true => flood on
-
+  logical,            public :: rtm_active    = .true.   ! true => rtm on
+  logical,            public :: flood_active  = .false.  ! true => flood on
+  logical,            public :: effvel_active = .false.  ! true => calculate eff. velocity from rdirc file
+ 
   ! Rtm grid size
   integer :: rtmlon = 1 ! number of rtm longitudes (initialize)
   integer :: rtmlat = 1 ! number of rtm latitudes  (initialize)
