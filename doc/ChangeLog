@@ -1,4 +1,16 @@
 ===============================================================
+Tag name:  rtm1_0_14
+Originator(s): muszala
+Date: Jan 2, 2013
+One-line Summary:  change default effvel value to that needed in sci45 branch
+
+  The namelist variable, rtm_effvel is now preset to ACTIVE and effvel_active is set to 
+  true.  This forces rtm to use slope in the velocity calculation.  If a user wants
+  backward compatibilty with clm4_0_* tags, rtm_effvel will have to be set to NULL.
+
+M    rtm/src/riverroute/RtmMod.F90
+
+===============================================================
 Tag name:  rtm1_0_13
 Originator(s): muszala
 Date: Nov 28, 2012

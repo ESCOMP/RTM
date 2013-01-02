@@ -191,7 +191,7 @@ contains
          rtmhist_avgflag_pertape
 
     ! Preset values
-    rtm_effvel     = 'NULL'
+    rtm_effvel     = 'ACTIVE'
     rtm_mode    = 'ACTIVE'
     flood_mode  = 'NULL'
     ice_runoff  = .true.
@@ -259,20 +259,20 @@ contains
 
     rtm_active = .true.
     flood_active = .true.
-    effvel_active = .false.
+    effvel_active = .true.
 
     if (trim(rtm_mode) == 'NULL') then
        rtm_active = .false.
        flood_active = .false.
-       effvel_active = .false.
+       effvel_active = .true.
     endif
 
     if (trim(flood_mode) == 'NULL') then
        flood_active = .false.
     endif
 
-    if (trim(rtm_effvel) == 'ACTIVE') then
-       effvel_active = .true.
+    if (trim(rtm_effvel) == 'NULL') then
+       effvel_active = .false.
     endif
 
     if (masterproc) then
