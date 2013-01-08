@@ -287,18 +287,17 @@ contains
     call t_stopf ('lc_rof_import')
 
     ! Run rtm (input is totrunin, output is runoff%runoff)
+    ! First advance rtm time step
     write(rdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr_sync,mon_sync,day_sync,tod_sync
     nlend = seq_timemgr_StopAlarmIsOn( EClock )
     rstwr = seq_timemgr_RestartAlarmIsOn( EClock )
+    call advance_timestep()
     call Rtmrun(totrunin, rstwr, nlend, rdate)
 
     ! Map roff data to MCT datatype (input is runoff%runoff, output is r2x_r)
     call t_startf ('lc_rof_export')
     call rof_export_mct( r2x_r )
     call t_stopf ('lc_rof_export')
-
-    ! Advance rtm time step
-    call advance_timestep()
 
     ! Check that internal clock is in sync with master clock
     call get_curr_date( yr, mon, day, tod )

@@ -1347,10 +1347,10 @@ contains
     !-----------------------------------------------------------------------
 
     !----------------------
-    ! only need the read for these two cases.  Additionally, the R01 rdirc
-    ! file does not have SLOPE or MAX_VOLR so R01 must be run with flood and effvel
-    ! off.  This will be addressed in rtm1_0_14 which will be matched with the
-    ! clm4.0/4.5 merge
+    ! if either is_rtmflood_on = .true. or is_effvel_on is .true. then do 
+    ! read slope and max_volr out of rdric file.  Below we make the distinction
+    ! between using SLOPE (only when is_effvel_on=.true.) and MAX_VOLR (which is
+    ! always used when is_rtmflood_on is .true.).
     !----------------------
     if (is_rtmflood_on .or. is_effvel_on) then
 
