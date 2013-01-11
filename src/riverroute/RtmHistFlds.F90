@@ -78,6 +78,14 @@ contains
          avgflag='A', long_name='RTM ocean change of storage: '//trim(rtm_tracers(2)), &
          ptr_rof=runoff%dvolrdtocn_nt2, default='inactive')
 
+    call RtmHistAddfld (fname='RTMTHRESH', units='m3',  &
+         avgflag='A', long_name='RTM flooding threshold', &
+         ptr_rof=runoff%fthresh)
+
+    call RtmHistAddfld (fname='RTMFLOOD', units='m3/s',  &
+         avgflag='A', long_name='RTM flooding flux', &
+         ptr_rof=runoff%flood)
+
     ! Print masterlist of history fields
 
     call RtmHistPrintflds()

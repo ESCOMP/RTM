@@ -569,10 +569,6 @@ subroutine timemgr_restart(ncid, flag)
      ! Initialize clock 
      call init_clock( start_date, ref_date, curr_date, stop_date )
      
-     ! Advance the timestep.  
-     ! Data from the restart file corresponds to the last timestep of the previous run.
-     call advance_timestep()
-     
      ! Set flag that this is the first timestep of the restart run.
      tm_first_restart_step = .true.
      

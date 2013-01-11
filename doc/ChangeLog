@@ -1,4 +1,16 @@
 ===============================================================
+Tag name:  rtm1_0_16
+Originator(s): muszala
+Date: Jan 11, 2013
+One-line Summary:  add fix for restarts and add history file vars.
+
+	Put in fix from mvertens for restarts.  Add RTMTHRESH and RTMFLOOD as default 
+	netcdf output variables.
+
+M       src/riverroute/RtmTimeManager.F90
+M       src/riverroute/RtmHistFlds.F90
+
+===============================================================
 Tag name:  rtm1_0_15
 Originator(s): muszala
 Date: Jan 8, 2013
