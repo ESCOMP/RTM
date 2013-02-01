@@ -58,6 +58,7 @@ cat >! $CASEBUILD/rtmconf/cesm_namelist << EOF2
 &rtm_inparm
  $finidat_rtm
  $nrevsn_rtm
+ $RTM_NAMELIST_OPTS
 EOF2
 if (-e $CASEROOT/user_nl_rtm${inst_string}) then
   $UTILROOT/Tools/user_nl_add -user_nl_file $CASEROOT/user_nl_rtm${inst_string} >> $CASEBUILD/rtmconf/cesm_namelist  || exit -2
@@ -72,7 +73,7 @@ $CODEROOT/rof/rtm/bld/build-namelist \
     -caseroot $CASEROOT \
     -scriptsroot $SCRIPTSROOT \
     -inst_string "$inst_string" \
-    -r_ncpl $ROF_NCPL -rtm_grid $rof_grid -lnd_grid $lnd_grid || exit -4
+    -r_ncpl $ROF_NCPL -rtm_grid $rof_grid -lnd_grid $lnd_grid $RTM_BLDNML_OPTS || exit -4
 
 if (-d ${RUNDIR}) then
   cp $CASEBUILD/rtmconf/rof_in ${RUNDIR}/$rof_in_filename || exit -2

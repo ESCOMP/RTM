@@ -1,4 +1,17 @@
 ===============================================================
+Tag name:  rtm1_0_17
+Originator(s): muszala
+Date: Feb 1, 2013
+One-line Summary:  fix esmf synch error & add RTM_NAMELIST_OPTS/RTM_BLDNML_OPTS 
+
+   Fix bug in esmf clock sync error.  Add  RTM_NAMELIST_OPTS/RTM_BLDNML_OPTS
+   to build-namelist in prep. for clm4_0_60 in which 40 and 45 source are
+   broken out.  This tag needs to be paired with scripts4_130130.
+
+M       bld/rtm.buildnml.csh
+M       src/cpl_esmf/rof_comp_esmf.F90
+
+===============================================================
 Tag name:  rtm1_0_16
 Originator(s): muszala
 Date: Jan 11, 2013
