@@ -191,7 +191,7 @@ contains
          rtmhist_avgflag_pertape
 
     ! Preset values
-    rtm_effvel     = 'ACTIVE'
+    rtm_effvel     = 'NULL'
     rtm_mode    = 'ACTIVE'
     flood_mode  = 'NULL'
     ice_runoff  = .true.

@@ -1,4 +1,15 @@
 ===============================================================
+Tag name:  rtm1_0_18
+Originator(s): muszala
+Date: Feb 4, 2013
+One-line Summary: change rtm_effvel to NULL as default for Erik
+
+   Change rtm_effvel to 'NULL' so 40 is the default physics behavior.
+   This is a change from what effvel was set to in rtm1_0_14.
+
+M       src/riverroute/RtmMod.F90
+
+===============================================================
 Tag name:  rtm1_0_17
 Originator(s): muszala
 Date: Feb 1, 2013
