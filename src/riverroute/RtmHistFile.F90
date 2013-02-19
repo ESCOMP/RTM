@@ -47,7 +47,7 @@ module RtmHistFile
        rtmhist_nhtfrq(max_tapes) = (/0, -24, -24/)  ! namelist: history write freq(0=monthly)
   character(len=1), public :: &
        rtmhist_avgflag_pertape(max_tapes) = (/(' ',ni=1,max_tapes)/)   ! namelist: per tape averaging flag
-
+  
   ! list of fields to add
   character(len=max_namlen+2), public :: rtmhist_fincl1(max_flds) = ' '       
   character(len=max_namlen+2), public :: rtmhist_fincl2(max_flds) = ' '
@@ -768,6 +768,7 @@ contains
     character(len=max_namlen):: units     ! variable units
     character(len=256):: str              ! global attribute string
     integer :: status
+    logical, save :: writeTC = .true. ! true => write out time-constant data
     character(len=*),parameter :: subname = 'htape_timeconst'
     !--------------------------------------------------------
 
@@ -816,6 +817,11 @@ contains
        call ncd_defvar(varname='lat', xtype=tape(t)%ncprec, dim1name='lat', &
             long_name='runoff coordinate latitude', units='degrees_north', ncid=nfid(t))
 
+       if(writeTC .and. t == 1) then 
+          call ncd_defvar(varname='fthresh', xtype=tape(t)%ncprec, dim1name='lon', &
+               dim2name='lat', long_name='flooding threshold', &
+               missing_value=spval, fill_value=spval, units='m3', ncid=nfid(t))
+       endif
     else if (mode == 'write') then
 
        call get_curr_time (mdcur, mscur)
@@ -844,6 +850,11 @@ contains
        call ncd_io(varname='lon', data=runoff%rlon, ncid=nfid(t), flag='write')
        call ncd_io(varname='lat', data=runoff%rlat, ncid=nfid(t), flag='write')
 
+       if(writeTC .and. t == 1 .and. tape(t)%ntimes == 1 ) then 
+          call ncd_io(varname='fthresh', data=runoff%fthresh, ncid=nfid(t), flag='write' &
+               ,dim1name='allrof')
+          writeTC = .false.
+       endif
     endif
 
   end subroutine htape_timeconst

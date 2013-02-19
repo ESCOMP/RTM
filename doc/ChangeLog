@@ -1,4 +1,21 @@
 ===============================================================
+Tag name:  rtm1_0_19
+Originator(s): muszala
+Date: Feb 19, 2013
+One-line Summary:  bring in tws, Volr, r01 rdric file
+
+   Bring VOLR through coupler to CLM.  New r01 rdirc file.  
+   Added rtm tests in CLM (test_system).
+
+M    bld/namelist_files/namelist_defaults_rtm.xml
+M    src/cpl_share/rtm_cpl_indices.F90
+M    src/cpl_mct/rof_comp_mct.F90
+M    src/riverroute/RtmMod.F90
+M    src/riverroute/RtmHistFlds.F90
+M    src/riverroute/RtmHistFile.F90
+
+
+===============================================================
 Tag name:  rtm1_0_18
 Originator(s): muszala
 Date: Feb 4, 2013

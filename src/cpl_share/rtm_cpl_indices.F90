@@ -37,7 +37,7 @@ module rtm_cpl_indices
   integer, public :: index_r2x_Forr_roff  = 0   ! rtm->ocn liquid runoff to ocean
   integer, public :: index_r2x_Forr_ioff  = 0   ! rtm->ocn ice runoff to ocean
   integer, public :: index_r2x_Flrr_flood = 0   ! rtm->lnd flood runoff (>fthresh) back to land
-
+  integer, public :: index_r2x_Slrr_volr = 0   ! rtm->lnd volr back to land
   integer, public :: nflds_r2x = 0
 
 !=======================================================================
@@ -88,6 +88,7 @@ contains
     index_r2x_Forr_roff  = mct_avect_indexra(avtmp,'Forr_roff')
     index_r2x_Forr_ioff  = mct_avect_indexra(avtmp,'Forr_ioff')
     index_r2x_Flrr_flood = mct_avect_indexra(avtmp,'Flrr_flood')
+    index_r2x_Slrr_volr = mct_avect_indexra(avtmp,'Slrr_volr')
 
     nflds_r2x = mct_avect_nRattr(avtmp)
 

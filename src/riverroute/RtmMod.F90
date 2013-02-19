@@ -852,7 +852,7 @@ contains
              runoff%dvolrdtlnd(nr,nt)= runoff%dvolrdt(nr,nt)
              runoff%volrlnd(nr,nt)= runoff%volr(nr,nt)
           enddo
-       elseif (runoff%mask(nr) == 2 .or. runoff%mask(nr) == 3) then
+       elseif (runoff%mask(nr) == 2) then
           do nt = 1,nt_rtm
              runoff%runoffocn(nr,nt) = runoff%runoff(nr,nt)
              runoff%dvolrdtocn(nr,nt)= runoff%dvolrdt(nr,nt)

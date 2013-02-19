@@ -34,6 +34,7 @@ contains
     ! describes what the field is, and a ``units'' attribute. A subroutine is
     ! called to add each field to the masterlist.
     !
+    ! !USES:
     ! ARGUMENTS:
     implicit none
     !-------------------------------------------------------
@@ -54,9 +55,9 @@ contains
          avgflag='A', long_name='RTM river discharge into ocean: '//trim(rtm_tracers(2)), &
          ptr_rof=runoff%runoffocn_nt2)
 
-    call RtmHistAddfld (fname='VOLR', units='m3',  &
+    call RtmHistAddfld (fname='VOLR'//'_'//trim(rtm_tracers(1)), units='m3',  &
          avgflag='A', long_name='RTM storage: '//trim(rtm_tracers(1)), &
-         ptr_rof=runoff%volr_nt1)
+         ptr_rof=runoff%volr_nt1, default='inactive')
 
     call RtmHistAddfld (fname='VOLR'//'_'//trim(rtm_tracers(2)), units='m3',  &
          avgflag='A', long_name='RTM storage: '//trim(rtm_tracers(2)), &
@@ -78,13 +79,9 @@ contains
          avgflag='A', long_name='RTM ocean change of storage: '//trim(rtm_tracers(2)), &
          ptr_rof=runoff%dvolrdtocn_nt2, default='inactive')
 
-    call RtmHistAddfld (fname='RTMTHRESH', units='m3',  &
-         avgflag='A', long_name='RTM flooding threshold', &
-         ptr_rof=runoff%fthresh)
-
     call RtmHistAddfld (fname='RTMFLOOD', units='m3/s',  &
          avgflag='A', long_name='RTM flooding flux', &
-         ptr_rof=runoff%flood)
+         ptr_rof=runoff%flood, default='inactive')
 
     ! Print masterlist of history fields
 
