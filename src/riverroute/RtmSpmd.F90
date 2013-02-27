@@ -16,8 +16,9 @@ module RtmSpmd
 !-----------------------------------------------------------------------
 
   implicit none
-  save
   private
+#include <mpif.h>
+  save
 
   ! Default settings valid even if there is no spmd 
 
@@ -48,8 +49,6 @@ module RtmSpmd
   public :: MPI_CHARACTER
   public :: MPI_COMM_WORLD
   public :: MPI_MAX_PROCESSOR_NAME
-
-#include <mpif.h>  
 
 contains
 

@@ -1,4 +1,13 @@
 ===============================================================
+Tag name:  rtm1_0_20
+Originator(s): muszala
+Date: Feb 21, 2013
+One-line Summary:  mods to a few lines for NAG port from Santos
+
+M       nag_rtm1_0_19/src/riverroute/RtmSpmd.F90
+M       nag_rtm1_0_19/src/riverroute/RtmTimeManager.F90
+
+===============================================================
 Tag name:  rtm1_0_19
 Originator(s): muszala
 Date: Feb 19, 2013
