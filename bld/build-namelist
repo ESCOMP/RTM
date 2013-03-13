@@ -86,9 +86,6 @@ my %opts = ( help        => 0,
 	     caseroot    => 0,
 	     scriptsroot => 0,
 	     inst_string => 0,
-	     rtm_grid    => 0,
-	     lnd_grid    => 0,
-             r_ncpl      => undef,
 	    );
 
 GetOptions(
@@ -99,9 +96,6 @@ GetOptions(
     "caseroot=s"    => \$opts{'caseroot'},
     "scriptsroot=s" => \$opts{'scriptsroot'},
     "inst_string=s" => \$opts{'inst_string'},	   
-    "rtm_grid=s"    => \$opts{'rtm_grid'},	   
-    "lnd_grid=s"    => \$opts{'lnd_grid'},	   
-    "r_ncpl=i"      => \$opts{'r_ncpl'},
 )  or usage();
 
 # Give usage message.
@@ -123,8 +117,6 @@ my $eol = "\n";
 my $CASEROOT    = $opts{'caseroot'}; 
 my $SCRIPTSROOT = $opts{'scriptsroot'};       
 my $INST_STRING = $opts{'inst_string'}; 
-#my $rtm_grid    = $opts{'rtm_grid'}; 
-#my $lnd_grid    = $opts{'lnd_grid'}; 
 
 if ($print>=2) { print "Setting rtm configuration script directory to $cfgdir$eol"; }
 
@@ -323,6 +315,9 @@ if ($ROF_GRID eq "null") {
     if ($RTM_MODE ne "NULL") {
 	die "$ProgName ERROR:: ROF_GRID null RTM_MODE not NULL.\n";
     }
+}
+
+if ($RTM_MODE eq "NULL") {
     add_default($nl, 'rtm_mode', 'val'=>"$RTM_MODE");
 }
 else {

@@ -1,4 +1,12 @@
 ===============================================================
+Tag name:  rtm1_0_21
+Originator(s): tcraig
+Date: Mar 13, 2013
+One-line Summary:  minor cleanup and fix to RTM_MODE setting
+
+M       bld/rtm.buildnml.csh
+M       bld/build-namelist
+===============================================================
 Tag name:  rtm1_0_20
 Originator(s): muszala
 Date: Feb 21, 2013

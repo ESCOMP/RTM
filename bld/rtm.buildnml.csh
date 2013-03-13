@@ -24,11 +24,6 @@ cd $CASEBUILD/rtmconf
 
 if (-e $CASEBUILD/rtm.input_data_list) rm $CASEBUILD/rtm.input_data_list
 
-set lnd_grid = $LND_GRID
-set rof_grid = $ROF_GRID
-
-if ("$PTS_MODE" == TRUE ) set rof_grid = "null"
-
 # The following is for backwards compatibility when runoff restart data was on clm restart files
 set finidat_rtm = ""
 if ($RUN_TYPE == 'hybrid') then
@@ -72,8 +67,7 @@ $CODEROOT/rof/rtm/bld/build-namelist \
     -infile $CASEBUILD/rtmconf/cesm_namelist \
     -caseroot $CASEROOT \
     -scriptsroot $SCRIPTSROOT \
-    -inst_string "$inst_string" \
-    -r_ncpl $ROF_NCPL -rtm_grid $rof_grid -lnd_grid $lnd_grid $RTM_BLDNML_OPTS || exit -4
+    -inst_string "$inst_string" $RTM_BLDNML_OPTS || exit -4
 
 if (-d ${RUNDIR}) then
   cp $CASEBUILD/rtmconf/rof_in ${RUNDIR}/$rof_in_filename || exit -2
