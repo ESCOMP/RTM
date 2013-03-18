@@ -118,7 +118,9 @@ contains
     runoff%dvolrdtlnd(:,:) = spval
     runoff%dvolrdtocn(:,:) = spval
     runoff%volr(:,:)       = 0._r8
-    runoff%volrlnd(:,:)    = spval
+    runoff%volrlnd(:,:)    = 0._r8
+    runoff%volr_nt1(:)     = 0._r8
+    runoff%volr_nt2(:)     = 0._r8
     runoff%flood(:)        = 0._r8
 
   end subroutine RunoffInit

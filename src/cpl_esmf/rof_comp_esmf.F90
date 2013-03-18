@@ -34,7 +34,7 @@ module rof_comp_esmf
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep 
   use rtm_cpl_indices  , only : rtm_cpl_indices_set, nt_rtm, rtm_tracers, &
                                 index_r2x_Forr_roff, index_r2x_Forr_ioff, index_r2x_Flrr_flood, &
-                                index_x2r_Flrl_rofliq, index_x2r_Flrl_rofice
+                                index_x2r_Flrl_rofliq, index_x2r_Flrl_rofice,index_r2x_Slrr_volr
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
 !
 ! !PUBLIC MEMBER FUNCTIONS:
@@ -751,6 +751,13 @@ contains
     do n = runoff%begr, runoff%endr
        ni = ni + 1
        fptr(index_r2x_Flrr_flood,ni) = -runoff%flood(n)
+    end do
+
+    ! Want volr on land side to do a correct water balance
+    ni = 0
+    do n = runoff%begr, runoff%endr
+      ni = ni + 1
+      fptr(index_r2x_Slrr_volr,ni) = runoff%volr_nt1(n)
     end do
 
   end subroutine rof_export_esmf
