@@ -1,4 +1,11 @@
 ===============================================================
+Tag name:  rtm1_0_23
+Originator(s): tcraig
+Date: May 3, 2013
+One-line Summary: add some grid checks
+
+M       bld/rtm.buildnml.csh
+===============================================================
 Tag name:  rtm1_0_22
 Originator(s): muszala
 Date: Mar 18, 2013

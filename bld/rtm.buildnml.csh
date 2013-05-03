@@ -2,6 +2,21 @@
 
 if !(-d $CASEBUILD/rtmconf) mkdir -p $CASEBUILD/rtmconf
 
+#------------------------------
+# Verify rof grid is supported
+
+set check_grid = "fail"
+if (${ROF_GRID} == "r05") set check_grid = "OK"
+if (${ROF_GRID} == "r01") set check_grid = "OK"
+
+if (${check_grid} != "OK") then
+  echo "ROF_GRID=${ROF_GRID} not supported in rtm"
+  echo "  rtm support on r05 or r01 ROF_GRID only"
+  exit -2
+endif
+
+#------------------------------
+
 set default_rof_in_filename = "rof_in"
 
 set inst_counter = 1
