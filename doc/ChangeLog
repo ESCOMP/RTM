@@ -1,4 +1,11 @@
 ===============================================================
+Tag name:  rtm1_0_25
+Originator(s): muszala
+Date: May 10, 2013
+One-line Summary: add multi-inst. support 
+
+M       bld/rtm.buildnml.csh
+===============================================================
 Tag name:  rtm1_0_24
 Originator(s): muszala
 Date: May 10, 2013
