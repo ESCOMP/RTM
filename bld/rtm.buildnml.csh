@@ -6,12 +6,13 @@ if !(-d $CASEBUILD/rtmconf) mkdir -p $CASEBUILD/rtmconf
 # Verify rof grid is supported
 
 set check_grid = "fail"
+if (${ROF_GRID} == "null")set check_grid = "OK"
 if (${ROF_GRID} == "r05") set check_grid = "OK"
 if (${ROF_GRID} == "r01") set check_grid = "OK"
 
 if (${check_grid} != "OK") then
   echo "ROF_GRID=${ROF_GRID} not supported in rtm"
-  echo "  rtm support on r05 or r01 ROF_GRID only"
+  echo "  rtm support on null (for single point runs), r05 and r01 ROF_GRIDs only"
   exit -2
 endif
 
