@@ -1,4 +1,12 @@
 ===============================================================
+Tag name:  rtm1_0_26
+Originator(s): jedwards
+Date: May 14, 2013
+One-line Summary: fix multi-inst. support 
+
+M       bld/rtm.buildnml.csh
+
+===============================================================
 Tag name:  rtm1_0_25
 Originator(s): muszala
 Date: May 10, 2013
