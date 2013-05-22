@@ -1,4 +1,18 @@
 ===============================================================
+Tag name:  rtm1_0_27
+Originator(s): erik
+Date: May 22, 2013
+One-line Summary: Initial conditions for 1850/2000 and fix logic for startup files
+
+Fix bugs: 1707, and 1708
+
+M       bld/rtm.buildnml.csh -- Fix bug 1707 where logic for setting hybrid
+                 or branch startup file was wrong.
+M       bld/build-namelist ---- Add ability to set simyr and finidat_rtm file
+M       bld/namelist_files/namelist_defaults_rtm.xml -- Add r05 1850/2000
+                 finidat_rtm files
+
+===============================================================
 Tag name:  rtm1_0_26
 Originator(s): jedwards
 Date: May 14, 2013

@@ -23,6 +23,10 @@ for the CLM data in the CESM distribution
 <rtmhist_nhtfrq>0</rtmhist_nhtfrq> 
 <rtmhist_ndens>2</rtmhist_ndens>
 
+<!-- RTM initial conditions -->
+<finidat_rtm simyr="1850" rof_grid="r05">rof/rtm/initdata/rtmi.I1850CRUCLM45BGC.0241-01-01.R05_simyr1850_c130515.nc</finidat_rtm>
+<finidat_rtm simyr="2000" rof_grid="r05">rof/rtm/initdata/rtmi.ICRUCLM45BGC.2000-01-01.R05_simyr2000_c130518.nc</finidat_rtm>
+
 <!-- River Transport Model river routing file (relative to {csmdata}) -->
 
 <frivinp_rtm rof_grid="r05" >lnd/clm2/rtmdata/rdirc_0.5x0.5_simyr2000_slpmxvl_c120717.nc</frivinp_rtm>

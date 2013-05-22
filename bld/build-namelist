@@ -45,6 +45,7 @@ OPTIONS
                               	      2 = verbose						    
      -caseroot                     CASEROOT directory variable
      -scriptsroot                  SCRIPTSROOT directory variable
+     -simyr <year>                 Starting year to simulate (default 2000)
      -inst_string                  INST_STRING variable
 
 Note: The precedence for setting the values of namelist variables is (highest to lowest):
@@ -85,6 +86,7 @@ my %opts = ( help        => 0,
 	     silent      => 0,
 	     caseroot    => 0,
 	     scriptsroot => 0,
+             simyr       => 2000,
 	     inst_string => 0,
 	    );
 
@@ -93,6 +95,7 @@ GetOptions(
     "infile=s"      => \$opts{'infile'},
     "namelist=s"    => \$opts{'namelist'},
     "print=i"       => \$opts{'print'},
+    "simyr=i"       => \$opts{'simyr'},
     "caseroot=s"    => \$opts{'caseroot'},
     "scriptsroot=s" => \$opts{'scriptsroot'},
     "inst_string=s" => \$opts{'inst_string'},	   
@@ -321,6 +324,9 @@ if ($RTM_MODE eq "NULL") {
     add_default($nl, 'rtm_mode', 'val'=>"$RTM_MODE");
 }
 else {
+    # Set Initial conditions if there is a file for this grid and sim-yr
+    add_default($nl, 'finidat_rtm' , 'rof_grid'=>$ROF_GRID, 'simyr'=>$opts{'simyr'}, 'nofail'=>1 );
+
     add_default($nl, 'rtm_mode', 'val'=>"$RTM_MODE");
     add_default($nl, 'flood_mode', 'val'=>"$RTM_FLOOD_MODE");
     add_default($nl, 'frivinp_rtm' , 'rof_grid'=>$ROF_GRID );
