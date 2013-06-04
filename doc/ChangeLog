@@ -1,4 +1,13 @@
 ===============================================================
+Tag name:  rtm1_0_28
+Originator(s): muszala 
+Date: May 14, 2013
+One-line Summary: VOLR area correction
+
+M       src/cpl_mct/rof_comp_mct.F90
+M       src/cpl_esmf/rof_comp_esmf.F90
+
+===============================================================
 Tag name:  rtm1_0_27
 Originator(s): erik
 Date: May 22, 2013

@@ -627,7 +627,8 @@ contains
     ni = 0
     do n = runoff%begr, runoff%endr
       ni = ni + 1
-      r2x_r%rattr(index_r2x_Slrr_volr,ni) = runoff%volr_nt1(n)
+         r2x_r%rattr(index_r2x_Slrr_volr,ni) = runoff%volr_nt1(n) &
+                                             / (runoff%area(n))
     end do
 
   end subroutine rof_export_mct
