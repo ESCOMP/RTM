@@ -42,7 +42,7 @@ if (-e $CASEBUILD/rtm.input_data_list) rm $CASEBUILD/rtm.input_data_list
 
 # The following is for backwards compatibility when runoff restart data was on clm restart files
 set finidat_rtm = ""
-if ($RUN_TYPE == 'hybrid') then
+if ($RUN_TYPE == 'hybrid' && ${ROF_GRID} != "null" ) then
   set finidat_rtm = "finidat_rtm ='${RUN_REFCASE}.rtm${inst_string}.r.${RUN_REFDATE}-${RUN_REFTOD}.nc'" 
   if ($GET_REFCASE == 'TRUE') then
     set refdir = "$DIN_LOC_ROOT/ccsm4_init/$RUN_REFCASE/$RUN_REFDATE"
@@ -54,7 +54,7 @@ if ($RUN_TYPE == 'hybrid') then
 endif
 
 set nrevsn_rtm = ""
-if ($RUN_TYPE == 'branch') then
+if ($RUN_TYPE == 'branch' && ${ROF_GRID} != "null" ) then
   set nrevsn_rtm = "${RUN_REFCASE}.rtm${inst_string}.r.${RUN_REFDATE}-${RUN_REFTOD}.nc" 
     if( -e "$RUNDIR/$nrevsn_rtm") then
       set nrevsn_rtm = "nrevsn_rtm='$nrevsn_rtm'"

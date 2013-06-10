@@ -1,4 +1,17 @@
 ===============================================================
+Tag name:  rtm1_0_29
+Originator(s): muszala 
+Date: May 14, 2013
+One-line Summary: fix 1x1_camdenNJ tests and use message
+
+M       bld/rtm.buildnml.csh
+   Fix from Erik K. that ignores the initial/restart file setting if the grid is
+   null...fixes bug with ERI_D.1x1_camdenNJ.ICLM45CNTEST.yellowstone_intel.
+	See bug 1734 in bugzilla
+M       bld/build-namelist
+  fix use message error found by Sean Santos.
+
+===============================================================
 Tag name:  rtm1_0_28
 Originator(s): muszala 
 Date: May 14, 2013
