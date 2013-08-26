@@ -48,7 +48,7 @@ if ($RUN_TYPE == 'hybrid' && ${ROF_GRID} != "null" ) then
     set refdir = "$DIN_LOC_ROOT/ccsm4_init/$RUN_REFCASE/$RUN_REFDATE"
     ls $refdir/*rtm* >& /dev/null
     if ( $status != 0 ) then
-      set finidat_rtm = "finidat_rtm ='${RUN_REFCASE}.clm2.r.${RUN_REFDATE}-${RUN_REFTOD}.nc'" 
+      set finidat_rtm = "finidat_rtm ='${RUN_REFCASE}.clm2.r${inst_string}.${RUN_REFDATE}-${RUN_REFTOD}.nc'" 
     endif
   endif
 endif
@@ -59,13 +59,13 @@ if ($RUN_TYPE == 'branch' && ${ROF_GRID} != "null" ) then
     if( -e "$RUNDIR/$nrevsn_rtm") then
       set nrevsn_rtm = "nrevsn_rtm='$nrevsn_rtm'"
     else
-      set nrevsn_rtm = "${RUN_REFCASE}.rtm.r.${RUN_REFDATE}-${RUN_REFTOD}.nc" 
+      set nrevsn_rtm = "nrevsn_rtm='${RUN_REFCASE}.rtm.r${inst_string}.${RUN_REFDATE}-${RUN_REFTOD}.nc'" 
     endif
   if ($GET_REFCASE == 'TRUE') then
      set refdir = "$DIN_LOC_ROOT/ccsm4_init/$RUN_REFCASE/$RUN_REFDATE"
      ls $refdir/*rtm* >& /dev/null
      if ( $status != 0 ) then
-       set nrevsn_rtm = "nrevsn_rtm ='${RUN_REFCASE}.clm2.r.${RUN_REFDATE}-${RUN_REFTOD}.nc'" 
+       set nrevsn_rtm = "nrevsn_rtm ='${RUN_REFCASE}.clm2.r${inst_string}.${RUN_REFDATE}-${RUN_REFTOD}.nc'" 
      endif
   endif
 endif

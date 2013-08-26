@@ -1,4 +1,15 @@
 ===============================================================
+Tag name:  rtm1_0_30
+Originator(s): erik
+Date: Aug 26, 2013
+One-line Summary: Fix bug 1777 (multi-instance) and 1789 (problem with branching)
+
+Change .r. in restart files to .r${inst_string}. as needed.
+Put needed "nrevsn_rtm='" in setting of nrevsn for branches.
+
+M       bld/rtm.buildnml.csh
+
+===============================================================
 Tag name:  rtm1_0_29
 Originator(s): muszala 
 Date: May 14, 2013
