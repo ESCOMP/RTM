@@ -33,8 +33,8 @@ module rof_comp_esmf
   use RtmMod           , only : Rtmini, Rtmrun
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep 
   use rtm_cpl_indices  , only : rtm_cpl_indices_set, nt_rtm, rtm_tracers, &
-                                index_r2x_Forr_roff, index_r2x_Forr_ioff, index_r2x_Flrr_flood, &
-                                index_x2r_Flrl_rofliq, index_x2r_Flrl_rofice,index_r2x_Slrr_volr
+                                index_r2x_Forr_rofl, index_r2x_Forr_rofi, index_r2x_Flrr_flood, &
+                                index_x2r_Flrl_rofl, index_x2r_Flrl_rofi, index_r2x_Flrr_volr
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
 !
 ! !PUBLIC MEMBER FUNCTIONS:
@@ -297,6 +297,9 @@ contains
     call ESMF_AttributeSet(export_state, name="rof_present", value=rtm_active, rc=rc)
     if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
+    call ESMF_AttributeSet(export_state, name="rofice_present", value=.false., rc=rc)
+    if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
     call ESMF_AttributeSet(export_state, name="rof_prognostic", value=rtm_active, rc=rc)
     if( rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
@@ -323,6 +326,7 @@ contains
     endif
 #endif
 
+#ifdef USE_ESMF_METADATA
     convCIM  = "CIM"
     purpComp = "Model Component Simulation Description"
 
@@ -353,6 +357,7 @@ contains
     !                           convention=convCIM, purpose=purpComp, rc=rc)
     !    call ESMF_AttributeSet(comp, "ResponsiblePartyRole", "contact", &
     !                           convention=convCIM, purpose=purpComp, rc=rc)
+#endif
 
   end subroutine rof_init_esmf
 
@@ -666,8 +671,8 @@ contains
     
     do n = runoff%begr,runoff%endr
        ni = n - runoff%begr + 1
-       totrunin(n,nliq) = fptr(index_x2r_Flrl_rofliq,ni)
-       totrunin(n,nfrz) = fptr(index_x2r_Flrl_rofice,ni)
+       totrunin(n,nliq) = fptr(index_x2r_Flrl_rofl,ni)
+       totrunin(n,nfrz) = fptr(index_x2r_Flrl_rofi,ni)
     enddo
 
   end subroutine rof_import_esmf
@@ -719,9 +724,9 @@ contains
           ni = ni + 1
           if (runoff%mask(n) == 2) then
              ! liquid and ice runoff are treated separately
-             fptr(index_r2x_Forr_roff,ni) = &
+             fptr(index_r2x_Forr_rofl,ni) = &
                  runoff%runoff(n,nliq)/(runoff%area(n)*1.0e-6_r8*1000._r8)
-             fptr(index_r2x_Forr_ioff,ni) = &
+             fptr(index_r2x_Forr_rofi,ni) = &
                  runoff%runoff(n,nfrz)/(runoff%area(n)*1.0e-6_r8*1000._r8)
              if (ni > runoff%lnumr) then
                 write(iulog,*) sub, ' : ERROR runoff count',n,ni
@@ -734,9 +739,9 @@ contains
           ni = ni + 1
           if (runoff%mask(n) == 2) then
              ! liquid and ice runoff are bundled together to liquid runoff, and then ice runoff set to zero
-             fptr(index_r2x_Forr_roff,ni) =   &
+             fptr(index_r2x_Forr_rofl,ni) =   &
                (runoff%runoff(n,nfrz)+runoff%runoff(n,nliq))/(runoff%area(n)*1.0e-6_r8*1000._r8)
-             fptr(index_r2x_Forr_ioff,ni) = 0.0_r8
+             fptr(index_r2x_Forr_rofi,ni) = 0.0_r8
              if (ni > runoff%lnumr) then
                 write(iulog,*) sub, ' : ERROR runoff count',n,ni
                 call shr_sys_abort( sub//' : ERROR runoff > expected' )
@@ -757,7 +762,7 @@ contains
     ni = 0
     do n = runoff%begr, runoff%endr
       ni = ni + 1
-      fptr(index_r2x_Slrr_volr,ni) = runoff%volr_nt1(n) &
+      fptr(index_r2x_Flrr_volr,ni) = runoff%volr_nt1(n) &
                                    / (runoff%area(n))
 
     end do

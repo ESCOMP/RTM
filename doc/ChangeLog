@@ -1,4 +1,19 @@
 ===============================================================
+Tag name:  rtm1_0_31
+Originator(s): tcraig
+Date: Sep 5, 2013
+One-line Summary: merge cplupa branch to trunk
+
+update runoff coupling field names for consistency with driver
+modify intents on init/run/finalize coupling interfaces
+add ifdef USE_ESMF_METADATA around esmf attribute calls
+add rof to ice control logic
+convert volr coupling field from state to flux
+
+M       src/cpl_share/rtm_cpl_indices.F90
+M       src/cpl_mct/rof_comp_mct.F90
+M       src/cpl_esmf/rof_comp_esmf.F90
+===============================================================
 Tag name:  rtm1_0_30
 Originator(s): erik
 Date: Aug 26, 2013

@@ -29,9 +29,9 @@ module rof_comp_mct
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep 
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
   use rtm_cpl_indices  , only : rtm_cpl_indices_set, nt_rtm, rtm_tracers, &
-                                index_x2r_Flrl_rofliq, index_x2r_Flrl_rofice, &
-                                index_r2x_Forr_roff,   index_r2x_Forr_ioff, &
-                                index_r2x_Flrr_flood, index_r2x_Slrr_volr
+                                index_x2r_Flrl_rofl,  index_x2r_Flrl_rofi, &
+                                index_r2x_Forr_rofl,  index_r2x_Forr_rofi, &
+                                index_r2x_Flrr_flood, index_r2x_Flrr_volr
   use mct_mod
   use ESMF
 !
@@ -72,7 +72,7 @@ contains
     ! back from (i.e. albedos, surface temperature and snow cover over land).
     !
     ! !ARGUMENTS:
-    type(ESMF_Clock),           intent(in)    :: EClock     ! Input synchronization clock
+    type(ESMF_Clock),           intent(inout) :: EClock     ! Input synchronization clock
     type(seq_cdata),            intent(inout) :: cdata_r    ! Input runoff-model driver data
     type(mct_aVect) ,           intent(inout) :: x2r_r      ! River import state
     type(mct_aVect),            intent(inout) :: r2x_r      ! River export state
@@ -211,7 +211,8 @@ contains
 
     ! Fill in infodata
     call seq_infodata_PutData( infodata, rof_present=rtm_active, &
-         rof_prognostic=rtm_active, rof_nx = rtmlon, rof_ny = rtmlat)
+         rofice_present=.false., rof_prognostic=rtm_active, &
+         rof_nx = rtmlon, rof_ny = rtmlat)
     call seq_infodata_PutData( infodata, flood_present=flood_active)
 
     ! Reset shr logging to original values
@@ -239,8 +240,8 @@ contains
 
     ! ARGUMENTS:
     implicit none
-    type(ESMF_Clock) , intent(in)    :: EClock    ! Input synchronization clock from driver
-    type(seq_cdata)  , intent(in)    :: cdata_r   ! Input driver data for runoff model
+    type(ESMF_Clock) , intent(inout) :: EClock    ! Input synchronization clock from driver
+    type(seq_cdata)  , intent(inout) :: cdata_r   ! Input driver data for runoff model
     type(mct_aVect)  , intent(inout) :: x2r_r     ! Import state from runoff model
     type(mct_aVect)  , intent(inout) :: r2x_r     ! Export state from runoff model
 
@@ -335,8 +336,8 @@ contains
     !
     ! ARGUMENTS:
     implicit none
-    type(ESMF_Clock) , intent(in)    :: EClock    ! Input synchronization clock from driver
-    type(seq_cdata)  , intent(in)    :: cdata_r   ! Input driver data for runoff model
+    type(ESMF_Clock) , intent(inout) :: EClock    ! Input synchronization clock from driver
+    type(seq_cdata)  , intent(inout) :: cdata_r   ! Input driver data for runoff model
     type(mct_aVect)  , intent(inout) :: x2r_r     ! Import state from runoff model
     type(mct_aVect)  , intent(inout) :: r2x_r     ! Export state from runoff model
     !-----------------------------------------------------
@@ -531,8 +532,8 @@ contains
     endr = runoff%endr
     do n = begr,endr
        n2 = n - begr + 1
-       totrunin(n,nliq) = x2r_r%rAttr(index_x2r_Flrl_rofliq,n2)
-       totrunin(n,nfrz) = x2r_r%rAttr(index_x2r_Flrl_rofice,n2)
+       totrunin(n,nliq) = x2r_r%rAttr(index_x2r_Flrl_rofl,n2)
+       totrunin(n,nfrz) = x2r_r%rAttr(index_x2r_Flrl_rofi,n2)
     enddo
 
   end subroutine rof_import_mct
@@ -589,9 +590,9 @@ contains
           ni = ni + 1
           if (runoff%mask(n) == 2) then
              ! liquid and ice runoff are treated separately - this is what goes to the ocean
-             r2x_r%rAttr(index_r2x_Forr_roff,ni) = &
+             r2x_r%rAttr(index_r2x_Forr_rofl,ni) = &
                   runoff%runoff(n,nliq)/(runoff%area(n)*1.0e-6_r8*1000._r8)
-             r2x_r%rAttr(index_r2x_Forr_ioff,ni) = &
+             r2x_r%rAttr(index_r2x_Forr_rofi,ni) = &
                   runoff%runoff(n,nfrz)/(runoff%area(n)*1.0e-6_r8*1000._r8)
              if (ni > runoff%lnumr) then
                 write(iulog,*) sub, ' : ERROR runoff count',n,ni
@@ -604,9 +605,9 @@ contains
           ni = ni + 1
           if (runoff%mask(n) == 2) then
              ! liquid and ice runoff are bundled together to liquid runoff, and then ice runoff set to zero
-             r2x_r%rAttr(index_r2x_Forr_roff,ni) =   &
+             r2x_r%rAttr(index_r2x_Forr_rofl,ni) =   &
                   (runoff%runoff(n,nfrz)+runoff%runoff(n,nliq))/(runoff%area(n)*1.0e-6_r8*1000._r8)
-             r2x_r%rAttr(index_r2x_Forr_ioff,ni) = 0._r8
+             r2x_r%rAttr(index_r2x_Forr_rofi,ni) = 0._r8
              if (ni > runoff%lnumr) then
                 write(iulog,*) sub, ' : ERROR runoff count',n,ni
                 call shr_sys_abort( sub//' : ERROR runoff > expected' )
@@ -627,7 +628,7 @@ contains
     ni = 0
     do n = runoff%begr, runoff%endr
       ni = ni + 1
-         r2x_r%rattr(index_r2x_Slrr_volr,ni) = runoff%volr_nt1(n) &
+         r2x_r%rattr(index_r2x_Flrr_volr,ni) = runoff%volr_nt1(n) &
                                              / (runoff%area(n))
     end do
 
