@@ -1,12 +1,12 @@
 module rof_comp_esmf
   
+#ifdef ESMF_INTERFACE
 !===============================================================================
+! !DESCRIPTION:
 ! Interface of the active river runoff componetn (RTM) model component of CESM 
 ! with the main CESM driver. This is a thin interface taking CESM driver information
 ! in MCT (Model Coupling Toolkit) format and converting it to use by RTM and outputing
 ! if in ESMF (Earth System Modelling Framework) format.
-!
-! !DESCRIPTION:
 !
 ! !USES:
   use shr_kind_mod     , only : r8 => shr_kind_r8, SHR_KIND_CL
@@ -15,26 +15,27 @@ module rof_comp_esmf
                                 shr_file_getUnit, shr_file_setIO
   use shr_const_mod    , only : SHR_CONST_REARTH
   use shr_sys_mod
-  use seq_timemgr_mod  , only : seq_timemgr_EClockGetData, seq_timemgr_StopAlarmIsOn, &
-                                seq_timemgr_RestartAlarmIsOn, seq_timemgr_EClockDateInSync
-  use seq_infodata_mod , only : seq_infodata_start_type_cont, &
-                                seq_infodata_start_type_brnch, &
-                                seq_infodata_start_type_start
+  use seq_timemgr_mod  , only : seq_timemgr_EClockGetData, seq_timemgr_StopAlarmIsOn
+  use seq_timemgr_mod  , only : seq_timemgr_RestartAlarmIsOn, seq_timemgr_EClockDateInSync
+  use seq_infodata_mod , only : seq_infodata_start_type_cont
+  use seq_infodata_mod , only : seq_infodata_start_type_brnch
+  use seq_infodata_mod , only : seq_infodata_start_type_start
   use seq_comm_mct     , only : seq_comm_suffix, seq_comm_inst, seq_comm_name
   use seq_flds_mod
   use esmf
   use esmfshr_mod
   use RunoffMod        , only : runoff
-  use RtmVar           , only : rtmlon, rtmlat, ice_runoff, iulog, &
-                                nsrStartup, nsrContinue, nsrBranch, & 
-                                inst_index, inst_suffix, inst_name, RtmVarSet, &
-                                rtm_active, flood_active
+  use RtmVar           , only : rtmlon, rtmlat, ice_runoff, iulog
+  use RtmVar           , only : nsrStartup, nsrContinue, nsrBranch
+  use RtmVar           , only : inst_index, inst_suffix, inst_name, RtmVarSet
+  use RtmVar           , only : rtm_active, flood_active
   use RtmSpmd          , only : masterproc, iam, RtmSpmdInit
   use RtmMod           , only : Rtmini, Rtmrun
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep 
-  use rtm_cpl_indices  , only : rtm_cpl_indices_set, nt_rtm, rtm_tracers, &
-                                index_r2x_Forr_rofl, index_r2x_Forr_rofi, index_r2x_Flrr_flood, &
-                                index_x2r_Flrl_rofl, index_x2r_Flrl_rofi, index_r2x_Flrr_volr
+  use rof_import_export, only : rof_import, rof_export
+  use rtm_cpl_indices  , only : rtm_cpl_indices_set, nt_rtm, rtm_tracers
+  use rtm_cpl_indices  , only : index_r2x_Forr_rofl, index_r2x_Forr_rofi, index_r2x_Flrr_flood
+  use rtm_cpl_indices  , only : index_x2r_Flrl_rofl, index_x2r_Flrl_rofi, index_r2x_Flrr_volr
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
 !
 ! !PUBLIC MEMBER FUNCTIONS:
@@ -55,14 +56,11 @@ module rof_comp_esmf
 ! Author:  Mariana Vertenstein
 !
 ! !PRIVATE MEMBER FUNCTIONS:
-  private :: rof_DistGrid_esmf        ! Distribute river runoff grid
+  private :: rof_distgrid_esmf        ! Distribute river runoff grid
   private :: rof_domain_esmf          ! Set the river runoff model domain information
-  private :: rof_import_esmf          ! Import data from the CESM coupler to the river runoff model
-  private :: rof_export_esmf          ! Export the river runoff model data to the CESM coupler
 !
 ! ! PRIVATE DATA MEMBERS:
   real(r8), pointer :: totrunin(:,:)   ! cell tracer lnd forcing on rtm grid (mm/s)
-!
 
 !===============================================================================
 contains
@@ -142,6 +140,7 @@ contains
     character(len=SHR_KIND_CL) :: username           ! user running the model
     character(len=32), parameter :: sub = 'rof_init_esmf'
     character(len=*),  parameter :: format = "('("//trim(sub)//") :',A)"
+    real(R8), pointer :: fptr(:,:)
     character(ESMF_MAXSTR) :: convCIM, purpComp
     !-----------------------------------------------------------------------
 
@@ -273,10 +272,10 @@ contains
 
        ! Initialize rof import and export states
 
-       r2x = mct2esmf_init(distgrid, attname=seq_flds_r2x_fields, name="r2x", rc=rc)
+       r2x = mct2esmf_init(distgrid, attname=seq_flds_r2x_fields, name="d2x", rc=rc)
        if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-       x2r = mct2esmf_init(distgrid, attname=seq_flds_x2r_fields, name="x2r", rc=rc)
+       x2r = mct2esmf_init(distgrid, attname=seq_flds_x2r_fields, name="x2d", rc=rc)
        if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
        call ESMF_StateAdd(export_state, (/dom/), rc=rc)
@@ -290,8 +289,11 @@ contains
 
        ! Create river runoff export state 
 
-       call rof_export_esmf(r2x, rc=rc)
+       call ESMF_ArrayGet(r2x, localDe=0, farrayPtr=fptr, rc=rc)
        if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+       call rof_export(fptr)
+
     endif  ! rtm_active
 
     call ESMF_AttributeSet(export_state, name="rof_present", value=rtm_active, rc=rc)
@@ -394,14 +396,15 @@ contains
     logical :: nlend_sync                 ! Flag signaling last time-step
     logical :: nlend                      ! .true. ==> last time-step
     integer :: shrlogunit,shrloglev       ! old values
-    integer :: begg, endg                 ! Beginning and ending gridcell index numbers
     integer :: lbnum                      ! input to memory diagnostic
     integer :: g,i,kf                     ! counters
+    real(R8), pointer :: fptr(:,:)
     character(len=32)            :: rdate ! date char string for restart file names
     character(len=32), parameter :: sub = "rof_run_esmf"
     !---------------------------------------------------------------------------
 
     call t_startf ('lc_rof_run1')
+
     rc = ESMF_SUCCESS
 
 #if (defined _MEMTRACE)
@@ -424,9 +427,15 @@ contains
     ! Map ESMF to rtm input (rof) data type
 
     call t_startf ('lc_rof_import')
-    call ESMF_StateGet(import_state, itemName="x2r", array=x2r, rc=rc)
+
+    call ESMF_StateGet(import_state, itemName="x2d", array=x2r, rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-    call rof_import_esmf( x2r, totrunin=totrunin, rc=rc )
+
+    call ESMF_ArrayGet(x2r, localDe=0, farrayPtr=fptr, rc=rc)
+    if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+    call rof_import(fptr, totrunin=totrunin)
+
     call t_stopf ('lc_rof_import')
 
     ! Run rtm (input is totrunin, output is runoff%runoff)
@@ -441,9 +450,15 @@ contains
     ! Map roff data to MCT datatype (input is runoff%runoff, output is r2x_r)
       
     call t_startf ('lc_rof_export')
-    call ESMF_StateGet(export_state, itemName="r2x", array=r2x, rc=rc)
+
+    call ESMF_StateGet(export_state, itemName="d2x", array=r2x, rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
-    call rof_export_esmf( r2x, rc=rc)
+
+    call ESMF_ArrayGet(r2x, localDe=0, farrayPtr=fptr, rc=rc)
+    if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+    call rof_export(fptr)
+
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
     call t_stopf ('lc_rof_export')
        
@@ -496,10 +511,10 @@ contains
     call esmfshr_util_StateArrayDestroy(export_state,'domain',rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
     
-    call esmfshr_util_StateArrayDestroy(export_state,'r2x',rc=rc)
+    call esmfshr_util_StateArrayDestroy(export_state,'d2x',rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-    call esmfshr_util_StateArrayDestroy(import_state,'x2r',rc=rc)
+    call esmfshr_util_StateArrayDestroy(import_state,'x2d',rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
   end subroutine rof_final_esmf
@@ -769,4 +784,5 @@ contains
 
   end subroutine rof_export_esmf
 
+#endif
 end module rof_comp_esmf

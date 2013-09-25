@@ -1,4 +1,27 @@
 ===============================================================
+Tag name:  rtm1_0_33
+Originator(s): mvertens
+Date: Sep 25, 2013
+One-line Summary: Coupler interface refactor
+
+migration of cpl_share/, cpl_esmf/ and cpl_mct code into 
+new cpl/ and introduction of rof_import_export.F90
+
+M       bld/rtm.buildexe.csh
+D       src/cpl_share
+D       src/cpl_share/rtm_cpl_indices.F90
+D       src/cpl_mct
+D       src/cpl_mct/rof_comp_mct.F90
+D       src/cpl_esmf
+D       src/cpl_esmf/rof_comp_mct.F90
+D       src/cpl_esmf/rof_comp_esmf.F90
+A  +    src/cpl
+A  +    src/cpl/rof_comp_mct.F90
+A  +    src/cpl/rof_comp_esmf.F90
+A  +    src/cpl/rtm_cpl_indices.F90
+A  +    src/cpl/rof_import_export.F90
+
+===============================================================
 Tag name:  rtm1_0_32
 Originator(s): muszala
 Date: Sep 19, 2013

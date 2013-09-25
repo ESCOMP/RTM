@@ -32,6 +32,8 @@ module rof_comp_mct
                                 index_x2r_Flrl_rofl,  index_x2r_Flrl_rofi, &
                                 index_r2x_Forr_rofl,  index_r2x_Forr_rofi, &
                                 index_r2x_Flrr_flood, index_r2x_Flrr_volr
+  use rof_import_export
+
   use mct_mod
   use ESMF
 !
@@ -41,17 +43,15 @@ module rof_comp_mct
   private                              ! By default make data private
 !
 ! PUBLIC MEMBER FUNCTIONS:
+
   public :: rof_init_mct               ! rof initialization
   public :: rof_run_mct                ! rof run phase
   public :: rof_final_mct              ! rof finalization/cleanup
 !
-! PUBLIC DATA MEMBERS:
-! None
-!
 ! PRIVATE MEMBER FUNCTIONS:
+
   private :: rof_SetgsMap_mct         ! Set the river runoff model MCT GS map
   private :: rof_domain_mct           ! Set the river runoff model domain information
-  private :: rof_export_mct           ! Export the river runoff model data to the CESM coupler
 !
 ! PRIVATE DATA MEMBERS:
   real(r8), pointer :: totrunin(:,:)   ! cell tracer lnd forcing on rtm grid (mm/s)
@@ -206,7 +206,7 @@ contains
        call mct_aVect_zero(r2x_r) 
        
        ! Create mct river runoff export state
-       call rof_export_mct( r2x_r )
+       call rof_export(r2x_r%rattr)
     end if
 
     ! Fill in infodata
@@ -285,20 +285,21 @@ contains
 
     ! Map MCT to land data type (output is totrunin - module variable) 
     call t_startf ('lc_rof_import')
-    call rof_import_mct( x2r_r, totrunin=totrunin )
+    call rof_import(x2r_r%rattr, totrunin=totrunin)
     call t_stopf ('lc_rof_import')
 
-    ! Run rtm (input is totrunin, output is runoff%runoff)
     ! First advance rtm time step
     write(rdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr_sync,mon_sync,day_sync,tod_sync
     nlend = seq_timemgr_StopAlarmIsOn( EClock )
     rstwr = seq_timemgr_RestartAlarmIsOn( EClock )
     call advance_timestep()
+
+    ! Run rtm (input is totrunin, output is runoff%runoff)
     call Rtmrun(totrunin, rstwr, nlend, rdate)
 
-    ! Map roff data to MCT datatype (input is runoff%runoff, output is r2x_r)
+    ! Map roff data to coupler datatype (input is runoff%runoff, output is r2x_r%rattr)
     call t_startf ('lc_rof_export')
-    call rof_export_mct( r2x_r )
+    call rof_export(r2x_r%rattr)
     call t_stopf ('lc_rof_export')
 
     ! Check that internal clock is in sync with master clock
@@ -495,143 +496,5 @@ contains
 
 !====================================================================================
  
-  subroutine rof_import_mct( x2r_r, totrunin)
-
-    !---------------------------------------------------------------------------
-    ! DESCRIPTION:
-    ! Obtain the runoff input from the coupler
-    !
-    ! ARGUMENTS:
-    implicit none
-    type(mct_aVect), intent(inout) :: x2r_r         
-    real(r8)       , pointer       :: totrunin(:,:) 
-    !
-    ! LOCAL VARIABLES
-    integer :: n2, n, nt, begr, endr, nliq, nfrz
-    character(len=32), parameter :: sub = 'rof_import_mct'
-    !---------------------------------------------------------------------------
-    
-    ! Note that totrunin is a flux
-
-    nliq = 0
-    nfrz = 0
-    do nt = 1,nt_rtm
-       if (trim(rtm_tracers(nt)) == 'LIQ') then
-          nliq = nt
-       endif
-       if (trim(rtm_tracers(nt)) == 'ICE') then
-          nfrz = nt
-       endif
-    enddo
-    if (nliq == 0 .or. nfrz == 0) then
-       write(iulog,*) trim(sub),': ERROR in rtm_tracers LIQ ICE ',nliq,nfrz,rtm_tracers
-       call shr_sys_abort()
-    endif
-
-    begr = runoff%begr
-    endr = runoff%endr
-    do n = begr,endr
-       n2 = n - begr + 1
-       totrunin(n,nliq) = x2r_r%rAttr(index_x2r_Flrl_rofl,n2)
-       totrunin(n,nfrz) = x2r_r%rAttr(index_x2r_Flrl_rofi,n2)
-    enddo
-
-  end subroutine rof_import_mct
-
-!====================================================================================
-
-  subroutine rof_export_mct( r2x_r )
-
-    !---------------------------------------------------------------------------
-    ! DESCRIPTION:
-    ! Send the runoff model export state to the coupler
-    !
-    ! ARGUMENTS:
-    implicit none
-    type(mct_aVect), intent(inout) :: r2x_r  ! Runoff to coupler export state
-    !
-    ! LOCAL VARIABLES
-    integer :: ni, n, nt, nliq, nfrz
-    logical :: first_time = .true.
-    character(len=32), parameter :: sub = 'rof_export_mct'
-    !---------------------------------------------------------------------------
-    
-    nliq = 0
-    nfrz = 0
-    do nt = 1,nt_rtm
-       if (trim(rtm_tracers(nt)) == 'LIQ') then
-          nliq = nt
-       endif
-       if (trim(rtm_tracers(nt)) == 'ICE') then
-          nfrz = nt
-       endif
-    enddo
-    if (nliq == 0 .or. nfrz == 0) then
-       write(iulog,*) trim(sub),': ERROR in rtm_tracers LIQ ICE ',nliq,nfrz,rtm_tracers
-       call shr_sys_abort()
-    endif
-
-    r2x_r%rattr(:,:) = 0._r8
-
-    if (first_time) then
-       if (masterproc) then
-       if ( ice_runoff )then
-          write(iulog,*)'Snow capping will flow out in frozen river runoff'
-       else
-          write(iulog,*)'Snow capping will flow out in liquid river runoff'
-       endif
-       endif
-       first_time = .false.
-    end if
-
-    ni = 0
-    if ( ice_runoff )then
-       do n = runoff%begr,runoff%endr
-          ni = ni + 1
-          if (runoff%mask(n) == 2) then
-             ! liquid and ice runoff are treated separately - this is what goes to the ocean
-             r2x_r%rAttr(index_r2x_Forr_rofl,ni) = &
-                  runoff%runoff(n,nliq)/(runoff%area(n)*1.0e-6_r8*1000._r8)
-             r2x_r%rAttr(index_r2x_Forr_rofi,ni) = &
-                  runoff%runoff(n,nfrz)/(runoff%area(n)*1.0e-6_r8*1000._r8)
-             if (ni > runoff%lnumr) then
-                write(iulog,*) sub, ' : ERROR runoff count',n,ni
-                call shr_sys_abort( sub//' : ERROR runoff > expected' )
-             endif
-          endif
-       end do
-    else
-       do n = runoff%begr,runoff%endr
-          ni = ni + 1
-          if (runoff%mask(n) == 2) then
-             ! liquid and ice runoff are bundled together to liquid runoff, and then ice runoff set to zero
-             r2x_r%rAttr(index_r2x_Forr_rofl,ni) =   &
-                  (runoff%runoff(n,nfrz)+runoff%runoff(n,nliq))/(runoff%area(n)*1.0e-6_r8*1000._r8)
-             r2x_r%rAttr(index_r2x_Forr_rofi,ni) = 0._r8
-             if (ni > runoff%lnumr) then
-                write(iulog,*) sub, ' : ERROR runoff count',n,ni
-                call shr_sys_abort( sub//' : ERROR runoff > expected' )
-             endif
-          endif
-       end do
-    end if
-
-    ! Flooding back to land, sign convention is positive in land->rof direction
-    ! so if water is sent from rof to land, the flux must be negative.
-    ni = 0
-    do n = runoff%begr, runoff%endr
-       ni = ni + 1
-       r2x_r%rattr(index_r2x_Flrr_flood,ni) = -runoff%flood(n)
-    end do
-
-    ! Want volr on land side to do a correct water balance
-    ni = 0
-    do n = runoff%begr, runoff%endr
-      ni = ni + 1
-         r2x_r%rattr(index_r2x_Flrr_volr,ni) = runoff%volr_nt1(n) &
-                                             / (runoff%area(n))
-    end do
-
-  end subroutine rof_export_mct
 
 end module rof_comp_mct
