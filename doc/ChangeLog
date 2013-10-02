@@ -1,4 +1,12 @@
 ===============================================================
+Tag name:  rtm1_0_34
+Originator(s): mvertens
+Date: Oct 2, 2013
+One-line Summary: removed mct2esmf calls from rof_comp_esmf.F90
+	
+M       src/cpl/rof_comp_esmf.F90
+	
+===============================================================
 Tag name:  rtm1_0_33
 Originator(s): mvertens
 Date: Sep 25, 2013
