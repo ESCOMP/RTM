@@ -54,11 +54,11 @@ if ($RUN_TYPE == 'hybrid' || $RUN_TYPE == "branch" ) then
   endif
 
   # search for clm or rtm files with instance or not
-  set fncheck = "${RUN_REFCASE}.rtm.r${inst_string}.${RUN_REFDATE}-${RUN_REFTOD}.nc"
+  set fncheck = "${RUN_REFCASE}.rtm${inst_string}.r.${RUN_REFDATE}-${RUN_REFTOD}.nc"
   if !(-e "$refdir/$fncheck") then
     set fncheck = "${RUN_REFCASE}.rtm.r.${RUN_REFDATE}-${RUN_REFTOD}.nc"
     if !(-e "$refdir/$fncheck") then
-      set fncheck = "${RUN_REFCASE}.clm2.r${inst_string}.${RUN_REFDATE}-${RUN_REFTOD}.nc"
+      set fncheck = "${RUN_REFCASE}.clm2${inst_string}.r.${RUN_REFDATE}-${RUN_REFTOD}.nc"
       if !(-e "$refdir/$fncheck") then
         set fncheck = "${RUN_REFCASE}.clm2.r.${RUN_REFDATE}-${RUN_REFTOD}.nc"
         if !(-e "$refdir/$fncheck") then

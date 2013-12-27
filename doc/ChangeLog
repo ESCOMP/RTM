@@ -1,4 +1,12 @@
 ===============================================================
+Tag name:  rtm1_0_36
+Originator(s): tcraig
+Date: Dec 27, 2013
+One-line Summary: fix multi instance hybrid/branch filenames
+
+M       bld/rtm.buildnml.csh
+
+===============================================================
 Tag name:  rtm1_0_35
 Originator(s): tcraig
 Date: Oct 28, 2013
