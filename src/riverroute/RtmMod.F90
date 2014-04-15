@@ -1,5 +1,7 @@
 module RtmMod
 
+#include "shr_assert.h"
+
 !-----------------------------------------------------------------------
 !BOP
 !
@@ -1317,7 +1319,6 @@ contains
     use pio
     use RtmVar          , only : spval 
     use shr_log_mod     , only : errMsg => shr_log_errMsg
-    use shr_assert_mod  , only : shr_assert
 
     ! Subroutine arguments 
     ! in mode arguments
@@ -1359,9 +1360,9 @@ contains
     character(*),parameter :: subname = '(RtmFloodInit) '
     !-----------------------------------------------------------------------
 
-    call shr_assert((ubound(fthresh) == (/endr/)),         errMsg(__FILE__, __LINE__))
-    call shr_assert((ubound(gindex)  == (/endr/)),         errMsg(__FILE__, __LINE__))
-    call shr_assert((ubound(evel)    == (/endr, nt_rtm/)), errMsg(__FILE__, __LINE__))
+    SHR_ASSERT_ALL((ubound(fthresh) == (/endr/)),         errMsg(__FILE__, __LINE__))
+    SHR_ASSERT_ALL((ubound(gindex)  == (/endr/)),         errMsg(__FILE__, __LINE__))
+    SHR_ASSERT_ALL((ubound(evel)    == (/endr, nt_rtm/)), errMsg(__FILE__, __LINE__))
 
     effvel4_0(:) = 0.35_r8  ! downstream velocity (m/s)
     effvel4_5(:) = 1.0_r8   ! downstream velocity (m/s)

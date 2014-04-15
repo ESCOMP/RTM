@@ -1,4 +1,14 @@
 ===============================================================
+Tag name:  rtm1_0_37
+Originator(s): muszala
+Date: Dec 27, 2014
+One-line Summary: add SHR_ASSERT macros
+
+Replace call shr_assert with SHR_ASSERT_ALL macros for Santos.  Add shr_assert.h.
+
+M       src/riverroute/RtmMod.F90
+
+===============================================================
 Tag name:  rtm1_0_36
 Originator(s): tcraig
 Date: Dec 27, 2013
