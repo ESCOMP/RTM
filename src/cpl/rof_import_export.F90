@@ -28,7 +28,7 @@ contains
     !
     ! ARGUMENTS:
     real(r8), intent(inout) :: x2r(:,:)         
-    real(r8), pointer       :: totrunin(:,:) 
+    real(r8), intent(out)   :: totrunin( runoff%begr: ,: ) 
     !
     ! LOCAL VARIABLES
     integer :: n2, n, nt

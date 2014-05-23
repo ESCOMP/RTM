@@ -73,6 +73,7 @@ module RtmHistFile
   public :: RtmHistUpdateHbuf    ! Updates history buffer for all fields and tapes
   public :: RtmHistHtapesWrapup  ! Write history tape(s)
   public :: RtmHistRestart       ! Read/write history file restart data
+  public :: RtmHistFileFinalize  ! Clean up memory
 !
 ! !REVISION HISTORY:
 ! Created by Mariana Vertenstein
@@ -174,6 +175,29 @@ module RtmHistFile
 contains
 
 !-----------------------------------------------------------------------
+  subroutine RtmHistFileFinalize()
+
+    ! DESCRIPTION:
+    !
+    ! Finalize and clean up memory,  Called from rof_final_mct
+    !
+
+    ! !ARGUMENTS:
+
+    implicit none
+
+    ! !LOCAL VARIABLES:
+
+    integer :: t,f     ! indices
+
+    do t = 1,ntapes
+       do f = 1,tape(t)%nflds
+          deallocate (tape(t)%hlist(f)%hbuf)
+          deallocate (tape(t)%hlist(f)%nacs)
+       end do
+    end do
+
+  end subroutine RtmHistFileFinalize
 
   subroutine RtmHistPrintflds()
 
@@ -499,8 +523,10 @@ contains
     tape(t)%nflds = tape(t)%nflds + 1
     n = tape(t)%nflds
     tape(t)%hlist(n)%field = masterlist(f)%field
+
     allocate (tape(t)%hlist(n)%hbuf(begrof:endrof))
     allocate (tape(t)%hlist(n)%nacs(begrof:endrof))
+     
     tape(t)%hlist(n)%hbuf(:) = 0._r8
     tape(t)%hlist(n)%nacs(:) = 0
 
@@ -515,6 +541,7 @@ contains
        write(iulog,*) trim(subname),' ERROR: unknown avgflag=', avgflag
        call shr_sys_abort()
     end select
+
 
   end subroutine htape_addfld
 
@@ -1078,7 +1105,7 @@ contains
                      trim(locfnh(t)),' at nstep = ', get_nstep()
                 write(iulog,*)
              endif
-	     call ncd_pio_closefile(nfid(t))
+             call ncd_pio_closefile(nfid(t))
              if ((.not.nlend) .and. (tape(t)%ntimes/=tape(t)%mfilt)) then
                 call ncd_pio_openfile (nfid(t), trim(locfnh(t)), ncd_write)
              end if
@@ -1729,7 +1756,7 @@ contains
 
   subroutine strip_null(str)
     character(len=*), intent(inout) :: str
-    integer :: i	
+    integer :: i  
     do i=1,len(str)
        if(ichar(str(i:i))==0) str(i:i)=' '
     end do

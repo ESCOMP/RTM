@@ -69,6 +69,7 @@ module RunoffMod
   type (runoff_flow), public :: runoff
 
   public :: RunoffInit
+  public :: RunoffFinalize
 
 contains
 
@@ -126,5 +127,39 @@ contains
     runoff%flood(:)        = 0._r8
 
   end subroutine RunoffInit
+
+  subroutine RunoffFinalize()
+
+    if (associated(runoff%runoff)) deallocate(runoff%runoff)
+    if (associated(runoff%dvolrdt)) deallocate(runoff%dvolrdt)
+    if (associated(runoff%runofflnd)) deallocate(runoff%runofflnd)
+    if (associated(runoff%dvolrdtlnd)) deallocate(runoff%dvolrdtlnd)
+    if (associated(runoff%runoffocn)) deallocate(runoff%runoffocn)
+    if (associated(runoff%dvolrdtocn)) deallocate(runoff%dvolrdtocn)
+    if (associated(runoff%area)) deallocate(runoff%area)
+    if (associated(runoff%volr)) deallocate(runoff%volr)
+    if (associated(runoff%volrlnd)) deallocate(runoff%volrlnd)
+    if (associated(runoff%fluxout)) deallocate(runoff%fluxout)
+    if (associated(runoff%lonc)) deallocate(runoff%lonc)
+    if (associated(runoff%latc)) deallocate(runoff%latc)
+    if (associated(runoff%rlon)) deallocate(runoff%rlon)
+    if (associated(runoff%rlat)) deallocate(runoff%rlat)
+    if (associated(runoff%dsi)) deallocate(runoff%dsi)
+    if (associated(runoff%runofflnd_nt1)) deallocate(runoff%runofflnd_nt1)
+    if (associated(runoff%runofflnd_nt2)) deallocate(runoff%runofflnd_nt2)
+    if (associated(runoff%runoffocn_nt1)) deallocate(runoff%runoffocn_nt1)
+    if (associated(runoff%runoffocn_nt2)) deallocate(runoff%runoffocn_nt2)
+    if (associated(runoff%volr_nt1)) deallocate(runoff%volr_nt1)
+    if (associated(runoff%volr_nt2)) deallocate(runoff%volr_nt2)
+    if (associated(runoff%dvolrdtlnd_nt1)) deallocate(runoff%dvolrdtlnd_nt1)
+    if (associated(runoff%dvolrdtlnd_nt2)) deallocate(runoff%dvolrdtlnd_nt2)
+    if (associated(runoff%dvolrdtocn_nt1)) deallocate(runoff%dvolrdtocn_nt1)
+    if (associated(runoff%dvolrdtocn_nt2)) deallocate(runoff%dvolrdtocn_nt2)
+    if (associated(runoff%mask)) deallocate(runoff%mask)
+    if (associated(runoff%gindex)) deallocate(runoff%gindex)
+    if (associated(runoff%fthresh)) deallocate(runoff%fthresh)
+    if (associated(runoff%flood)) deallocate(runoff%flood)
+
+  end subroutine RunoffFinalize
 
 end module RunoffMod

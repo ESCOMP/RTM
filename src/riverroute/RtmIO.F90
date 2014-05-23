@@ -46,6 +46,7 @@ module RtmIO
   public :: ncd_inqvdims       ! inquire variable ndims
   public :: ncd_inqvdids       ! inquire variable dimids
   public :: ncd_io             ! write local data
+  public :: ncd_finalize       ! clean up any memory
 
   integer,parameter,public :: ncd_int       = pio_int
   integer,parameter,public :: ncd_log       =-pio_int
@@ -125,6 +126,7 @@ module RtmIO
      integer           :: dims(4)
      integer           :: dimids(4) 
   end type iodesc_plus_type
+
   integer,parameter      ,private :: max_iodesc = 100
   integer                ,private :: num_iodesc = 0
   type(iodesc_plus_type) ,private, target :: iodesc_list(max_iodesc)
@@ -1921,12 +1923,15 @@ contains
 
     gsize = runoff%numr
     lsize = runoff%lnumr
+
     allocate(compDOF(lsize))
+
     cnt = 0
     do m = runoff%begr, runoff%endr
        cnt = cnt + 1
        compDOF(cnt) = runoff%gindex(m)
     enddo
+
     if (debug > 1) then
        do m = 0,npes-1
           if (iam == m) then
@@ -1937,7 +1942,9 @@ contains
           call mpi_barrier(mpicom_rof,status)
        enddo
     endif
+
     call pio_initdecomp(pio_subsystem, baseTYPE, dims(1:ndims), compDOF, iodesc_list(iodnum)%iodesc)
+
     deallocate(compDOF)
 
     iodesc_list(iodnum)%type  = xtype
@@ -1946,7 +1953,44 @@ contains
     iodesc_list(iodnum)%dims(1:ndims)   = dims(1:ndims)
     iodesc_list(iodnum)%dimids(1:ndims) = dimids(1:ndims)
 
-
   end subroutine ncd_getiodesc
+
+  subroutine ncd_finalize()
+  !-----------------------------------------------------------------------
+  ! !DESCRIPTION:
+  ! clean up  PIO
+  !
+  ! !USES:
+  use alloc_mod , only : dealloc_check
+  ! !ARGUMENTS:
+  implicit none
+  ! !LOCAL VARIABLES:
+  integer :: n ! index into num_iodesc
+
+  do n = 1,num_iodesc
+
+     if(associated(iodesc_list(n)%iodesc%start)) then
+        call dealloc_check(iodesc_list(n)%iodesc%start,'RtmIO::iodesc%start')
+        nullify(iodesc_list(n)%iodesc%start)
+     end if
+
+     if(associated(iodesc_list(n)%iodesc%count)) then
+        call dealloc_check(iodesc_list(n)%iodesc%count,'RtmIO::iodesc%count')
+        nullify(iodesc_list(n)%iodesc%count)
+     end if
+
+     if(associated(iodesc_list(n)%iodesc%dest_ioproc)) then
+        call dealloc_check(iodesc_list(n)%iodesc%dest_ioproc,'RtmIO::iodesc%dest_ioproc')
+        nullify(iodesc_list(n)%iodesc%dest_ioproc)
+     end if
+
+     if(associated(iodesc_list(n)%iodesc%dest_ioindex)) then
+        call dealloc_check(iodesc_list(n)%iodesc%dest_ioindex,'RtmIO::iodesc%ioindex')
+        nullify(iodesc_list(n)%iodesc%dest_ioindex)
+     end if
+
+  end do
+     
+  end subroutine ncd_finalize
 
 end module RtmIO

@@ -26,7 +26,7 @@ module rof_comp_mct
                                 rtm_active, flood_active
   use RtmSpmd          , only : masterproc, mpicom_rof, iam, RtmSpmdInit
   use RtmMod           , only : Rtmini, Rtmrun
-  use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep 
+  use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
   use rtm_cpl_indices  , only : rtm_cpl_indices_set, nt_rtm, rtm_tracers, &
                                 index_x2r_Flrl_rofl,  index_x2r_Flrl_rofi, &
@@ -54,7 +54,7 @@ module rof_comp_mct
   private :: rof_domain_mct           ! Set the river runoff model domain information
 !
 ! PRIVATE DATA MEMBERS:
-  real(r8), pointer :: totrunin(:,:)   ! cell tracer lnd forcing on rtm grid (mm/s)
+  real(r8), allocatable :: totrunin(:,:)   ! cell tracer lnd forcing on rtm grid (mm/s)
 
 ! REVISION HISTORY:
 ! Author: Mariana Vertenstein
@@ -79,7 +79,7 @@ contains
     character(len=*), optional, intent(in)    :: NLFilename ! Namelist filename to read
     !
     ! !LOCAL VARIABLES:
-    integer :: ROFID	                             ! rof identifyer
+    integer :: ROFID                                 ! rof identifyer
     integer :: mpicom_rof                            ! mpi communicator
     type(mct_gsMap),         pointer :: gsMap_rof    ! runoff model MCT GS map
     type(mct_gGrid),         pointer :: dom_r        ! runoff model domain
@@ -331,6 +331,8 @@ contains
 
   subroutine rof_final_mct( EClock, cdata_r, x2r_r, r2x_r)
 
+    use RtmFinalizeAll , only : RtmFinalizeMemory
+
     !-----------------------------------------------------
     ! DESCRIPTION:
     ! Finalize rof surface model
@@ -343,7 +345,18 @@ contains
     type(mct_aVect)  , intent(inout) :: r2x_r     ! Export state from runoff model
     !-----------------------------------------------------
 
-   ! fill this in
+    !
+    ! deal with deallocations of items in this file here
+    !
+    if (rtm_active) then
+       if (allocated(totrunin)) deallocate(totrunin)
+    end if
+
+    !
+    ! deal with clean up of memory for parts of RTM here
+    !
+    call RtmFinalizeMemory()
+
   end subroutine rof_final_mct
 
 !===============================================================================

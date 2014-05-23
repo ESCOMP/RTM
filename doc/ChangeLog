@@ -1,4 +1,35 @@
 ===============================================================
+Tag name:  rtm1_0_38
+Originator(s): muszala
+Date: May 23, 2014
+One-line Summary: add code to handle deallocations based on valgrind errors
+
+Address errors found with valgrind that originate in src/riverroute.  Change some
+pointers to allocables.
+Note: use with esmf_wrf_timemgr_140523 or later.
+
+! add RtmHistFileFinalize() which cleans up hbuf and nacs
+M       src/riverroute/RtmHistFile.F90
+! add ncd_finalize() which cleans up some members of iodesc_list
+M       src/riverroute/RtmIO.F90
+! add RunoffFinalize() which cleans up the members of the runoff type
+M       src/riverroute/RunoffMod.F90
+! add  RtmRestFinalize( ) which calls ncd_finalize
+M       src/riverroute/RtmRestFile.F90
+! change some pointers to allocatables, clean up fluxout,sfluxin, ddist, evel
+M       src/riverroute/RtmMod.F90
+! call ESMF clock clean up routine
+M       src/riverroute/RtmTimeManager.F90
+! new module that calls other RTM finalize routines
+A  +    src/riverroute/RtmFinalizeAll.F90
+! add call to  RtmFinalizeMemory() and deallocate totrunin
+M       src/cpl/rof_comp_mct.F90
+! add call to  RtmFinalizeMemory()
+M       src/cpl/rof_comp_esmf.F90
+! totrunin actual argument now totrunin( runoff%begr: ,: )
+M       src/cpl/rof_import_export.F90
+
+===============================================================
 Tag name:  rtm1_0_37
 Originator(s): muszala
 Date: Dec 27, 2014

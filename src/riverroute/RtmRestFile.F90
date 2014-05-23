@@ -36,6 +36,7 @@ module RtmRestFile
   public :: RtmRestGetfile
   public :: RtmRestTimeManager
   public :: RtmRestart
+  public :: RtmRestFinalize
 !
 ! !PRIVATE MEMBER FUNCTIONS:
   private :: restFile_read_pfile     
@@ -452,6 +453,20 @@ contains
     endif
 
   end subroutine RtmRestart
+
+  subroutine RtmRestFinalize( )
+
+    ! !DESCRIPTION:
+    ! clean up memory after a RTM restart handling
+    !
+    use RtmIO , only : ncd_finalize
+    !
+    ! !ARGUMENTS:
+    implicit none
+
+       call ncd_finalize()
+
+  end subroutine RtmRestFinalize
 
 end module RtmRestFile
 

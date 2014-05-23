@@ -53,7 +53,7 @@ module rof_comp_esmf
   private :: rof_domain_esmf          ! Set the river runoff model domain information
 !
 ! ! PRIVATE DATA MEMBERS:
-  real(r8), pointer :: totrunin(:,:)   ! cell tracer lnd forcing on rtm grid (mm/s)
+  real(r8), allocatable :: totrunin(:,:)   ! cell tracer lnd forcing on rtm grid (mm/s)
 
 !===============================================================================
 contains
@@ -479,6 +479,7 @@ contains
     nlend = seq_timemgr_StopAlarmIsOn( EClock )
     rstwr = seq_timemgr_RestartAlarmIsOn( EClock )
     call advance_timestep()
+
     call Rtmrun(totrunin, rstwr, nlend, rdate)
 
     ! Map roff data to MCT datatype (input is runoff%runoff, output is r2x_r)
@@ -529,6 +530,8 @@ contains
     !------------------------------------------------------------------------------
     ! !DESCRIPTION:
     ! Finalize rtm
+    use RtmFinalizeAll , only : RtmFinalizeMemory
+
     !
     ! !ARGUMENTS:
     type(ESMF_GridComp)  :: comp            ! RTM gridded component
@@ -536,6 +539,7 @@ contains
     type(ESMF_State)     :: export_state    ! RTM export state
     type(ESMF_Clock)     :: EClock          ! ESMF synchronization clock
     integer, intent(out) :: rc              ! Return code
+    
     !---------------------------------------------------------------------------
     
     rc = ESMF_SUCCESS
@@ -549,6 +553,11 @@ contains
 
     call esmfshr_util_StateArrayDestroy(import_state,'x2d',rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
+
+    !
+    ! deal with clean up of memory for parts of RTM here
+    !
+    call RtmFinalizeMemory()
 
   end subroutine rof_final_esmf
 

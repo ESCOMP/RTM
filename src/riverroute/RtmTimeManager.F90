@@ -7,7 +7,6 @@ module RtmTimeManager
    use RtmIO
    use ESMF
 
-
    implicit none
    private
 
@@ -17,6 +16,7 @@ module RtmTimeManager
       timemgr_setup,            &! setup startup values
       timemgr_init,             &! time manager initialization
       timemgr_restart,          &! read/write time manager restart info and restart time manager
+      timemgr_finalize,         &! calls ESMF_ClockDestroy to clean up ESMF clock memory
       advance_timestep,         &! increment timestep number
       get_clock,                &! get the clock from the time-manager
       get_step_size,            &! return step size in seconds
@@ -257,6 +257,7 @@ subroutine init_clock( start_date, ref_date, curr_date, stop_date )
      call ESMF_ClockGet(tm_clock, currTime=current )
      call chkrc(rc, sub//': error return from ESMF_ClockGet')
   end do
+
 end subroutine init_clock
 
 !=========================================================================================
@@ -1072,6 +1073,36 @@ logical function is_restart( )
      is_restart = .false.
   end if
 end function is_restart
+
+!=========================================================================================
+
+subroutine timemgr_finalize( )
+   !
+   ! call ESMF_ClockDestroy to clean up ESMF clock memory
+   !
+   implicit none
+   
+   integer                     :: rc    ! return code
+   character(len=*), parameter :: sub = 'rtm::timemgr_finalize'
+   !
+   ! tm_clock is a module variable
+   !
+
+   ! 
+   ! FIX(SPM, 05222014) if you try to compile this with the ESMF interfaces, 
+   ! you will get an intel error "This is not a field name that is defined
+   ! in the encompassing structure.".  Furthermore, with CME tests,
+   ! when building the MCT version we have defined both -DUSE_ESMF_LIB -DMCT_INTERFACE 
+   ! during compile.
+   ! 
+#ifdef MCT_INTERFACE 
+#ifndef USE_ESMF_LIB
+   call ESMF_ClockDestroy( tm_clock, rc )
+   call chkrc(rc, sub//': error return from ESMF_ClockDestory')
+#endif
+#endif
+
+end subroutine timemgr_finalize
 
 !=========================================================================================
 

@@ -45,6 +45,7 @@ module RtmMod
 ! !PUBLIC MEMBER FUNCTIONS:
   public Rtmini          ! Initialize RTM grid
   public Rtmrun          ! River routing model (based on U. Texas code)
+  public RtmFinalize     ! Clean up memory
 !
 ! !REVISION HISTORY:
 ! Author: Sam Levis
@@ -68,18 +69,18 @@ module RtmMod
   integer , pointer :: dwnstrm_index(:)! downstream index
 
 !local (gdc)
-  real(r8), save, pointer :: ddist(:)        ! downstream dist (m)
-  real(r8), save, pointer :: evel(:,:)       ! effective tracer velocity (m/s)
-  real(r8), save, pointer :: sfluxin(:,:)    ! cell tracer influx (m3/s)
-  real(r8), save, pointer :: fluxout(:,:)    ! cell tracer outlflux (m3/s)
+  real(r8), public, allocatable :: ddist(:)        ! downstream dist (m)
+  real(r8), public, allocatable :: evel(:,:)       ! effective tracer velocity (m/s)
+  real(r8), public, allocatable :: sfluxin(:,:)    ! cell tracer influx (m3/s)
+  real(r8), public, allocatable :: fluxout(:,:)    ! cell tracer outlflux (m3/s)
 
 ! global rtm grid
-  real(r8),pointer :: rlatc(:)    ! latitude of 1d grid cell (deg)
-  real(r8),pointer :: rlonc(:)    ! longitude of 1d grid cell (deg)
-  real(r8),pointer :: rlats(:)    ! latitude of 1d south grid cell edge (deg)
-  real(r8),pointer :: rlatn(:)    ! latitude of 1d north grid cell edge (deg)
-  real(r8),pointer :: rlonw(:)    ! longitude of 1d west grid cell edge (deg)
-  real(r8),pointer :: rlone(:)    ! longitude of 1d east grid cell edge (deg)
+  real(r8),allocatable :: rlatc(:)    ! latitude of 1d grid cell (deg)
+  real(r8),allocatable :: rlonc(:)    ! longitude of 1d grid cell (deg)
+  real(r8),allocatable :: rlats(:)    ! latitude of 1d south grid cell edge (deg)
+  real(r8),allocatable :: rlatn(:)    ! latitude of 1d north grid cell edge (deg)
+  real(r8),allocatable :: rlonw(:)    ! longitude of 1d west grid cell edge (deg)
+  real(r8),allocatable :: rlone(:)    ! longitude of 1d east grid cell edge (deg)
 
   character(len=256) :: flood_mode
   character(len=256) :: rtm_mode
@@ -143,6 +144,7 @@ contains
     integer ,allocatable :: nba(:)            ! number of basins on each pe
     integer ,allocatable :: nrs(:)            ! begr on each pe
     integer ,allocatable :: basin(:)          ! basin to rtm mapping
+    integer ,allocatable :: num_rtm(:)        ! num of cells on each pe
     integer  :: nbas                          ! number of basins
     integer  :: nrtm                          ! num of rtm points
     integer  :: baspe                         ! pe with min number of rtm cells
@@ -161,14 +163,13 @@ contains
     integer  :: pid,np,npmin,npmax,npint      ! log loop control
     integer  :: na,nb,ns                      ! mct sizes
     integer  :: ni,no,go                      ! tmps
-    integer ,pointer  :: rgdc2glo(:)          ! temporary for initialization
-    integer ,pointer  :: rglo2gdc(:)          ! temporary for initialization
-    integer ,pointer  :: gmask(:)             ! global mask
+    integer ,allocatable  :: rgdc2glo(:)          ! temporary for initialization
+    integer ,allocatable  :: rglo2gdc(:)          ! temporary for initialization
+    integer ,allocatable  :: gmask(:)             ! global mask
     logical           :: found                ! if variable found on rdirc file
     character(len=256):: fnamer               ! name of netcdf restart file 
     character(len=256):: pnamer               ! full pathname of netcdf restart file
     character(len=256):: locfn                ! local file name
-    integer , pointer :: num_rtm(:)           ! num of cells on each pe
     integer           :: begro,endro          ! local start/stop indices
     integer           :: begrl,endrl          ! local start/stop indices
     integer           :: lnumrl               ! rtm gdc local number of lnd cells
@@ -183,6 +184,7 @@ contains
     !-------------------------------------------------------
     ! Read in rtm namelist
     !-------------------------------------------------------
+
 
     namelist /rtm_inparm / &
          ice_runoff, rtm_mode, flood_mode, rtm_effvel, &
@@ -302,7 +304,7 @@ contains
        if (masterproc) then
           write(iulog,*)'RTM will not be active '
        endif
-       RETURN
+       return
     end if
 
     if (rtm_tstep <= 0) then
@@ -328,8 +330,8 @@ contains
     ! Obtain restart file if appropriate
     if ((nsrest == nsrStartup .and. finidat_rtm /= ' ') .or. &
         (nsrest == nsrContinue) .or. & 
- 	(nsrest == nsrBranch  )) then
-       call RtmRestGetfile( file=fnamer, path=pnamer )
+        (nsrest == nsrBranch  )) then
+           call RtmRestGetfile( file=fnamer, path=pnamer )
     endif       
 
     ! Initialize time manager
@@ -669,6 +671,8 @@ contains
        endif
     enddo
 
+    deallocate(num_rtm)
+
     ! nrs is begr on each pe
     nrs(0) = 1
     do n = 1,npes-1
@@ -766,6 +770,7 @@ contains
               ddist   (begr:endr),        &
               evel    (begr:endr,nt_rtm), &
               sfluxin (begr:endr,nt_rtm), stat=ier)
+
     if (ier /= 0) then
        write(iulog,*)'Rtmgridini: Allocation ERROR for ',&
             'volr, fluxout, ddist'
@@ -960,9 +965,9 @@ contains
     ! The call below opens and closes the file
     if ((nsrest == nsrStartup .and. finidat_rtm /= ' ') .or. &
         (nsrest == nsrContinue) .or. & 
- 	(nsrest == nsrBranch  )) then
-       call RtmRestFileRead( file=fnamer )
-       fluxout(:,:) = runoff%fluxout(:,:)
+        (nsrest == nsrBranch  )) then
+          call RtmRestFileRead( file=fnamer )
+          fluxout(:,:) = runoff%fluxout(:,:)
     end if
 
     !-------------------------------------------------------
@@ -975,7 +980,10 @@ contains
     end if
     call RtmHistFldsSet()
 
+    deallocate(rlonc, rlatc, rlonw, rlone, rlats, rlatn)
+
     if (masterproc) write(iulog,*) subname //':: Success '
+
 
   end subroutine Rtmini
   !=======================================================================
@@ -999,10 +1007,10 @@ contains
 !
 ! !ARGUMENTS:
     implicit none
-    real(r8),         pointer    :: totrunin(:,:)  ! cell tracer lnd forcing on rtm grid (mm/s)
-    logical ,         intent(in) :: rstwr          ! true => write restart file this step
-    logical ,         intent(in) :: nlend          ! true => end of run on this step
-    character(len=*), intent(in) :: rdate          ! restart file time stamp for name
+    real(r8),         intent(inout) :: totrunin( runoff%begr: ,: )  ! cell tracer lnd forcing on rtm grid (mm/s)
+    logical ,         intent(in)    :: rstwr          ! true => write restart file this step
+    logical ,         intent(in)    :: nlend          ! true => end of run on this step
+    character(len=*), intent(in)    :: rdate          ! restart file time stamp for name
 !
 ! !CALLED FROM:
 ! subroutine RtmMap in this module
@@ -1300,8 +1308,9 @@ contains
        enddo
     endif
     call shr_sys_flush(iulog)
-    call t_stopf('RTMrun')
 
+    call t_stopf('RTMrun')
+     
   end subroutine Rtmrun
 
   !=======================================================================
@@ -1461,6 +1470,25 @@ contains
 
   end subroutine RtmFloodInit 
 
+  !=======================================================================
+  !
+  !=======================================================================
+  subroutine RtmFinalize()
+  !
+  ! use this to clean up memory
+  ! right now used to clean up io descriptor memory that is never called when
+  ! restarts are dealt with
+  !
+
+
+  implicit none
+
+     if (allocated(fluxout)) deallocate(fluxout)
+     if (allocated(sfluxin)) deallocate(sfluxin)
+     if (allocated(ddist))   deallocate(ddist)
+     if (allocated(evel))    deallocate(evel)
+     
+  end subroutine RtmFinalize
   !=======================================================================
 
 end module RtmMod
