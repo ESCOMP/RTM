@@ -62,8 +62,11 @@ if ($RUN_TYPE == 'hybrid' || $RUN_TYPE == "branch" ) then
       if !(-e "$refdir/$fncheck") then
         set fncheck = "${RUN_REFCASE}.clm2.r.${RUN_REFDATE}-${RUN_REFTOD}.nc"
         if !(-e "$refdir/$fncheck") then
-          echo "rtm.buildnml.csh could not find restart file for branch or hybrid start"
-          exit -8
+          echo "WARNING:: rtm.buildnml.csh could not find restart file for branch or hybrid start"
+          if ($GET_REFCASE == 'TRUE') then
+             echo "ERROR:: GET_REFASE is TRUE, so aborting because couldn't find files"
+             exit -8
+          endif
         endif
       endif
     endif

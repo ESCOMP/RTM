@@ -1,4 +1,14 @@
 ===============================================================
+Tag name:  rtm1_0_39
+Originator(s): erik
+Date: Oct 03, 2014
+One-line Summary: Prevent cesm_setup from aborting if can't find files
+
+Fix bug 2032 rtm.buildnml.csh kills cesm_setup if GET_REFCASE is FALSE
+
+M       bld/rtm.buildnml.csh
+
+===============================================================
 Tag name:  rtm1_0_38
 Originator(s): muszala
 Date: May 23, 2014
