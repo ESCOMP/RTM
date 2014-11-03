@@ -1,4 +1,16 @@
 ===============================================================
+Tag name:  rtm1_0_40
+Originator(s): muszala
+Date: Nov 03, 2014
+One-line Summary: patch RtmIo to address valgrind errors found by Santos
+
+example change:
+-          status = pio_inq_vardimid(ncid,vardesc, dids)
++          status = pio_inq_vardimid(ncid,vardesc, dids(1:ndims))
+
+M       src/riverroute/RtmIO.F90
+
+===============================================================
 Tag name:  rtm1_0_39
 Originator(s): erik
 Date: Oct 03, 2014

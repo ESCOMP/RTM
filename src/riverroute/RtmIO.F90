@@ -1550,7 +1550,7 @@ contains
        call ncd_inqvid(ncid, varname, varid, vardesc, readvar=varpresent)
        if (varpresent) then
           status = pio_inq_varndims(ncid, vardesc, ndims)
-          status = pio_inq_vardimid(ncid, vardesc, dids)
+          status = pio_inq_vardimid(ncid, vardesc, dids(1:ndims))
           status = pio_inq_vartype (ncid, vardesc, xtype)
           status = pio_inq_dimname(ncid,dids(ndims),dimname)
           if ('time' == trim(dimname)) then
@@ -1575,7 +1575,7 @@ contains
 
        call ncd_inqvid(ncid, varname ,varid, vardesc)
        status = pio_inq_varndims(ncid, vardesc, ndims)
-       status = pio_inq_vardimid(ncid, vardesc, dids)
+       status = pio_inq_vardimid(ncid, vardesc, dids(1:ndims))
        status = pio_inq_vartype (ncid, vardesc, xtype)
        status = pio_inq_dimname(ncid,dids(ndims),dimname)
        if ('time' == trim(dimname)) then
@@ -1654,7 +1654,7 @@ contains
        if (varpresent) then
           allocate( idata(size(data)) ) 
           status = pio_inq_varndims(ncid, vardesc, ndims)
-          status = pio_inq_vardimid(ncid, vardesc, dids)
+          status = pio_inq_vardimid(ncid, vardesc, dids(1:ndims))
           status = pio_inq_vartype (ncid, vardesc, xtype)
           status = pio_inq_dimname(ncid,dids(ndims),dimname)
           if ('time' == trim(dimname)) then
@@ -1684,7 +1684,7 @@ contains
 
        call ncd_inqvid(ncid, varname ,varid, vardesc)
        status = pio_inq_varndims(ncid, vardesc, ndims)
-       status = pio_inq_vardimid(ncid, vardesc, dids)
+       status = pio_inq_vardimid(ncid, vardesc, dids(1:ndims))
        status = pio_inq_vartype (ncid, vardesc, xtype)
        status = pio_inq_dimname(ncid,dids(ndims),dimname)
        if ('time' == trim(dimname)) then
@@ -1768,7 +1768,7 @@ contains
        call ncd_inqvid(ncid, varname, varid, vardesc, readvar=varpresent)
        if (varpresent) then
           status = pio_inq_varndims(ncid, vardesc, ndims)
-          status = pio_inq_vardimid(ncid,vardesc, dids)
+          status = pio_inq_vardimid(ncid,vardesc, dids(1:ndims))
           status = pio_inq_vartype(ncid, vardesc, xtype)
           status = pio_inq_dimname(ncid,dids(ndims),dimname)
           if ('time' == trim(dimname)) then
@@ -1793,7 +1793,7 @@ contains
 
        call ncd_inqvid(ncid, varname ,varid, vardesc)
        status = pio_inq_varndims(ncid, vardesc, ndims)
-       status = pio_inq_vardimid(ncid, vardesc, dids)
+       status = pio_inq_vardimid(ncid, vardesc, dids(1:ndims))
        status = pio_inq_vartype (ncid, vardesc, xtype)
        status = pio_inq_dimname(ncid,dids(ndims),dimname)
        if ('time' == trim(dimname)) then
