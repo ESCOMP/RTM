@@ -179,7 +179,7 @@ contains
 
     if(ierr/= PIO_NOERR) then
        call shr_sys_abort(subname//'ERROR: Failed to open file')
-    else if(pio_subsystem%io_rank==0) then
+    else if(pio_iotask_rank(pio_subsystem)==0) then
        write(iulog,*) 'Opened existing file ', trim(fname), file%fh
     end if
 
@@ -222,7 +222,7 @@ contains
 
     if(ierr/= PIO_NOERR) then
        call shr_sys_abort( subname//' ERROR: Failed to open file to write: '//trim(fname))
-    else if(pio_subsystem%io_rank==0) then
+    else if(pio_iotask_rank(pio_subsystem)==0) then
        write(iulog,*) 'Opened file ', trim(fname),  ' to write', file%fh
     end if
 
@@ -1077,8 +1077,9 @@ contains
     character(len=32) :: vname      ! variable error checking
     type(var_desc_t)  :: vardesc    ! local vardesc pointer
     character(len=*),parameter :: subname='ncd_io_int_var1_nf'
+    integer :: ndims =1
     !-----------------------------------------------------------------------
-
+    
     if (flag == 'read') then
 
        call ncd_inqvid(ncid, varname, varid, vardesc, readvar=varpresent)
@@ -1094,14 +1095,13 @@ contains
           count(1) = size(data)
           start(2) = nt
           count(2) = 1
+          ndims=2
        else
           start(1) = 1
           count(1) = size(data)
-          start(2) = 1
-          count(2) = 1
        end if
        call ncd_inqvid  (ncid, varname, varid, vardesc)
-       status = pio_put_var(ncid, varid, start, count, data)
+       status = pio_put_var(ncid, varid, start(1:ndims), count(1:ndims), data)
 
     endif   ! flag
 
@@ -1132,6 +1132,7 @@ contains
     character(len=32) :: vname      ! variable error checking
     type(var_desc_t)  :: vardesc    ! local vardesc pointer
     character(len=*),parameter :: subname='ncd_io_log_var1_nf'
+    integer :: ndims
     !-----------------------------------------------------------------------
 
     if (flag == 'read') then
@@ -1155,11 +1156,13 @@ contains
           count(1) = size(data)
           start(2) = nt
           count(2) = 1
+          ndims = 2
        else
           start(1) = 1
           count(1) = size(data)
           start(2) = 1
           count(2) = 1
+          ndims = 1
        end if
        call ncd_inqvid  (ncid, varname, varid, vardesc)
        allocate( idata(size(data)) ) 
@@ -1168,7 +1171,7 @@ contains
        elsewhere
           idata = 0
        end where
-       status = pio_put_var(ncid, varid, start, count, idata)
+       status = pio_put_var(ncid, varid, start(1:ndims), count(1:ndims), idata)
        deallocate( idata )
 
     endif   ! flag
@@ -1199,6 +1202,7 @@ contains
     character(len=32) :: vname      ! variable error checking
     type(var_desc_t)  :: vardesc    ! local vardesc pointer
     character(len=*),parameter :: subname='ncd_io_real_var1_nf'
+    integer :: ndims
     !-----------------------------------------------------------------------
 
     if (flag == 'read') then
@@ -1216,14 +1220,16 @@ contains
           start(2) = nt
           count(1) = size(data)
           count(2) = 1
+          ndims = 2
        else
           start(1) = 1
           start(2) = 1
           count(1) = size(data)
           count(2) = 1
+          ndims = 1
        end if
        call ncd_inqvid  (ncid, varname, varid, vardesc)
-       status = pio_put_var(ncid, varid, start, count, data)
+       status = pio_put_var(ncid, varid, start(1:ndims), count(1:ndims), data)
 
     endif   ! flag
 
@@ -1248,11 +1254,10 @@ contains
     ! !LOCAL VARIABLES:
     integer :: varid                   ! netCDF variable id
     integer :: m                       ! indices
-    integer :: start(2), count(2)      ! output bounds
+    integer :: start(2)
     integer :: status                  ! error code
     logical :: varpresent              ! if true, variable is on tape
     character(len=32) :: vname         ! variable error checking
-    character(len=1)  :: tmpString(128)! temp for manipulating output string
     type(var_desc_t)  :: vardesc       ! local vardesc pointer
     character(len=*),parameter :: subname='ncd_io_char_var1_nf'
     !-----------------------------------------------------------------------
@@ -1270,18 +1275,9 @@ contains
        call ncd_inqvid  (ncid, varname, varid, vardesc)
 
        if (present(nt))      then
-          count(1) = len_trim(data)
-          count(2) = 1
-          do m = 1,count(1)
-             tmpString(m:m) = data(m:m)
-          end do
-          if ( count(1) > size(tmpString) )then
-             write(iulog,*) subname//' ERROR: input string size is too large:'//trim(data)
-          end if
           start(1) = 1
           start(2) = nt
-          status = pio_put_var(ncid, varid, start=start, count=count, &
-               ival=tmpString(1:count(1)) )
+          status = pio_put_var(ncid, varid, index=start, ival=data )
        else
           status = pio_put_var(ncid, varid, data )
        end if
@@ -1315,6 +1311,7 @@ contains
     type(var_desc_t)  :: vardesc    ! local vardesc pointer
     logical :: found                ! if true, found lat/lon dims on file
     character(len=*),parameter :: subname='ncd_io_int_var2_nf'
+    integer :: ndims
     !-----------------------------------------------------------------------
 
     if (flag == 'read') then
@@ -1334,6 +1331,7 @@ contains
           count(1) = size(data, dim=1)
           count(2) = size(data, dim=2)
           count(3) = 1
+          ndims = 3
        else
           start(1) = 1
           start(2) = 1
@@ -1341,9 +1339,10 @@ contains
           count(1) = size(data, dim=1)
           count(2) = size(data, dim=2)
           count(3) = 1
+          ndims = 2
        end if
        call ncd_inqvid(ncid, varname, varid, vardesc)
-       status = pio_put_var(ncid, varid, start, count, data)
+       status = pio_put_var(ncid, varid, start(1:ndims), count(1:ndims), data)
 
     endif   
 
@@ -1374,6 +1373,7 @@ contains
     type(var_desc_t)  :: vardesc    ! local vardesc pointer
     logical :: found                ! if true, found lat/lon dims on file
     character(len=*),parameter :: subname='ncd_io_real_var2_nf'
+    integer :: ndims
     !-----------------------------------------------------------------------
 
     if (flag == 'read') then
@@ -1393,6 +1393,7 @@ contains
           count(1) = size(data, dim=1)
           count(2) = size(data, dim=2)
           count(3) = 1
+          ndims = 3
        else
           start(1) = 1
           start(2) = 1
@@ -1400,9 +1401,10 @@ contains
           count(1) = size(data, dim=1)
           count(2) = size(data, dim=2)
           count(3) = 1
+          ndims = 2
        end if
        call ncd_inqvid  (ncid, varname, varid, vardesc)
-       status = pio_put_var(ncid, varid, start, count, data)
+       status = pio_put_var(ncid, varid, start(1:ndims), count(1:ndims), data)
 
     endif   
 
@@ -1565,7 +1567,7 @@ contains
                xtype, iodnum)
           iodesc_plus => iodesc_list(iodnum)
           if (present(nt)) then
-             call pio_setframe(vardesc, int(nt,kind=PIO_Offset))
+             call pio_setframe(ncid, vardesc, int(nt,kind=pio_offset_kind))
           end if
           call pio_read_darray(ncid, vardesc, iodesc_plus%iodesc, data, status)
        end if
@@ -1590,7 +1592,7 @@ contains
             xtype, iodnum)
        iodesc_plus => iodesc_list(iodnum)
        if (present(nt)) then
-          call pio_setframe(vardesc, int(nt,kind=PIO_Offset))
+          call pio_setframe(ncid, vardesc, int(nt,kind=pio_offset_kind))
        end if
        call pio_write_darray(ncid, vardesc, iodesc_plus%iodesc, data, status, fillval=0)
 
@@ -1669,7 +1671,7 @@ contains
                xtype, iodnum)
           iodesc_plus => iodesc_list(iodnum)
           if (present(nt)) then
-             call pio_setframe(vardesc, int(nt,kind=PIO_Offset))
+             call pio_setframe(ncid, vardesc, int(nt,kind=pio_offset_kind))
           end if
           call pio_read_darray(ncid, vardesc, iodesc_plus%iodesc, idata, status)
           data = (idata == 1)
@@ -1699,7 +1701,7 @@ contains
             xtype, iodnum)
        iodesc_plus => iodesc_list(iodnum)
        if (present(nt)) then
-          call pio_setframe(vardesc, int(nt,kind=PIO_Offset))
+          call pio_setframe(ncid, vardesc, int(nt,kind=pio_offset_kind))
        end if
        allocate( idata(size(data)) ) 
        where( data )
@@ -1783,7 +1785,7 @@ contains
                xtype, iodnum)
           iodesc_plus => iodesc_list(iodnum)
           if (present(nt)) then
-             call pio_setframe(vardesc, int(nt,kind=PIO_Offset))
+             call pio_setframe(ncid, vardesc, int(nt,kind=pio_offset_kind))
           end if
           call pio_read_darray(ncid, vardesc, iodesc_plus%iodesc, data, status)
        end if
@@ -1808,7 +1810,7 @@ contains
             xtype, iodnum)
        iodesc_plus => iodesc_list(iodnum)
        if (present(nt)) then
-          call pio_setframe(vardesc, int(nt,kind=PIO_Offset))
+          call pio_setframe(ncid, vardesc, int(nt,kind=pio_offset_kind))
        end if
        call pio_write_darray(ncid, vardesc, iodesc_plus%iodesc, data, status, fillval=spval)
 
@@ -1961,34 +1963,14 @@ contains
   ! clean up  PIO
   !
   ! !USES:
-  use alloc_mod , only : dealloc_check
+
   ! !ARGUMENTS:
   implicit none
   ! !LOCAL VARIABLES:
   integer :: n ! index into num_iodesc
 
   do n = 1,num_iodesc
-
-     if(associated(iodesc_list(n)%iodesc%start)) then
-        call dealloc_check(iodesc_list(n)%iodesc%start,'RtmIO::iodesc%start')
-        nullify(iodesc_list(n)%iodesc%start)
-     end if
-
-     if(associated(iodesc_list(n)%iodesc%count)) then
-        call dealloc_check(iodesc_list(n)%iodesc%count,'RtmIO::iodesc%count')
-        nullify(iodesc_list(n)%iodesc%count)
-     end if
-
-     if(associated(iodesc_list(n)%iodesc%dest_ioproc)) then
-        call dealloc_check(iodesc_list(n)%iodesc%dest_ioproc,'RtmIO::iodesc%dest_ioproc')
-        nullify(iodesc_list(n)%iodesc%dest_ioproc)
-     end if
-
-     if(associated(iodesc_list(n)%iodesc%dest_ioindex)) then
-        call dealloc_check(iodesc_list(n)%iodesc%dest_ioindex,'RtmIO::iodesc%ioindex')
-        nullify(iodesc_list(n)%iodesc%dest_ioindex)
-     end if
-
+     call pio_freedecomp(pio_subsystem, iodesc_list(n)%iodesc)
   end do
      
   end subroutine ncd_finalize

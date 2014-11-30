@@ -1162,7 +1162,7 @@ contains
     integer :: t                                 ! tape index
     integer :: f                                 ! field index
     integer :: varid                             ! variable id
-    integer, allocatable :: itemp2d(:,:)         ! 2D temporary
+    integer, allocatable :: itemp(:)         ! 2D temporary
     real(r8), pointer :: hbuf(:)                 ! history buffer
     integer , pointer :: nacs(:)                 ! accumulation counter
     character(len=*),parameter :: subname = 'hist_restart_ncd'
@@ -1342,7 +1342,7 @@ contains
 
 
        ! Add history namelist data to each history restart tape
-       allocate(itemp2d(max_nflds,ntapes))
+       allocate(itemp(max_nflds))
        do t = 1,ntapes
           call ncd_inqvid(ncid_hist(t), 'name',           varid, name_desc)
           call ncd_inqvid(ncid_hist(t), 'long_name',      varid, longname_desc)
@@ -1353,11 +1353,11 @@ contains
           call ncd_io(varname='fexcl'     , data=fexcl(:,t)        , ncid=ncid_hist(t), flag='write')
           call ncd_io(varname='is_endhist', data=tape(t)%is_endhist, ncid=ncid_hist(t), flag='write')
 
-          itemp2d(:,:) = 0
+          itemp(:) = 0
           do f=1,tape(t)%nflds
-             itemp2d(f,t) = tape(t)%hlist(f)%field%hpindex
+             itemp(f) = tape(t)%hlist(f)%field%hpindex
           end do
-          call ncd_io(varname='hpindex', data=itemp2d(:,t), ncid=ncid_hist(t), flag='write')
+          call ncd_io(varname='hpindex', data=itemp(:), ncid=ncid_hist(t), flag='write')
 
           call ncd_io('nflds' ,  tape(t)%nflds,   'write', ncid_hist(t))
           call ncd_io('ntimes',  tape(t)%ntimes,  'write', ncid_hist(t))
@@ -1377,7 +1377,7 @@ contains
                           'write', ncid_hist(t), start )
           end do
        end do
-       deallocate(itemp2d)
+       deallocate(itemp)
 
     !================================================
     else if (flag == 'read') then
@@ -1403,7 +1403,7 @@ contains
 
           if ( t == 1 )then
              call ncd_inqdlen(ncid_hist(1),dimid,max_nflds,name='max_nflds')
-             allocate(itemp2d(max_nflds,ntapes))
+             allocate(itemp(max_nflds))
           end if
 
           call ncd_inqvid(ncid_hist(t), 'name',           varid, name_desc)
@@ -1422,9 +1422,9 @@ contains
           call ncd_io('begtime', tape(t)%begtime,'read', ncid_hist(t) )
 
           call ncd_io(varname='is_endhist', data=tape(t)%is_endhist, ncid=ncid_hist(t), flag='read')
-          call ncd_io(varname='hpindex'   , data=itemp2d(:,t)      , ncid=ncid_hist(t), flag='read')
+          call ncd_io(varname='hpindex'   , data=itemp(:)      , ncid=ncid_hist(t), flag='read')
           do f=1,tape(t)%nflds
-             tape(t)%hlist(f)%field%hpindex = itemp2d(f,t)
+             tape(t)%hlist(f)%field%hpindex = itemp(f)
           end do
 
           do f=1,tape(t)%nflds
@@ -1468,7 +1468,7 @@ contains
        rtmhist_fexcl2(:) = fexcl(:,2)
        rtmhist_fexcl3(:) = fexcl(:,3)
        
-       if ( allocated(itemp2d) ) deallocate(itemp2d)
+       if ( allocated(itemp) ) deallocate(itemp)
 
     end if
 

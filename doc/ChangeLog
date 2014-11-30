@@ -1,4 +1,15 @@
 ===============================================================
+Tag name:  rtm1_0_41
+Originator(s): jedwards
+Date: Nov 30, 2014
+One-line Summary: PIO2 Compatibility changes 
+
+M         src/riverroute/RtmMod.F90
+M         src/riverroute/RtmHistFile.F90
+M         src/riverroute/RtmIO.F90
+
+
+===============================================================
 Tag name:  rtm1_0_40
 Originator(s): muszala
 Date: Nov 03, 2014
