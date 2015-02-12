@@ -1,4 +1,12 @@
 ===============================================================
+Tag name:  rtm1_0_42
+Originator(s): jedwards
+Date: Feb 12, 2015
+One-line Summary: String syntax change to satisfy cray compiler
+
+M      src/riverroute/RtmMod.F90
+
+===============================================================
 Tag name:  rtm1_0_41
 Originator(s): jedwards
 Date: Nov 30, 2014
