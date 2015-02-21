@@ -1,11 +1,21 @@
 ===============================================================
 Tag name:  rtm1_0_42
-Originator(s): jedwards
-Date: Feb 12, 2015
-One-line Summary: String syntax change to satisfy cray compiler
+Originator(s): mvertens
+Date: Feb 21, 2015
+One-line Summary: changes needed for scripts/testing refactor
 
-M      src/riverroute/RtmMod.F90
-
+This is required for cesm1_3_beta18
+	
+M       bld/build-namelist
+D       bld/rof.cpl7.template
+D       bld/rtm.buildexe.csh
+A  +    bld/rtm.buildlib
+A  +    bld/rtm.buildnml
+D       bld/rtm.buildnml.csh
+D       bld/rtm.cpl7.template
+	
+M       src/riverroute/RtmMod.F90
+	- very minor change for output 
 ===============================================================
 Tag name:  rtm1_0_41
 Originator(s): jedwards
