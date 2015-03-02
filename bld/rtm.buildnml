@@ -15,7 +15,7 @@ my $sysmod;
 
 my $CASEBUILD		= `./xmlquery  CASEBUILD	 -value`;
 my $CASEROOT		= `./xmlquery  CASEROOT		 -value`;
-my $CODEROOT		= `./xmlquery  CODEROOT		 -value`;
+my $CCSMROOT		= `./xmlquery  CCSMROOT		 -value`;
 my $DIN_LOC_ROOT	= `./xmlquery  DIN_LOC_ROOT	 -value`;
 my $NINST_ROF		= `./xmlquery  NINST_ROF	 -value`;
 my $GET_REFCASE		= `./xmlquery  GET_REFCASE	 -value`;
@@ -132,7 +132,7 @@ while ($inst_counter <= $NINST_ROF) {
     # call build-namelist
     # -----------------------------------------------------
     
-    $sysmod = "$CODEROOT/rof/rtm/bld/build-namelist ";
+    $sysmod = "$CCSMROOT/components/rtm/bld/build-namelist ";
     $sysmod = "$sysmod -infile $CASEBUILD/rtmconf/cesm_namelist";
     $sysmod = "$sysmod -caseroot $CASEROOT";
     $sysmod = "$sysmod -scriptsroot $SCRIPTSROOT";  

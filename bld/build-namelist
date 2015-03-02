@@ -17,7 +17,7 @@ use strict;
 #use warnings;
 #use diagnostics;
 
-use Cwd;
+use Cwd qw(getcwd abs_path);
 use English;
 use Getopt::Long;
 use IO::File;
@@ -71,7 +71,7 @@ my $cwd = getcwd();                    # current working directory
 my $cfgdir;                            # absolute pathname of directory that contains this script
 my $nm = "ProgName::";                 # name to use if script dies
 if ($ProgDir) { 
-    $cfgdir = absolute_path($ProgDir);
+    $cfgdir = abs_path($ProgDir);
 } else {
     $cfgdir = $cwd;
 }
@@ -145,19 +145,33 @@ EOF
 # Look for them under the directory that contains the configure script.
 
 # The root directory to cesm utils Tools
-my $cesm_tools = &absolute_path( "$SCRIPTSROOT/ccsm_utils/Tools" );
-
-# The XML::Lite module is required to parse the XML files.
-(-f "$cesm_tools/perl5lib/XML/Lite.pm")  or  die <<"EOF";
-** $ProgName - Cannot find perl module \"XML/Lite.pm\" in directory 
-    \"$cesm_tools/perl5lib\" **
-EOF
+my $perldir = abs_path( "$cfgdir/../../../cime/perl5lib" );
 
 # The Build::Config module provides utilities to access the configuration information
 # in the config_cache.xml file
-(-f "$cesm_tools/perl5lib/Build/Config.pm")  or  die <<"EOF";
-** $ProgName - Cannot find perl module \"Build/Config.pm\" in directory 
-    \"$cesm_tools/perl5lib\" **
+my $file = "$perldir/Build/Config.pm";
+(-f "$file")  or  die <<"EOF";
+** $ProgName - Cannot find perl module $file **
+EOF
+
+# The Build::NamelistDefinition module provides utilities to validate that the output
+# namelists are consistent with the namelist definition file
+my $file = "$perldir/Build/NamelistDefinition.pm";
+(-f "$file")  or  die <<"EOF";
+** $ProgName - Cannot find perl module $file **
+EOF
+
+# The Build::NamelistDefaults module provides a utility to obtain default values of namelist
+# variables based on finding a best fit with the attributes specified in the defaults file.
+my $file = "$perldir/Build/NamelistDefaults.pm";
+(-f "$file")  or  die <<"EOF";
+** $ProgName - Cannot find perl module $file **
+EOF
+
+# The Build::Namelist module provides utilities to parse input namelists, to query and modify
+# namelists, and to write output namelists.
+(-f "$file")  or  die <<"EOF";
+** $ProgName - Cannot find perl module $file **
 EOF
 
 # The namelist definition file contains entries for all namelist variables that
@@ -168,13 +182,6 @@ my $nl_definition_file = "$cfgdir/namelist_files/namelist_definition_rtm.xml";
 EOF
 if ($print>=2) { print "Using namelist definition file $nl_definition_file$eol"; }
 
-# The Build::NamelistDefinition module provides utilities to validate that the output
-# namelists are consistent with the namelist definition file
-(-f "$cesm_tools/perl5lib/Build/NamelistDefinition.pm")  or  die <<"EOF";
-** $ProgName - Cannot find perl module \"Build/NamelistDefinition.pm\" in directory 
-    \"$cesm_tools/perl5lib\" **
-EOF
-
 # The namelist defaults file contains default values for all required namelist variables.
 my $nl_defaults_file = "$cfgdir/namelist_files/namelist_defaults_rtm.xml"; 
 (-f "$nl_defaults_file")  or  die <<"EOF";
@@ -182,38 +189,19 @@ my $nl_defaults_file = "$cfgdir/namelist_files/namelist_defaults_rtm.xml";
 EOF
 if ($print>=2) { print "Using namelist defaults file $nl_defaults_file$eol"; }
 
-# The Build::NamelistDefaults module provides a utility to obtain default values of namelist
-# variables based on finding a best fit with the attributes specified in the defaults file.
-(-f "$cesm_tools/perl5lib/Build/NamelistDefaults.pm")  or  die <<"EOF";
-** $ProgName - Cannot find perl module \"Build/NamelistDefaults.pm\" in directory 
-    \"$cesm_tools//perl5lib\" **
-EOF
-
-# The Build::Namelist module provides utilities to parse input namelists, to query and modify
-# namelists, and to write output namelists.
-(-f "$cesm_tools/perl5lib/Build/Namelist.pm")  or  die <<"EOF";
-** $ProgName - Cannot find perl module \"Build/Namelist.pm\" in directory 
-    \"$cesm_tools/perl5lib\" **
-EOF
-
 #-----------------------------------------------------------------------------------------------
-# Add $cfgdir/perl5lib to the list of paths that Perl searches for modules
-my @dirs = ( "$cfgdir/..", "$cesm_tools/perl5lib");
+my $SetupToolsDir = "$SCRIPTSROOT/ccsm_utils/Tools";
+my @dirs = ( "$cfgdir/..", "$perldir", "$SetupToolsDir" );
 unshift @INC, "$CASEROOT/Tools", @dirs;
-require XML::Lite;
 require Build::Config;
 require Build::NamelistDefinition;
 require Build::NamelistDefaults;
 require Build::Namelist;
-require Streams::TemplateGeneric;
 require SetupTools;
 
 #-----------------------------------------------------------------------------------------------
 # Create a configuration object from the RTM config_cache.xml file. 
 my $cfg = Build::Config->new('config_cache.xml');
-
-# Validate some of the commandline option values.
-validate_options("commandline", $cfg, \%opts);
 
 # Create a namelist definition object.  This object provides a method for verifying that the
 # output namelist variables are in the definition file, and are output in the correct
@@ -567,69 +555,6 @@ sub set_abs_filepath {
     return $out;
 }
 
-#-----------------------------------------------------------------------------------------------
-
-sub absolute_path {
-#
-# Convert a pathname into an absolute pathname, expanding any . or .. characters.
-# Assumes pathnames refer to a local filesystem.
-# Assumes the directory separator is "/".
-#
-  my $path = shift;
-  my $cwd = getcwd();  # current working directory
-  my $abspath;         # resulting absolute pathname
-
-# Strip off any leading or trailing whitespace.  (This pattern won't match if
-# there's embedded whitespace.
-  $path =~ s!^\s*(\S*)\s*$!$1!;
-
-# Convert relative to absolute path.
-
-  if ($path =~ m!^\.$!) {          # path is "."
-      return $cwd;
-  } elsif ($path =~ m!^\./!) {     # path starts with "./"
-      $path =~ s!^\.!$cwd!;
-  } elsif ($path =~ m!^\.\.$!) {   # path is ".."
-      $path = "$cwd/..";
-  } elsif ($path =~ m!^\.\./!) {   # path starts with "../"
-      $path = "$cwd/$path";
-  } elsif ($path =~ m!^[^/]!) {    # path starts with non-slash character
-      $path = "$cwd/$path";
-  }
-
-  my ($dir, @dirs2);
-  my @dirs = split "/", $path, -1;   # The -1 prevents split from stripping trailing nulls
-                                     # This enables correct processing of the input "/".
-
-  # Remove any "" that are not leading.
-  for (my $i=0; $i<=$#dirs; ++$i) {
-      if ($i == 0 or $dirs[$i] ne "") {
-	  push @dirs2, $dirs[$i];
-      }
-  }
-  @dirs = ();
-
-  # Remove any "."
-  foreach $dir (@dirs2) {
-      unless ($dir eq ".") {
-	  push @dirs, $dir;
-      }
-  }
-  @dirs2 = ();
-
-  # Remove the "subdir/.." parts.
-  foreach $dir (@dirs) {
-    if ( $dir !~ /\.\./ ) {
-        push @dirs2, $dir;
-    } else {
-        pop @dirs2;   # remove previous dir when current dir is ..
-    }
-  }
-  if ($#dirs2 == 0 and $dirs2[0] eq "") { return "/"; }
-  $abspath = join '/', @dirs2;
-  return( $abspath );
-}
-
 #-------------------------------------------------------------------------------
 
 sub valid_option {
@@ -643,17 +568,6 @@ sub valid_option {
 	if ($val =~ /^$expect$/i) { return $expect; }
     }
     return undef;
-}
-
-#-------------------------------------------------------------------------------
-
-sub validate_options {
-
-    my $source = shift;   # text string declaring the source of the options being validated
-    my $cfg    = shift;   # configure object
-    my $opts   = shift;   # reference to hash that contains the options
-
-    my ($opt, $old, @expect);
 }
 
 #-------------------------------------------------------------------------------
