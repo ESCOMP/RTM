@@ -1,7 +1,18 @@
+===============================================================
+Tag name:  rtm1_0_45
+Originator(s): mvertens
+Date: Mar 10, 2015
+One-line Summary: more changes needed for scripts/testing refactor
+
+This is required for cesm1_3_beta18
+	
+M       bld/build-namelist
+	
+===============================================================
 Tag name:  rtm1_0_44
 Originator(s): mvertens
-Date: Mar 01, 2015
-One-line Summary: updates for directory restructuring and introduction of cime
+Date: Feb 21, 2015
+One-line Summary: more changes needed for scripts/testing refactor
 
 This is required for cesm1_3_beta18
 	

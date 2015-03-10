@@ -144,26 +144,33 @@ EOF
 # Make sure we can find required perl modules, definition, and defaults files.
 # Look for them under the directory that contains the configure script.
 
+my $cesmroot = abs_path( "$cfgdir/../../../");
+my $perl5dir = "$cesmroot/cime/utils/perl5lib";
+
 # The root directory to cesm utils Tools
-my $perldir = abs_path( "$cfgdir/../../../cime/perl5lib" );
+
+my $SetupTools_dir = "$cesmroot/cime/scripts/ccsm_utils/Tools";
+(-f "$SetupTools_dir/SetupTools.pm")  or
+    fatal_error("Cannot find perl module \"SetupTools.pm\" in directory\n" .
+                "\"$SetupTools_dir\" \n");
 
 # The Build::Config module provides utilities to access the configuration information
 # in the config_cache.xml file
-my $file = "$perldir/Build/Config.pm";
+my $file = "$perl5dir/Build/Config.pm";
 (-f "$file")  or  die <<"EOF";
 ** $ProgName - Cannot find perl module $file **
 EOF
 
 # The Build::NamelistDefinition module provides utilities to validate that the output
 # namelists are consistent with the namelist definition file
-my $file = "$perldir/Build/NamelistDefinition.pm";
+my $file = "$perl5dir/Build/NamelistDefinition.pm";
 (-f "$file")  or  die <<"EOF";
 ** $ProgName - Cannot find perl module $file **
 EOF
 
 # The Build::NamelistDefaults module provides a utility to obtain default values of namelist
 # variables based on finding a best fit with the attributes specified in the defaults file.
-my $file = "$perldir/Build/NamelistDefaults.pm";
+my $file = "$perl5dir/Build/NamelistDefaults.pm";
 (-f "$file")  or  die <<"EOF";
 ** $ProgName - Cannot find perl module $file **
 EOF
@@ -190,9 +197,9 @@ EOF
 if ($print>=2) { print "Using namelist defaults file $nl_defaults_file$eol"; }
 
 #-----------------------------------------------------------------------------------------------
-my $SetupToolsDir = "$SCRIPTSROOT/ccsm_utils/Tools";
-my @dirs = ( "$cfgdir/..", "$perldir", "$SetupToolsDir" );
+my @dirs = ( "$cfgdir/..", "$perl5dir", "$SetupTools_dir" );
 unshift @INC, "$CASEROOT/Tools", @dirs;
+
 require Build::Config;
 require Build::NamelistDefinition;
 require Build::NamelistDefaults;
