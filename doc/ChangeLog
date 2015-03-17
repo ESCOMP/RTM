@@ -1,4 +1,12 @@
 ===============================================================
+Tag name:  rtm1_0_46
+Originator(s): mvertens
+Date: Mar 10, 2015
+One-line Summary: fixes for new scripts directory structure
+	
+M       bld/build-namelist
+	
+===============================================================
 Tag name:  rtm1_0_45
 Originator(s): mvertens
 Date: Mar 10, 2015
