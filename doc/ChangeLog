@@ -1,4 +1,15 @@
 ===============================================================
+Tag name:  rtm1_0_47
+Originator(s): erik
+Date: Mar 18, 2015
+One-line Summary: Add cimetest directory that was under clm before
+
+A       cimetest
+A       cimetest/testlist_rtm.xml
+A       cimetest/testmods_dirs
+A  +    cimetest/testmods_dirs/rtm
+	
+===============================================================
 Tag name:  rtm1_0_46
 Originator(s): mvertens
 Date: Mar 10, 2015
