@@ -1,4 +1,12 @@
 ===============================================================
+Tag name:  rtm1_0_48
+Originator(s): jedwards
+Date: Apr 25, 2015
+One-line Summary: readnamelist on mastertask only
+
+M   src/riverroute/RtmMod.F90
+
+===============================================================
 Tag name:  rtm1_0_47
 Originator(s): erik
 Date: Mar 18, 2015

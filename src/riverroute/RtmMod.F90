@@ -203,14 +203,14 @@ contains
     nrevsn_rtm  = ' '
     rtm_tstep   = -1
 
-    nlfilename_rof = "rof_in" // trim(inst_suffix)
-    inquire (file = trim(nlfilename_rof), exist = lexist)
-    if ( .not. lexist ) then
-       write(iulog,*) subname // ' ERROR: nlfilename_rof does NOT exist:'&
-            //trim(nlfilename_rof)
-       call shr_sys_abort()
-    end if
     if (masterproc) then
+       nlfilename_rof = "rof_in" // trim(inst_suffix)
+       inquire (file = trim(nlfilename_rof), exist = lexist)
+       if ( .not. lexist ) then
+          write(iulog,*) subname // ' ERROR: nlfilename_rof does NOT exist:'&
+               //trim(nlfilename_rof)
+          call shr_sys_abort()
+       end if
        unitn = getavu()
        write(iulog,*) 'Read in rtm_inparm namelist from: ', trim(nlfilename_rof)
        open( unitn, file=trim(nlfilename_rof), status='old' )
@@ -222,7 +222,7 @@ contains
           endif
        end do
        call relavu( unitn )
-    end if
+   end if
 
     call mpi_bcast (rtm_tstep,   1, MPI_INTEGER, 0, mpicom_rof, ier)
 
