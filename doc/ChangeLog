@@ -1,4 +1,12 @@
 ===============================================================
+Tag name:  rtm1_0_49
+Originator(s): cacraig
+Date: June 25, 2015
+One-line Summary: NAG6.0 requires additional pointers to be nullified
+
+M       src/riverroute/RunoffMod.F90
+
+===============================================================
 Tag name:  rtm1_0_48
 Originator(s): jedwards
 Date: Apr 25, 2015

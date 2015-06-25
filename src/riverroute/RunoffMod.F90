@@ -21,29 +21,30 @@ module RunoffMod
   public :: runoff_flow
   type runoff_flow
      !    - local initialization
-     real(r8), pointer :: lonc(:)          ! lon of cell
-     real(r8), pointer :: latc(:)          ! lat of cell
-     real(r8), pointer :: area(:)          ! area of cell
-     integer , pointer :: gindex(:)        ! global index
-     integer , pointer :: dsi(:)           ! downstream index
+     real(r8), pointer :: lonc(:)   => null()       ! lon of cell
+     real(r8), pointer :: latc(:)   => null()     ! lat of cell
+     real(r8), pointer :: area(:)   => null()     ! area of cell
+     integer , pointer :: gindex(:) => null()     ! global index
+     integer , pointer :: dsi(:)    => null()     ! downstream index
 
      !    - local runtime
-     real(r8), pointer :: runoff(:,:)      ! RTM flow (m**3 H2O/s)
-     real(r8), pointer :: runofflnd(:,:)   ! runoff masked for land (m**3 H2O/s)
-     real(r8), pointer :: runoffocn(:,:)   ! runoff masked for ocn  (m**3 H2O/s)
-     real(r8), pointer :: dvolrdt(:,:)     ! RTM change in storage (mm/s)
-     real(r8), pointer :: dvolrdtlnd(:,:)  ! dvolrdt masked for land (mm/s)
-     real(r8), pointer :: dvolrdtocn(:,:)  ! dvolrdt masked for ocn  (mm/s)
-     real(r8), pointer :: volr(:,:)        ! RTM storage (m**3)
-     real(r8), pointer :: volrlnd(:,:)     ! RTM storage masked for land (m**3)
-     real(r8), pointer :: fluxout(:,:)     ! RTM cell tracer outlflux (m3/s)
-     real(r8), pointer :: fthresh(:)       ! RTM water flood threshold
-     real(r8), pointer :: flood(:)         ! RTM water (flood) sent back to clm (mm/s)
+     real(r8), pointer :: runoff(:,:)     => null() ! RTM flow (m**3 H2O/s)
+     real(r8), pointer :: runofflnd(:,:)  => null() ! runoff masked for land (m**3 H2O/s)
+     real(r8), pointer :: runoffocn(:,:)  => null() ! runoff masked for ocn  (m**3 H2O/s)
+     real(r8), pointer :: dvolrdt(:,:)    => null() ! RTM change in storage (mm/s)
+     real(r8), pointer :: dvolrdtlnd(:,:) => null() ! dvolrdt masked for land (mm/s)
+     real(r8), pointer :: dvolrdtocn(:,:) => null() ! dvolrdt masked for ocn  (mm/s)
+     real(r8), pointer :: volr(:,:)       => null() ! RTM storage (m**3)
+     real(r8), pointer :: volrlnd(:,:)    => null() ! RTM storage masked for land (m**3)
+     real(r8), pointer :: fluxout(:,:)    => null() ! RTM cell tracer outlflux (m3/s)
+     real(r8), pointer :: fthresh(:)      => null() ! RTM water flood threshold
+     real(r8), pointer :: flood(:)        => null() ! RTM water (flood) sent back to clm (mm/s)
 
      !    - global 
-     integer , pointer :: mask(:)          ! mask of cell 0=none, 1=lnd, 2=ocn
-     real(r8), pointer :: rlon(:)          ! rtm longitude list, 1d
-     real(r8), pointer :: rlat(:)          ! rtm latitude list, 1d
+     integer , pointer :: mask(:)         => null() ! mask of cell 0=none, 1=lnd, 2=ocn
+     real(r8), pointer :: rlon(:)         => null() ! rtm longitude list, 1d
+     real(r8), pointer :: rlat(:)         => null() ! rtm latitude list, 1d
+
      real(r8)          :: totarea          ! global area
      integer           :: numr             ! rtm gdc global number of cells
      integer           :: numrl            ! rtm gdc global number of lnd cells
@@ -54,16 +55,16 @@ module RunoffMod
      integer           :: lnumr            ! local number of cells
 
      !    - 1d field pointers for history files (currently needed)
-     real(r8), pointer :: runofflnd_nt1(:)
-     real(r8), pointer :: runofflnd_nt2(:)
-     real(r8), pointer :: runoffocn_nt1(:)
-     real(r8), pointer :: runoffocn_nt2(:)
-     real(r8), pointer :: dvolrdtlnd_nt1(:)
-     real(r8), pointer :: dvolrdtlnd_nt2(:)
-     real(r8), pointer :: dvolrdtocn_nt1(:)
-     real(r8), pointer :: dvolrdtocn_nt2(:)
-     real(r8), pointer :: volr_nt1(:)
-     real(r8), pointer :: volr_nt2(:)
+     real(r8), pointer :: runofflnd_nt1(:)  => null() 
+     real(r8), pointer :: runofflnd_nt2(:)  => null() 
+     real(r8), pointer :: runoffocn_nt1(:)  => null() 
+     real(r8), pointer :: runoffocn_nt2(:)  => null() 
+     real(r8), pointer :: dvolrdtlnd_nt1(:) => null() 
+     real(r8), pointer :: dvolrdtlnd_nt2(:) => null() 
+     real(r8), pointer :: dvolrdtocn_nt1(:) => null() 
+     real(r8), pointer :: dvolrdtocn_nt2(:) => null() 
+     real(r8), pointer :: volr_nt1(:)       => null() 
+     real(r8), pointer :: volr_nt2(:)       => null() 
   end type runoff_flow
   !
   type (runoff_flow), public :: runoff
