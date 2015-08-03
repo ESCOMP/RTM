@@ -125,10 +125,10 @@ contains
 
     integer  :: ioff(0:8) = (/0,0,1,1,1,0,-1,-1,-1/) !rdirc input to i
     integer  :: joff(0:8) = (/0,1,1,0,-1,-1,-1,0,1/) !rdirc input to j
-    real(r8) :: edgen =   90._r8
-    real(r8) :: edgee =  180._r8
-    real(r8) :: edges =  -90._r8
-    real(r8) :: edgew = -180._r8
+    real(r8) :: edgen                         ! North edge of the direction file
+    real(r8) :: edgee                         ! East edge of the direction file
+    real(r8) :: edges                         ! South edge of the direction file
+    real(r8) :: edgew                         ! West edge of the direction file
     integer  :: i,j,k,n,ng,g,n2,nt            ! loop indices
     integer  :: im1,ip1,jm1,jp1,ir,jr,nr      ! neighbor indices
     real(r8) :: deg2rad                       ! pi/180
@@ -817,7 +817,27 @@ contains
     endif
     deallocate(gmask)
 
+    ! assuming equispaced grid, calculate edges from rtmlat/rtmlon
+    ! w/o assuming a global grid
+    edgen = maxval(rlatc) + 0.5*abs(rlatc(1) - rlatc(2))
+    edges = minval(rlatc) - 0.5*abs(rlatc(1) - rlatc(2))
+    edgee = maxval(rlonc) + 0.5*abs(rlonc(1) - rlonc(2))
+    edgew = minval(rlonc) - 0.5*abs(rlonc(1) - rlonc(2))
+
+    if ( edgen .ne.  90._r8 )then
+       write(iulog,*) 'Regional grid: edgen = ', edgen
+    end if
+    if ( edges .ne. -90._r8 )then
+       write(iulog,*) 'Regional grid: edges = ', edges
+    end if
+    if ( edgee .ne. 180._r8 )then
+       write(iulog,*) 'Regional grid: edgee = ', edgee
+    end if
+    if ( edgew .ne.-180._r8 )then
+       write(iulog,*) 'Regional grid: edgew = ', edgew
+    end if
     ! Set edge latitudes (assumes latitudes are constant for a given longitude)
+
     rlats(:) = edges
     rlatn(:) = edgen
     do j = 2, rtmlat

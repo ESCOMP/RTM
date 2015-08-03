@@ -1,4 +1,17 @@
 ===============================================================
+Tag name:  rtm1_0_50
+Originator(s): erik
+Date: Aug 03, 2015
+One-line Summary: Don't assume that direction files are global
+
+Figure out grid edges from the direction file grid, don't assume
+it's global. Report on the edge values if the grid is NOT
+global. Checked to ensure global grid edges are the same as
+before.
+
+M   src/riverroute/RtmMod.F90
+
+===============================================================
 Tag name:  rtm1_0_49
 Originator(s): cacraig
 Date: June 25, 2015
