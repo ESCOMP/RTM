@@ -1,4 +1,14 @@
 ===============================================================
+Tag name:  rtm1_0_51
+Originator(s): erik
+Date: Aug 13, 2015
+One-line Summary: Fix bug 2199 continuation line in middle of string
+
+Fix so a line isn't continued in the middle of a character string.
+
+M  src/riverroute/RtmMod.F90
+
+===============================================================
 Tag name:  rtm1_0_50
 Originator(s): erik
 Date: Aug 03, 2015
