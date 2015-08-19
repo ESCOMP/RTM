@@ -1,4 +1,14 @@
 ===============================================================
+Tag name:  rtm1_0_52
+Originator(s): erik
+Date: Aug 19, 2015
+One-line Summary: Move goldbach tests to hobart and only one node
+
+Move the goldbach tests to hobart, and only run on one node.
+
+M       cimetest/testlist_rtm.xml
+
+===============================================================
 Tag name:  rtm1_0_51
 Originator(s): erik
 Date: Aug 13, 2015

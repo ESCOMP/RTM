@@ -7,10 +7,10 @@
         <machine compiler="intel" testtype="aux_clm45" testmods="rtm/rtmOnFloodOnEffvelOn">yellowstone</machine>
         <machine compiler="intel" testtype="aux_clm45" testmods="rtm/rtmOnIceOff">yellowstone</machine>
       </test>
-      <test name="SMS_D_Ld5">
-        <machine compiler="nag" testtype="aux_clm45" testmods="rtm/rtmOff">goldbach</machine>
-        <machine compiler="nag" testtype="aux_clm45" testmods="rtm/rtmOnFloodOnEffvelOn">goldbach</machine>
-        <machine compiler="nag" testtype="aux_clm45" testmods="rtm/rtmOnIceOff">goldbach</machine>
+      <test name="SMS_D_Ld5_P24x1">
+        <machine compiler="nag" testtype="aux_clm45" testmods="rtm/rtmOff">hobart</machine>
+        <machine compiler="nag" testtype="aux_clm45" testmods="rtm/rtmOnFloodOnEffvelOn">hobart</machine>
+        <machine compiler="nag" testtype="aux_clm45" testmods="rtm/rtmOnIceOff">hobart</machine>
       </test>
     </grid>
     <grid name="f19_g16">
