@@ -3,19 +3,13 @@ use strict;
 use Cwd;
 
 if ($#ARGV == -1) {
-    die " ERROR rtm.buildnml: must specify a caseroot input argument";
+    die " ERROR rtm buildnml: must specify a caseroot input argument";
 }
 my ($CASEROOT) = @ARGV;
 chdir "${CASEROOT}";
 
-my @dirs = ("$CASEROOT/Tools");
-unshift @INC, @dirs;
-require SetupTools;
-my $sysmod; 
-
-my $CASEBUILD		= `./xmlquery  CASEBUILD	 -value`;
-my $CASEROOT		= `./xmlquery  CASEROOT		 -value`;
-my $CCSMROOT		= `./xmlquery  CCSMROOT		 -value`;
+my $CIMEROOT		= `./xmlquery  CIMEROOT	         -value`;
+my $SRCROOT		= `./xmlquery  SRCROOT		 -value`;
 my $DIN_LOC_ROOT	= `./xmlquery  DIN_LOC_ROOT	 -value`;
 my $NINST_ROF		= `./xmlquery  NINST_ROF	 -value`;
 my $GET_REFCASE		= `./xmlquery  GET_REFCASE	 -value`;
@@ -28,14 +22,18 @@ my $RUN_STARTDATE	= `./xmlquery  RUN_STARTDATE	 -value`;
 my $RUN_REFCASE	        = `./xmlquery  RUN_REFCASE 	 -value`;
 my $RUN_REFDATE	        = `./xmlquery  RUN_REFDATE	 -value`;
 my $RUN_REFTOD	        = `./xmlquery  RUN_REFTOD 	 -value`;
-my $SCRIPTSROOT		= `./xmlquery  SCRIPTSROOT	 -value`;
-my $UTILROOT		= `./xmlquery  UTILROOT		 -value`;
+my $TESTCASE            = `./xmlquery  TESTCASE		 -value`;
 
-if (! -d "$CASEBUILD/rtmconf" ) {
-    $sysmod = "mkdir $CASEBUILD/rtmconf";
-    system($sysmod) == 0 or die "ERROR rtm.buildnml: $sysmod failed: $?\n";
+my @dirs = ("${CIMEROOT}/utils/perl5lib");
+unshift @INC, @dirs;
+require Config::SetupTools;
+my $sysmod; 
+
+if (! -d "$CASEROOT/Buildconf/rtmconf" ) {
+    $sysmod = "mkdir $CASEROOT/Buildconf/rtmconf";
+    system($sysmod) == 0 or die "ERROR rtm buildnml: $sysmod failed: $?\n";
 }
-chdir "$CASEBUILD/rtmconf";
+chdir "$CASEROOT/Buildconf/rtmconf";
 
 #--------------------------------------------------------------------
 # Verify rof grid is supported
@@ -54,7 +52,7 @@ if (${check_grid} ne "OK") {
 }
 
 #--------------------------------------------------------------------
-# Invoke rtm build-namelist - output will go in $CASEBUILD/rtmconf
+# Invoke rtm build-namelist - output will go in $CASEROOT/Buildconf/rtmconf
 #--------------------------------------------------------------------
 
 my $inst_string;
@@ -73,17 +71,17 @@ while ($inst_counter <= $NINST_ROF) {
 	# for each instance
 	if ( (! -e "$RUNDIR/rpointer.rof${inst_string}") && (-e "$RUNDIR/rpointer.rof") ) {
 	    $sysmod = "cp -v $RUNDIR/rpointer.rof $RUNDIR/rpointer.rof${inst_string}";
-	    system($sysmod) == 0 or die "ERROR rtm.buildnml: $sysmod failed: $?\n";
+	    system($sysmod) == 0 or die "ERROR rtm buildnml: $sysmod failed: $?\n";
 	}
     }
 
     # -----------------------------------------------------
-    # create rtmconf/cesm_namelist
+    # create rtmconf/namelist
     # -----------------------------------------------------
 
-    if (-e "$CASEBUILD/rtm.input_data_list") {
-	$sysmod = "rm $CASEBUILD/rtm.input_data_list";
-	system($sysmod) == 0 or die "ERROR rtm.buildnml: $sysmod failed: $?\n";
+    if (-e "$CASEROOT/Buildconf/rtm.input_data_list") {
+	$sysmod = "rm $CASEROOT/Buildconf/rtm.input_data_list";
+	system($sysmod) == 0 or die "ERROR rtm buildnml: $sysmod failed: $?\n";
     }
     
     # The following is for backwards compatibility when runoff restart data was on clm restart files
@@ -108,9 +106,13 @@ while ($inst_counter <= $NINST_ROF) {
 		    if (! -e "$refdir/$fncheck") {
 			$fncheck = "${RUN_REFCASE}.clm2.r.${RUN_REFDATE}-${RUN_REFTOD}.nc";
 			if (! -e "$refdir/$fncheck") {
-			    print "WARNING:: rtm.buildnml could not find restart file for branch or hybrid start \n";
+			    print "WARNING:: rtm buildnml could not find restart file for branch or hybrid start \n";
 			    if ($GET_REFCASE eq 'TRUE') {
-				die "ERROR rtm.buildnml: GET_REFASE is TRUE, so aborting because couldn't find files";
+				if ($TESTCASE eq 'SBN') {
+				    # do nothing
+				} else {
+				    die "ERROR rtm buildnml: GET_REFASE is TRUE, so aborting because couldn't find files";
+				}
 			    }
 			}
 		    }
@@ -125,28 +127,28 @@ while ($inst_counter <= $NINST_ROF) {
 
     SetupTools::create_namelist_infile("$CASEROOT", 
 				       "$CASEROOT/user_nl_rtm${inst_string}", 
-				       "$CASEBUILD/rtmconf/cesm_namelist", 
+				       "$CASEROOT/Buildconf/rtmconf/namelist", 
 				       "$infile_text");
 
     # -----------------------------------------------------
     # call build-namelist
     # -----------------------------------------------------
     
-    $sysmod = "$CCSMROOT/components/rtm/bld/build-namelist ";
-    $sysmod = "$sysmod -infile $CASEBUILD/rtmconf/cesm_namelist";
+    $sysmod = "$SRCROOT/components/rtm/bld/build-namelist ";
+    $sysmod = "$sysmod -infile $CASEROOT/Buildconf/rtmconf/namelist";
     $sysmod = "$sysmod -caseroot $CASEROOT";
-    $sysmod = "$sysmod -scriptsroot $SCRIPTSROOT";  
+    $sysmod = "$sysmod -cimeroot $CIMEROOT";  
     $sysmod = "$sysmod -namelist \" \&rtmexp $RTM_NAMELIST_OPTS \/\" ";
     $sysmod = "$sysmod -inst_string \"$inst_string\" $RTM_BLDNML_OPTS";
-    system($sysmod) == 0 or die "ERROR rtm.buildnml: $sysmod failed: $?\n";
+    system($sysmod) == 0 or die "ERROR rtm buildnml: $sysmod failed: $?\n";
     
     # -----------------------------------------------------
     # move rof_in to $RUNDIR
     # -----------------------------------------------------
     
     if (-d ${RUNDIR}) {
-	$sysmod = "cp $CASEBUILD/rtmconf/rof_in ${RUNDIR}/rof_in${inst_string}";
-	system($sysmod) == 0 or die "ERROR rtm.buildnml: $sysmod failed: $?\n";
+	$sysmod = "cp $CASEROOT/Buildconf/rtmconf/rof_in ${RUNDIR}/rof_in${inst_string}";
+	system($sysmod) == 0 or die "ERROR rtm buildnml: $sysmod failed: $?\n";
     }
     
     # -----------------------------------------------------

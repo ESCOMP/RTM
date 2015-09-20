@@ -7,8 +7,8 @@ if ($#ARGV == -1) {
 my ($CASEROOT) = @ARGV;
 chdir "${CASEROOT}";
 
+my $SRCROOT   = `./xmlquery SRCROOT   -value`;
 my $CASEBUILD = `./xmlquery CASEBUILD -value`;
-my $CCSMROOT  = `./xmlquery CCSMROOT  -value`;
 my $CASETOOLS = `./xmlquery CASETOOLS -value`;
 my $OBJROOT   = `./xmlquery OBJROOT   -value`;
 my $LIBROOT   = `./xmlquery LIBROOT   -value`;
@@ -19,9 +19,9 @@ chdir "${OBJROOT}/rof/obj";
 
 open(file,">tmp_filepath") or die "ERROT: rtm.buildexe could not open file Filepath to write";
 print file "$CASEROOT/SourceMods/src.rtm \n";
-print file "$CCSMROOT/components/rtm/src/riverroute \n";
-print file "$CCSMROOT/components/rtm/src/cpl \n";
-print file "$CCSMROOT/components/rtm/src/cpl_share \n";
+print file "$SRCROOT/components/rtm/src/riverroute \n";
+print file "$SRCROOT/components/rtm/src/cpl \n";
+print file "$SRCROOT/components/rtm/src/cpl_share \n";
 close(file);
 
 if (-f "Filepath") {
