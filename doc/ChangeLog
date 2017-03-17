@@ -1,4 +1,38 @@
 ===============================================================
+Tag name:  rtm1_0_61
+Originator(s): andre
+Date: March 17, 2017
+One-line Summary: histfile pointer bugfix bugz-2184
+
+Bugfix from bugzilla issue 2184. The histfile infrastructure rtm
+inherited from clm needs to use pointers to refer to pio/netcdf file
+handles. Bug 2184 has never occured in rtm, but the same problem
+existed.
+
+Testing:
+
+    NOTE: testing done with a franken-branch of clm4_5_14_r229 and
+    rtm1_0_60.
+
+    rtm - pass - yellowstone gnu, intel, pgi. baseline rtm1_0_60_clm4_5_14_r229.
+
+    aux_clm4{0,5}: ok vs clm4_5_14_r229 baselines, yellowstone gnu, intel, pgi
+
+	Notes: Expected failures from clm + expected failures from rtm1_0_60.
+
+	ERP_D.f19_g16.IRCP85CN.yellowstone_pgi.clm-40default
+	ERP_P180x2_Ld5.f19_g16.I1850CN.yellowstone_pgi.clm-40default
+	SMS.f19_g16.IRCP45CN.yellowstone_pgi
+	SSP_D_Ld10.f19_g16.I1850CLM45BGC.yellowstone_intel.clm-default
+	SSP_Ld10.f19_g16.I1850CLM45BGC.yellowstone_pgi.clm-default
+
+
+Modified files: fix for bugzilla #2184
+
+    components/rtm/src/riverroute/RtmHistFile.F90
+
+
+===============================================================
 Tag name:  rtm1_0_60
 Originator(s): mvertens, andre
 Date: March 14, 2017
