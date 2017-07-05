@@ -1,4 +1,14 @@
 ===============================================================
+Tag name:  rtm1_0_62
+Originator(s): andre
+Date: July 5, 2017
+One-line Summary: update compset names in testlist
+
+Update the rtm testlist to use clm5 compset alias naming conventions.
+
+M cime_config/testdefs/testlist_rtm.xml
+
+===============================================================
 Tag name:  rtm1_0_61
 Originator(s): andre
 Date: March 17, 2017

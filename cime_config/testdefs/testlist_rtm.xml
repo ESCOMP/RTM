@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <testlist>
-  <compset name="ICRUCLM50BGC">
+  <compset name="I2000Clm50BgcCropRtm">
     <grid name="f10_f10">
       <test name="ERS_Ld5">
         <machine compiler="gnu" testtype="rtm" testmods="rtm/default">yellowstone</machine>
@@ -18,7 +18,7 @@
       </test>
     </grid>
   </compset>
-  <compset name="I1850CLM45BGC">
+  <compset name="I1850Clm45BgcCru">
     <grid name="f10_f10">
       <test name="ERP_D_Ld5">
          <machine compiler="intel" testtype="aux_clm45" testmods="rtm/default">yellowstone</machine>
