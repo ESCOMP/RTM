@@ -1,8 +1,21 @@
 <?xml version="1.0"?>
 
-<?xml-stylesheet type="text/xsl" href="definitions_variables" ?>
+<?xml-stylesheet type="text/xsl" href="definitions_variables.xsl" ?>
 
-<definitions_variables>
+<entry_id version="3.0">
+
+  <!-- modifier_mode allowed values are
+       '*' 0 or more modifiers (default)
+       '1' exactly 1 modifier
+       '?' 0 or 1 modifiers
+       '+' 1 or more modifiers
+       This file may have lnd desc entries.
+  -->
+
+  <description modifier_mode="*">
+    <desc rof="RTM[%FLOOD]">RTM: River Transport Model</desc>
+    <desc option="FLOOD">RTM model with flood:</desc>
+  </description>
 
   <entry id="COMP_ROF"> 
      <type>char</type>
@@ -37,7 +50,7 @@
     <desc>mode for rtm flood feature, NULL means rtm flood is turned off</desc>
   </entry>
 
-  <entry id="RTM_SIM_YEAR"> 
+  <entry id="RTM_SIM_YEAR">
     <type>char</type>
     <valid_values></valid_values>
     <default_value>2000</default_value>
@@ -52,16 +65,10 @@
     <desc>RTM build-namelist options</desc>
   </entry>
 
-  <description>
-    <desc compset="_RTM">RTM:</desc>
-    <desc compset="_RTM%FLOOD">RTM model with flood:</desc>
-  </description>
-
   <help>
     =========================================
     RTM naming conventions
     =========================================
   </help>
 
-</definitions_variables>
-
+</entry_id>

@@ -1,4 +1,20 @@
 ===============================================================
+Tag name:  rtm1_0_63
+Originator(s): erik
+Date: Oct 3, 2017
+One-line Summary: Upgrade config_component to version 3, allow output file format
+                  to change, fix so REFCASE will check for files with or without
+                  instance name
+
+
+M    src/riverroute/RtmIO.F90 --------- Changes from Jim Edwards
+        to change NetCDF output file format, also make io_type not public
+M    cime_config/buildnml ------------- Fix bug 2477 for RTM so that
+        if NINST_RTM > 1, will check if REFCASE has instance name
+        in it and then use it, but if not use it without instance name
+M    cime_config/config_component.xml - Upgrade to version 3 format
+
+===============================================================
 Tag name:  rtm1_0_62
 Originator(s): andre
 Date: July 5, 2017
