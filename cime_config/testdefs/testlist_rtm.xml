@@ -1,52 +1,152 @@
 <?xml version="1.0"?>
-<testlist>
-  <compset name="I2000Clm50BgcCropRtm">
-    <grid name="f10_f10">
-      <test name="ERS_Ld5">
-        <machine compiler="gnu" testtype="rtm" testmods="rtm/default">yellowstone</machine>
-        <machine compiler="intel" testtype="rtm" testmods="rtm/default">yellowstone</machine>
-        <machine compiler="intel" testtype="rtm" testmods="rtm/rtmOnIceOff">yellowstone</machine>
-        <machine compiler="intel" testtype="rtm" testmods="rtm/rtmOnFloodOnEffvelOn">yellowstone</machine>
-        <machine compiler="intel" testtype="rtm" testmods="rtm/rtmOnFloodOnEffvelOff">yellowstone</machine>
-        <machine compiler="intel" testtype="rtm" testmods="rtm/rtmOff">yellowstone</machine>
-        <machine compiler="pgi" testtype="rtm" testmods="rtm/default">yellowstone</machine>
-      </test>
-      <test name="SMS_D_Ld5">
-        <machine compiler="gnu" testtype="rtm" testmods="rtm/default">yellowstone</machine>
-        <machine compiler="intel" testtype="rtm" testmods="rtm/default">yellowstone</machine>
-        <machine compiler="pgi" testtype="rtm" testmods="rtm/default">yellowstone</machine>
-      </test>
-    </grid>
-  </compset>
-  <compset name="I1850Clm45BgcCru">
-    <grid name="f10_f10">
-      <test name="ERP_D_Ld5">
-         <machine compiler="intel" testtype="aux_clm45" testmods="rtm/default">yellowstone</machine>
-      </test>
-      <test name="ERP_Ld5">
-        <machine compiler="intel" testtype="aux_clm45" testmods="rtm/rtmOff">yellowstone</machine>
-        <machine compiler="intel" testtype="aux_clm45" testmods="rtm/rtmOnFloodOnEffvelOn">yellowstone</machine>
-        <machine compiler="intel" testtype="aux_clm45" testmods="rtm/rtmOnIceOff">yellowstone</machine>
-      </test>
-      <test name="SMS_D_Ld5_P24x1">
-        <machine compiler="nag" testtype="aux_clm45" testmods="rtm/rtmOff">hobart</machine>
-        <machine compiler="nag" testtype="aux_clm45" testmods="rtm/rtmOnFloodOnEffvelOn">hobart</machine>
-        <machine compiler="nag" testtype="aux_clm45" testmods="rtm/rtmOnIceOff">hobart</machine>
-      </test>
-    </grid>
-    <grid name="f19_g16">
-      <test name="ERP_Ld5">
-        <machine compiler="intel" testtype="aux_clm_ys_pgi" testmods="rtm/rtmOnFloodOnEffvelOff">edison</machine>
-        <machine compiler="intel" testtype="aux_clm_ys_pgi" testmods="rtm/rtmOnIceOn">edison</machine>
-        <machine compiler="gnu" testtype="aux_clm45" testmods="rtm/rtmOnIceOn">yellowstone</machine>
-        <machine compiler="pgi" testtype="aux_clm45" testmods="rtm/rtmOnFloodOnEffvelOff">yellowstone</machine>
-      </test>
-    </grid>
-    <grid name="f19_g16_r01">
-      <test name="ERP_Ld5">
-        <machine compiler="intel" testtype="aux_clm_ys_pgi" testmods="rtm/rtmOnFloodOnEffvelOff">edison</machine>
-        <machine compiler="gnu" testtype="aux_clm45" testmods="rtm/rtmOnFloodOnEffvelOff">yellowstone</machine>
-      </test>
-    </grid>
-  </compset>
+<testlist version="2.0">
+
+  <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="rtm"></machine>
+      <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
+      <machine name="hobart" compiler="nag" category="rtm"></machine>
+      <options>
+        <option name="wallclock">0:20</option>
+        <option name="comment"  >Restart test without DEBUG on all machines/compilers</option>
+      </options>
+    </machines>
+  </test>
+  <test name="SMS_D_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="rtm"></machine>
+      <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
+      <machine name="hobart" compiler="nag" category="rtm"></machine>
+      <options>
+        <option name="wallclock">0:20</option>
+        <option name="comment"  >Run with DEBUG compiler option all machine/compilers</option>
+      </options>
+    </machines>
+  </test>
+  <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnIceOff">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="rtm">
+        <options>
+          <option name="wallclock">0:20</option>
+        </options>
+      </machine>
+    </machines>
+  </test>
+  <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="rtm">
+        <options>
+          <option name="wallclock">0:20</option>
+        </options>
+      </machine>
+    </machines>
+  </test>
+  <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOff">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="rtm">
+        <options>
+          <option name="wallclock">0:20</option>
+        </options>
+      </machine>
+    </machines>
+  </test>
+  <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOff">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="rtm">
+        <options>
+          <option name="wallclock">0:20</option>
+        </options>
+      </machine>
+    </machines>
+  </test>
+  <test name="ERP_D_Ld5" grid="f10_f10_musgs" compset="I1850Clm45BgcCru" testmods="rtm/default">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="aux_clm"> </machine>
+      <machine name="hobart" compiler="nag" category="aux_clm"> </machine>
+      <options>
+        <option name="wallclock">0:20</option>
+      </options>
+    </machines>
+  </test>
+  <test name="ERP_Ld5" grid="f10_f10_musgs" compset="I1850Clm45BgcCru" testmods="rtm/default">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="aux_clm"> </machine>
+      <machine name="hobart" compiler="nag" category="aux_clm"> </machine>
+      <options>
+        <option name="wallclock">0:20</option>
+      </options>
+    </machines>
+  </test>
+  <test name="ERP_D_Ld5" grid="f10_f10_musgs" compset="I1850Clm45BgcCru" testmods="rtm/rtmOff">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="aux_clm"> </machine>
+      <machine name="hobart" compiler="nag" category="aux_clm"> </machine>
+      <options>
+        <option name="wallclock">0:20</option>
+      </options>
+    </machines>
+  </test>
+  <test name="ERP_Ld5" grid="f10_f10_musgs" compset="I1850Clm45BgcCru" testmods="rtm/rtmOff">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="aux_clm"> </machine>
+      <machine name="hobart" compiler="nag" category="aux_clm"> </machine>
+      <options>
+        <option name="wallclock">0:20</option>
+      </options>
+    </machines>
+  </test>
+  <test name="ERP_D_Ld5" grid="f10_f10_musgs" compset="I1850Clm45BgcCru" testmods="rtm/rtmOnFloodOnEffvelOn">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="aux_clm"> </machine>
+      <machine name="hobart" compiler="nag" category="aux_clm"> </machine>
+      <options>
+        <option name="wallclock">0:20</option>
+      </options>
+    </machines>
+  </test>
+  <test name="ERP_Ld5" grid="f10_f10_musgs" compset="I1850Clm45BgcCru" testmods="rtm/rtmOnFloodOnEffvelOn">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="aux_clm"> </machine>
+      <machine name="hobart" compiler="nag" category="aux_clm"> </machine>
+      <options>
+        <option name="wallclock">0:20</option>
+      </options>
+    </machines>
+  </test>
+  <test name="ERP_D_Ld5" grid="f10_f10_musgs" compset="I1850Clm45BgcCru" testmods="rtm/rtmOnIceOff">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="aux_clm"> </machine>
+      <machine name="hobart" compiler="nag" category="aux_clm"> </machine>
+      <options>
+        <option name="wallclock">0:20</option>
+      </options>
+    </machines>
+  </test>
+  <test name="ERP_Ld5" grid="f10_f10_musgs" compset="I1850Clm45BgcCru" testmods="rtm/rtmOnIceOff">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="aux_clm"> </machine>
+      <machine name="hobart" compiler="nag" category="aux_clm"> </machine>
+      <options>
+        <option name="wallclock">0:20</option>
+      </options>
+    </machines>
+  </test>
+  <test name="ERP_Ld5" grid="f19_g17" compset="I1850Clm45BgcCru" testmods="rtm/default">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="aux_clm"> </machine>
+      <machine name="hobart" compiler="nag" category="aux_clm"> </machine>
+      <options>
+        <option name="wallclock">0:20</option>
+      </options>
+    </machines>
+  </test>
+  <test name="ERP_Ld5" grid="f19_g16_r01" compset="I1850Clm45BgcCru" testmods="rtm/default">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="aux_clm"> </machine>
+      <options>
+        <option name="wallclock">0:20</option>
+      </options>
+    </machines>
+  </test>
+
 </testlist>
