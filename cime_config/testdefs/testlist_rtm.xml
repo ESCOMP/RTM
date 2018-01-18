@@ -41,6 +41,15 @@
       </machine>
     </machines>
   </test>
+  <test name="ERS_D_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
+    <machines>
+      <machine name="cheyenne" compiler="intel" category="rtm">
+        <options>
+          <option name="wallclock">0:20</option>
+        </options>
+      </machine>
+    </machines>
+  </test>
   <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOff">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
