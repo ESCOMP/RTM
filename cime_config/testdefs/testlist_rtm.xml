@@ -6,29 +6,29 @@
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
       <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
       <machine name="hobart" compiler="nag" category="rtm"></machine>
-      <options>
-        <option name="wallclock">0:20</option>
-        <option name="comment"  >Restart test without DEBUG on all machines/compilers</option>
-      </options>
     </machines>
+    <options>
+      <option name="wallclock">0:20</option>
+      <option name="comment"  >Restart test without DEBUG on all machines/compilers</option>
+    </options>
   </test>
   <test name="SMS_D_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
       <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
       <machine name="hobart" compiler="nag" category="rtm"></machine>
-      <options>
-        <option name="wallclock">0:20</option>
-        <option name="comment"  >Run with DEBUG compiler option all machine/compilers</option>
-      </options>
     </machines>
+    <options>
+      <option name="wallclock">0:20</option>
+      <option name="comment"  >Run with DEBUG compiler option all machine/compilers</option>
+    </options>
   </test>
   <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnIceOff">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
-        <options>
-          <option name="wallclock">0:20</option>
-        </options>
+         <options>
+           <option name="wallclock">0:20</option>
+         </options>
       </machine>
     </machines>
   </test>

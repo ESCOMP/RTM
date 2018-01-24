@@ -1,4 +1,12 @@
 ===============================================================
+Tag name:  rtm1_0_65
+Originator(s): erik
+Date: Jan 23, 2018
+One-line Summary: Put testlist options under test rather than machines
+
+ M  cime_config/testdefs/testlist_rtm.xml
+
+===============================================================
 Tag name:  rtm1_0_64
 Originator(s): erik
 Date: Jan 17, 2018
