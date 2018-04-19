@@ -156,6 +156,7 @@ contains
                               case_desc=ctitle, start_type=starttype,      &
                               brnch_retain_casename=brnch_retain_casename, &
                               model_version=version,                       &
+                              model_doi_url=model_doi_url,                 &
                               hostname=hostname, username=username)
 
     call timemgr_setup(calendar_in=calendar,                           &
@@ -176,6 +177,7 @@ contains
     call RtmVarSet(caseid_in=caseid, ctitle_in=ctitle,             &
                    brnch_retain_casename_in=brnch_retain_casename, &
                    nsrest_in=nsrest, version_in=version,           &
+                   model_doi_url=model_doi_url,                    &
                    hostname_in=hostname, username_in=username)
 
     ! Read namelist, grid and surface data
