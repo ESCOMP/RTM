@@ -353,8 +353,6 @@ contains
     call ncd_putatt(ncid, NCD_GLOBAL, 'host'    , trim(hostname))
     call ncd_putatt(ncid, NCD_GLOBAL, 'version' , trim(version))
     call ncd_putatt(ncid, NCD_GLOBAL, 'source'  , trim(source))
-    str = '$Id: restFileMod.F90 35676 2012-03-22 21:48:04Z tcraig $'
-    call ncd_putatt(ncid, NCD_GLOBAL, 'revision_id'    , trim(str))
     call ncd_putatt(ncid, NCD_GLOBAL, 'case_title'     , trim(ctitle))
     call ncd_putatt(ncid, NCD_GLOBAL, 'case_id'        , trim(caseid))
     call ncd_putatt(ncid, NCD_GLOBAL, 'title', &

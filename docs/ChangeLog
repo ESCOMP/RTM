@@ -1,4 +1,25 @@
 ===============================================================
+Tag name:  rtm1_0_65
+Originator(s): erik
+Date: Jan 23, 2018
+One-line Summary: Put testlist options under test rather than machines
+
+ M  cime_config/testdefs/testlist_rtm.xml
+
+===============================================================
+Tag name:  rtm1_0_64
+Originator(s): erik
+Date: Jan 17, 2018
+One-line Summary: Convert test list to version 2 format and remove ys
+
+Convert the test list to version 2 format, add comments and wallclock to it.
+Remove ys tests. Remove aux_clm tests (put those in CLM itself).
+
+Add buildnmlc to .gitignore
+
+ M  cime_config/testdefs/testlist_rtm.xml
+
+===============================================================
 Tag name:  rtm1_0_63
 Originator(s): erik
 Date: Oct 3, 2017

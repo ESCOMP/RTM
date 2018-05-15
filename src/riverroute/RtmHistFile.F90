@@ -12,7 +12,8 @@ module RtmHistFile
   use RunoffMod     , only : runoff
   use RtmVar        , only : rtmlon, rtmlat, spval, ispval, secspday, frivinp_rtm, &   
                              iulog, nsrest, caseid, inst_suffix, nsrStartup, nsrBranch, & 
-                             ctitle, version, hostname, username, conventions, source
+                             ctitle, version, hostname, username, conventions, source, &
+                             model_doi_url
   use RtmFileUtils  , only : get_filename, getfil
   use RtmTimeManager, only : get_nstep, get_curr_date, get_curr_time, get_ref_date, &
                              get_prev_time, get_prev_date, is_last_step, get_step_size
@@ -726,15 +727,13 @@ contains
     call ncd_putatt(lnfid, ncd_global, 'Conventions', trim(conventions))
     call getdatetime(curdate, curtime)
     str = 'created on ' // curdate // ' ' // curtime
-    call ncd_putatt(lnfid, ncd_global, 'history' , trim(str))
-    call ncd_putatt(lnfid, ncd_global, 'source'  , trim(source))
-    call ncd_putatt(lnfid, ncd_global, 'hostname', trim(hostname))
-    call ncd_putatt(lnfid, ncd_global, 'username', trim(username))
-    call ncd_putatt(lnfid, ncd_global, 'version' , trim(version))
+    call ncd_putatt(lnfid, ncd_global, 'history'      , trim(str))
+    call ncd_putatt(lnfid, ncd_global, 'source'       , trim(source))
+    call ncd_putatt(lnfid, ncd_global, 'hostname'     , trim(hostname))
+    call ncd_putatt(lnfid, ncd_global, 'username'     , trim(username))
+    call ncd_putatt(lnfid, ncd_global, 'version'      , trim(version))
+    call ncd_putatt(lnfid, ncd_global, 'model_doi_url', trim(model_doi_url))
 
-    str = &
-    '$Id: histFileMod.F90 36692 2012-04-27 18:39:55Z tcraig $'
-    call ncd_putatt(lnfid, ncd_global, 'revision_id', trim(str))
     call ncd_putatt(lnfid, ncd_global, 'case_title', trim(ctitle))
     call ncd_putatt(lnfid, ncd_global, 'case_id', trim(caseid))
 
