@@ -1,4 +1,26 @@
 ===============================================================
+Tag name:  rtm1_0_66
+Originator(s): erik
+Date: May 15, 2018
+One-line Summary:  Add model_doi_url
+
+Move RTM config_archive to it's own cime_config. Add in model_doi_url 
+read in from infodata from coupler. Remove old rof_comp_esmf interface. 
+Remove revision_id from output files.
+
+Pull Request -- #7
+
+https://github.com/ESCOMP/mosart/pull/11/files
+
+ A  cime_config/config_archive.xml
+ M  docs/index.html
+ D  src/cpl/rof_comp_esmf.F90
+ M  src/cpl/rof_comp_mct.F90
+ M  src/riverroute/RtmHistFile.F90
+ M  src/riverroute/RtmRestFile.F90
+ M  src/riverroute/RtmVar.F90
+
+t===============================================================
 Tag name:  rtm1_0_65
 Originator(s): erik
 Date: Jan 23, 2018
