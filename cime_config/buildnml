@@ -8,8 +8,8 @@
 
 # Disable these because this is our standard setup
 # pylint: disable=wildcard-import,unused-wildcard-import,wrong-import-position
-
-import os, shutil, sys, glob
+# pylint: disable=multiple-imports
+import os, shutil, sys
 
 CIMEROOT = os.environ.get("CIMEROOT")
 if CIMEROOT is None:
@@ -20,13 +20,13 @@ from standard_script_setup import *
 from CIME.case import Case
 from CIME.nmlgen import NamelistGenerator
 from CIME.utils import expect
-from CIME.buildnml import create_namelist_infile
+from CIME.buildnml import create_namelist_infile, parse_input
 
 logger = logging.getLogger(__name__)
 
 # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
 ####################################################################################
-def _create_namelist(case, confdir, inst_string, infile, nmlgen):
+def _create_namelists(case, confdir, inst_string, infile, nmlgen, data_list_path):
 ####################################################################################
     """Write out the namelist for this component.
 
@@ -40,7 +40,7 @@ def _create_namelist(case, confdir, inst_string, infile, nmlgen):
     #----------------------------------------------------
     config = {}
     config['rtm_mode'] = case.get_value("RTM_MODE")
-    config['rtm_flood_mode']  = case.get_value("RTM_FLOOD_MODE")
+    config['rtm_flood_mode'] = case.get_value("RTM_FLOOD_MODE")
     config['clm_accelerated_spinup'] = case.get_value("CLM_ACCELERATED_SPINUP")
     config['rof_grid'] = case.get_value("ROF_GRID")
     config['lnd_grid'] = case.get_value("LND_GRID")
@@ -52,7 +52,7 @@ def _create_namelist(case, confdir, inst_string, infile, nmlgen):
     # Check for incompatible options.
     #----------------------------------------------------
     if config["rof_grid"] == "null" and config["rtm_mode"] != "NULL":
-        expect (False, "ROF_GRID is null RTM_MODE not NULL")
+        expect(False, "ROF_GRID is null RTM_MODE not NULL")
 
     #----------------------------------------------------
     # Clear out old data.
@@ -74,10 +74,10 @@ def _create_namelist(case, confdir, inst_string, infile, nmlgen):
     if run_type == 'branch' or run_type == 'hybrid':
         run_refcase = case.get_value("RUN_REFCASE")
         run_refdate = case.get_value("RUN_REFDATE")
-        run_tod     = case.get_value("RUN_REFTOD")
+        run_tod = case.get_value("RUN_REFTOD")
         filename = "%s.rtm%s.r.%s-%s.nc" %(run_refcase, inst_string, run_refdate, run_tod)
         rundir = case.get_value("RUNDIR")
-        if not os.path.exists(os.path.join(rundir, filename ) ):
+        if not os.path.exists(os.path.join(rundir, filename)):
             filename = "%s.rtm.r.%s-%s.nc" %(run_refcase, run_refdate, run_tod)
 
         if run_type == "hybrid":
@@ -90,7 +90,7 @@ def _create_namelist(case, confdir, inst_string, infile, nmlgen):
         else:
             nmlgen.add_default("finidat_rtm")
 
-    ncpl_base_period  = case.get_value('NCPL_BASE_PERIOD')
+    ncpl_base_period = case.get_value('NCPL_BASE_PERIOD')
     if ncpl_base_period == 'hour':
         basedt = 3600
     elif ncpl_base_period == 'day':
@@ -113,10 +113,10 @@ def _create_namelist(case, confdir, inst_string, infile, nmlgen):
 
     rof_ncpl = case.get_value("ROF_NCPL")
     if basedt % rof_ncpl != 0:
-        expect(False, "rof_ncpl %s doesn't divide evenly into basedt \n" 
+        expect(False, "rof_ncpl %s doesn't divide evenly into basedt %s\n"
                %(rof_ncpl, basedt))
     else:
-        rtm_tstep = basedt / rof_ncpl
+        rtm_tstep = basedt // rof_ncpl
     nmlgen.set_value("rtm_tstep", value=rtm_tstep)
 
     #----------------------------------------------------
@@ -130,26 +130,26 @@ def buildnml(case, caseroot, compname):
 ###############################################################################
     """Build the namelist """
 
-    # Build the component namelist 
+    # Build the component namelist
     if compname != "rtm":
         raise AttributeError
 
-    srcroot = case.get_value("SRCROOT") 
+    srcroot = case.get_value("SRCROOT")
     rundir = case.get_value("RUNDIR")
     ninst = case.get_value("NINST_ROF")
 
     # Determine configuration directory
-    confdir = os.path.join(caseroot,"Buildconf","rtmconf")
+    confdir = os.path.join(caseroot, "Buildconf", "rtmconf")
     if not os.path.isdir(confdir):
         os.makedirs(confdir)
 
     #----------------------------------------------------
-    # Construct the namelist generator 
+    # Construct the namelist generator
     #----------------------------------------------------
     # determine directory for user modified namelist_definitions.xml and namelist_defaults.xml
     user_xml_dir = os.path.join(caseroot, "SourceMods", "src.rtm")
-    expect (os.path.isdir(user_xml_dir),
-            "user_xml_dir %s does not exist " %user_xml_dir)
+    expect(os.path.isdir(user_xml_dir),
+           "user_xml_dir %s does not exist "%user_xml_dir)
 
     # NOTE: User definition *replaces* existing definition.
     namelist_xml_dir = os.path.join(srcroot, "components", "rtm", "cime_config")
@@ -164,6 +164,12 @@ def buildnml(case, caseroot, compname):
     nmlgen = NamelistGenerator(case, definition_file)
 
     #----------------------------------------------------
+    # Clear out old data.
+    #----------------------------------------------------
+    data_list_path = os.path.join(case.get_case_root(), "Buildconf", "mosart.input_data_list")
+    if os.path.exists(data_list_path):
+        os.remove(data_list_path)
+    #----------------------------------------------------
     # Loop over instances
     #----------------------------------------------------
     for inst_counter in range(1, ninst+1):
@@ -175,9 +181,9 @@ def buildnml(case, caseroot, compname):
 
         # If multi-instance case does not have restart file, use
         # single-case restart for each instance
-        rpointer = "rpointer.rof" 
-        if (os.path.isfile(os.path.join(rundir,rpointer)) and
-            (not os.path.isfile(os.path.join(rundir,rpointer + inst_string)))):
+        rpointer = "rpointer.rof"
+        if (os.path.isfile(os.path.join(rundir, rpointer)) and
+                (not os.path.isfile(os.path.join(rundir, rpointer + inst_string)))):
             shutil.copy(os.path.join(rundir, rpointer),
                         os.path.join(rundir, rpointer + inst_string))
 
@@ -193,20 +199,20 @@ def buildnml(case, caseroot, compname):
         create_namelist_infile(case, user_nl_file, infile)
         namelist_infile = [infile]
 
-        # create namelist 
-        _create_namelist(case, confdir, inst_string, namelist_infile, nmlgen)
+        # create namelist
+        _create_namelists(case, confdir, inst_string, namelist_infile, nmlgen, data_list_path)
 
         # copy namelist files and stream text files, to rundir
         if os.path.isdir(rundir):
-            file_src  = os.path.join(confdir, 'rof_in')
+            file_src = os.path.join(confdir, 'rof_in')
             file_dest = os.path.join(rundir, 'rof_in')
             if inst_string:
                 file_dest += inst_string
             shutil.copy(file_src, file_dest)
-            
+
             for txtfile in glob.glob(os.path.join(confdir, "*txt*")):
                 shutil.copy(txtfile, rundir)
-                
+
 ###############################################################################
 def _main_func():
 
