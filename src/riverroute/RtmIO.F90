@@ -1767,6 +1767,8 @@ contains
     integer                , pointer  :: compDOF(:)
     type(iodesc_plus_type) , pointer  :: iodesc_plus
     type(var_desc_t)                  :: vardesc
+    real(r4)        , allocatable :: datar4(:)               ! local data at r4
+    real(r4)                      :: spvalr4
     character(len=*),parameter :: subname='ncd_io_real_var1' ! subroutine name
     !-----------------------------------------------------------------------
 
@@ -1822,7 +1824,11 @@ contains
           call pio_setframe(ncid, vardesc, int(nt,kind=pio_offset_kind))
        end if
        if(xtype == ncd_float) then
-          call pio_write_darray(ncid, vardesc, iodesc_plus%iodesc, real(data, kind=r4), status, fillval=real(spval,kind=r4))
+          allocate( datar4(sizeof(data)) )
+          datar4(:) = real(data, kind=r4)
+          spvalr4 = real(spval,kind=r4)
+          call pio_write_darray(ncid, vardesc, iodesc_plus%iodesc, datar4, status, fillval=spvalr4)
+          deallocate( datar4 )
        else
           call pio_write_darray(ncid, vardesc, iodesc_plus%iodesc, data, status, fillval=spval)
        endif
