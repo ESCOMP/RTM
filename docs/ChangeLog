@@ -1,4 +1,27 @@
 ===============================================================
+Tag name:  release-cesm2.0.02
+Originator(s): erik
+Date: Oct 17, 2018
+One-line Summary: Fix some issues with nag compiler
+
+
+Software Changes since last release: release-cesm2.0.01
+  * Fix issues with nag compiler
+
+Science Changes since last release: release-cesm2.0.00
+  * None
+
+Changes to User Interface since: release-cesm2.0.00
+  * None
+
+Pull Requests that document the changes (include PR ids):
+   #10 -- Fix some issues with nag compiler
+
+Testing:
+   rtm testlist on hobart and cheyenne (PASS)
+
+
+===============================================================
 Tag name:  release-cesm2.0.01
 Originator(s): erik
 Date: Oct 10, 2018
