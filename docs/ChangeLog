@@ -1,4 +1,38 @@
 ===============================================================
+Tag name:  release-cesm2.0.02
+Originator(s): erik
+Date: Oct 19, 2018
+One-line Summary: Fix some issues with nag compiler, remove rtmhist_ndens==2 option
+
+basetype wasn't declared and needed to be. Also add more "implicit none"
+statements in. Remove the deletion of "rtm.input_data_list" file, as cime
+now does this. Remove the option of setting single-precision
+history output, as it sometimes has numerical conversion issues. The
+real solution for it should be to keep a single-precision history
+buffer that then outputs at the same precision as stored, rather than
+converting just before. This would trigger issues with the conversion
+earlier.
+
+RTM Master Tag This Corresponds To: rtm1_0_66 (with changes)
+
+Software Changes since last release: release-cesm2.0.01
+  * Fix issues with nag compiler
+  * Remove single precision output option
+
+Science Changes since last release: release-cesm2.0.00
+  * None
+
+Changes to User Interface since: release-cesm2.0.00
+  * rtmhist_ndens can no longer equal 2.
+
+Pull Requests that document the changes (include PR ids):
+   #10 -- Fix some issues with nag compiler
+
+Testing:
+   rtm testlist on hobart and cheyenne (PASS)
+
+
+===============================================================
 Tag name:  release-cesm2.0.01
 Originator(s): erik
 Date: Oct 10, 2018
@@ -7,6 +41,8 @@ One-line Summary: pylint cleanup, and fill value changes for pio2
 Changes ported from mosart/#15 to rtm. Run pylint through buildlib/buildnml,
 changes for fill value needed for pio2. Also use the floor operator
 for a specific integer divide as python3 turns it into reals.
+
+RTM Master Tag This Corresponds To: rtm1_0_66 (with changes)
 
 Purpose:
 
@@ -36,6 +72,8 @@ One-line Summary: First CESM2.0 release version, identical to rtm1_0_66
 Purpose:
 
 First RTM version for the CESM2.0 release. This tag is identical to rtm1_0_66
+
+RTM Master Tag This Corresponds To: rtm1_0_66
 
 Software Changes since last release: rtm1_0_30
 

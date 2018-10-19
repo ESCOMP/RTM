@@ -195,6 +195,7 @@ contains
     ! Close a NetCDF PIO file
     !
     ! !ARGUMENTS:
+    implicit none
     type(file_desc_t), intent(inout) :: file   ! PIO file handle to close
     !-----------------------------------------------------------------------
 
@@ -408,6 +409,7 @@ contains
 
     !-----------------------------------------------------------------------
     ! !ARGUMENTS:
+    implicit none
     type(file_desc_t), intent(inout):: ncid
     logical          , intent(out)  :: isgrid2d
     integer          , intent(out)  :: ni
@@ -1820,7 +1822,7 @@ contains
           call pio_setframe(ncid, vardesc, int(nt,kind=pio_offset_kind))
        end if
        if(xtype == ncd_float) then
-          call pio_write_darray(ncid, vardesc, iodesc_plus%iodesc, real(data, kind=r4), status, fillval=real(spval,kind=r4))
+          call shr_sys_abort( subname//' error: Attempt to write out single-precision data which is current NOT implemented (see issue #12)' )
        else
           call pio_write_darray(ncid, vardesc, iodesc_plus%iodesc, data, status, fillval=spval)
        endif
@@ -1844,6 +1846,7 @@ contains
     ! Returns an index to an io descriptor
     !
     ! !ARGUMENTS:
+    implicit none
     type(file_desc_t), intent(inout) :: ncid       ! PIO file descriptor
     integer          , intent(in)    :: ndims      ! ndims for var
     integer          , intent(in)    :: dims(:)    ! dim sizes
@@ -1855,6 +1858,7 @@ contains
     integer :: lsize                         ! local size
     integer :: gsize                         ! global size
     integer :: status                        ! error status
+    integer :: basetype                      ! base data type
     logical :: found                         ! true => found created iodescriptor
     integer :: ndims_file                    ! temporary
     character(len=64) dimname_file           ! dimension name on file
