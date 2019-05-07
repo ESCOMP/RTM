@@ -1,0 +1,57 @@
+===============================================================
+Tag name:  release-cesm2.0.00
+Originator(s): erik
+Date: May 21, 2018
+One-line Summary: First CESM2.0 release version, identical to rtm1_0_66
+
+RTM Issues Fixed: #5, #6
+See: https://github.com/ESCOMP/rtm/issu
+  #6 -- Move config_archive.xml to cime_config
+  #5 -- Add model_doi_url
+
+RTM Bugzilla bugs Fixed: 2184, 1674, 2156, 1819, 2230, 2397, 2199, 2032
+See: http://bugs.cgd.ucar.edu
+  2184 -- vector (1d) history output crashes for some fields
+  1674 -- assumes history files are no_leap calendar
+  2156 -- Hard coded RTM domain edges
+  1819 -- finidat_rtm defaults to $CASE.clm2.r.*.nc
+  2230 -- for RTM delt_save not initialized
+  2397 -- Determination of RTM time step assumes NCPL_BASE_PERIOD = ndays
+  2199 -- continuation line in middle of string
+  2032 -- rtm.buildnml.csh kills cesm_setup if GET_REFCASE is FALSE
+
+Software Changes since last release: rtm1_0_30
+
+ - Add in model_doi_url read in from infodata from coupler.
+ - RTM own's version of config_archive.xml
+ - Remove old rof_comp_esmf
+ - Remove revision_id from output files
+ - Convert testlist format to version 2, and use new Clm5 compset names.
+ - Remove yellowstone tests.
+ - Update config_component.xml to version 3 format.
+ - if NINST_RTM > 1, will check if REFCASE has instance name and use it, otherwise without it.
+ - I/O fixes from Jim Edwards
+ - Update buildnamelist to cime5 python namelist infrastructure
+ - Add time period frequency to output history file
+ - Remove ESMF top level coupler interface and tests
+ - Have RTM react to CLM_ACCELERATED_SPINUP setting from CLM and turn itself off
+ - Update to newer cime versions
+ - Move tests from goldbach to hobart
+ - Don't assume that direction files are global
+ - NAG6.0 requires additional pointers to be nullified
+ - readnamelist on mastertask only
+ - PIO2 Compatibility changes
+ - address valgrind errors
+ - add SHR_ASSERT macros
+ - migration of cpl_share/, cpl_esmf/ and cpl_mct code into new cpl/ and introduction of rof_import_export.F90
+
+Science Changes since last release: rtm1_0_30
+ - Treat irrigation as a seperate flux
+ - Remove directo to ocean runnoff
+ - fix fthresh bug and refactor RtmFloodInit
+ - convert volr coupling field from state to flux
+
+RTM Master Tag this corresponds to: rtm1_0_66
+
+
+===============================================================
