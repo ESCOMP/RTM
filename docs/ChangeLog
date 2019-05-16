@@ -1,4 +1,28 @@
 ===============================================================
+Tag name:  rtm1_0_67
+Originator(s): erik
+Date: May 07, 2019
+One-line Summary: Move release-cesm2.0.02 to master
+
+basetype wasn't declared and needed to be. Also add more "implicit none"
+statements in. Remove the deletion of "rtm.input_data_list" file, as cime
+now does this. Remove the option of setting single-precision
+history output, as it sometimes has numerical conversion issues. The
+real solution for it should be to keep a single-precision history
+buffer that then outputs at the same precision as stored, rather than
+converting just before. This would trigger issues with the conversion
+earlier.
+
+Changes ported from mosart/#15 to rtm. Run pylint through buildlib/buildnml,
+changes for fill value needed for pio2. Also use the floor operator
+for a specific integer divide as python3 turns it into reals.
+
+Add CODE_OF_CONDUCT.md
+
+Testing:
+   rtm testlist on hobart and cheyenne (PASS)
+
+===============================================================
 Tag name:  rtm1_0_66
 Originator(s): erik
 Date: May 15, 2018

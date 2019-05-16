@@ -205,13 +205,13 @@
     <type>integer(6)</type>
     <category>history</category>
     <group>rtm_inparm</group>
-    <valid_values>1,2</valid_values>
+    <valid_values>1</valid_values>
     <desc>
       Per tape series  history file density (i.e. output precision) 
-      1=double precision, 2=single precision
+      1=double precision, 2=single precision (NOT functional)
     </desc>
     <values>
-      <value>2</value>
+      <value>1</value>
     </values>
   </entry>
 
