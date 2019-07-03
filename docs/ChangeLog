@@ -4,6 +4,78 @@ Originator(s): erik
 Date: Oct 19, 2018
 One-line Summary: Fix some issues with nag compiler, remove rtmhist_ndens==2 option
 
+Bring rtm1_0_69 to release branch
+
+RTM Master Tag This Corresponds To: rtm1_0_69 (with changes)
+
+Software Changes since last release: release-cesm2.0.02
+  * mosart is used in the title of some files
+  * Added a cold-start test
+
+Science Changes since last release: release-cesm2.0.02
+  * None
+
+Changes to User Interface since: release-cesm2.0.02
+  * Allow finidat_rtm to be set to blank to indicate a cold-start
+
+Pull Requests that document the changes (include PR ids):
+   #11 -- 
+
+===============================================================
+Tag name:  rtm1_0_69
+Originator(s): erik
+Date: Jun 03, 2019
+One-line Summary: Fix cold-starts and remove mosart from files
+
+You couldn't set finidat_rtm to blank to indicate a cold start should
+be done. This fixes that issue. It now both indicates that a cold start
+should happen, AND it doesn't search for an empty filename from inputdata.
+
+Also added a cold-start test to make sure this continues to work.
+
+mosart was in a few places and it was changed to refer to "rtm" now.
+For example the list of files needed was mosart.input_data_files now
+it's properly rtm.input_data_files.
+
+Fixes: #14, #15
+
+   Fixes #14 -- Can't set finidat_rtm to blank indicating a cold-start
+   Fixes #15 -- mosart is used in the title of some files
+Testing:
+   rtm testlist on hobart and cheyenne (PASS)
+
+===============================================================
+Tag name:  rtm1_0_68 (NOT moved to release branch)
+===============================================================
+Tag name:  rtm1_0_67
+Originator(s): erik
+Date: May 07, 2019
+One-line Summary: Move release-cesm2.0.02 to master
+
+basetype wasn't declared and needed to be. Also add more "implicit none"
+statements in. Remove the deletion of "rtm.input_data_list" file, as cime
+now does this. Remove the option of setting single-precision
+history output, as it sometimes has numerical conversion issues. The
+real solution for it should be to keep a single-precision history
+buffer that then outputs at the same precision as stored, rather than
+converting just before. This would trigger issues with the conversion
+earlier.
+
+Changes ported from mosart/#15 to rtm. Run pylint through buildlib/buildnml,
+changes for fill value needed for pio2. Also use the floor operator
+for a specific integer divide as python3 turns it into reals.
+
+Add CODE_OF_CONDUCT.md
+
+Testing:
+   rtm testlist on hobart and cheyenne (PASS)
+
+===============================================================
+Tag name:  release-cesm2.0.02
+Originator(s): erik
+Date: Oct 19, 2018
+One-line Summary: Fix some issues with nag compiler, remove rtmhist_ndens==2 option
+
 basetype wasn't declared and needed to be. Also add more "implicit none"
 statements in. Remove the deletion of "rtm.input_data_list" file, as cime
 now does this. Remove the option of setting single-precision
