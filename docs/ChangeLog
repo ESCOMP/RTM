@@ -1,4 +1,27 @@
 ===============================================================
+Tag name:  rtm1_0_69
+Originator(s): erik
+Date: Jun 03, 2019
+One-line Summary: Fix cold-starts and remove mosart from files
+
+You couldn't set finidat_rtm to blank to indicate a cold start should
+be done. This fixes that issue. It now both indicates that a cold start
+should happen, AND it doesn't search for an empty filename from inputdata.
+
+Also added a cold-start test to make sure this continues to work.
+
+mosart was in a few places and it was changed to refer to "rtm" now.
+For example the list of files needed was mosart.input_data_files now
+it's properly rtm.input_data_files.
+
+Fixes: #14, #15
+
+   Fixes #14 -- Can't set finidat_rtm to blank indicating a cold-start
+   Fixes #15 -- mosart is used in the title of some files
+Testing:
+   rtm testlist on hobart and cheyenne (PASS)
+
+===============================================================
 Tag name:  rtm1_0_68
 Originator(s): erik
 Date: Jun 11, 2019
