@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Build the mosart component library
+Build the rtm component library
 """
 #pylint: disable=unused-wildcard-import, wildcard-import, multiple-imports
 #pylint: disable=wrong-import-position, invalid-name, too-many-locals
