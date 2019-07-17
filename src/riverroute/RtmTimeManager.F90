@@ -1092,19 +1092,10 @@ subroutine timemgr_finalize( )
    !
    ! tm_clock is a module variable
    !
-
    ! 
-   ! FIX(SPM, 05222014) if you try to compile this with the ESMF interfaces, 
-   ! you will get an intel error "This is not a field name that is defined
-   ! in the encompassing structure.".  Furthermore, with CME tests,
-   ! when building the MCT version we have defined both -DUSE_ESMF_LIB -DMCT_INTERFACE 
-   ! during compile.
-   ! 
-#ifdef MCT_INTERFACE 
 #ifndef USE_ESMF_LIB
    call ESMF_ClockDestroy( tm_clock, rc )
    call chkrc(rc, sub//': error return from ESMF_ClockDestory')
-#endif
 #endif
 
 end subroutine timemgr_finalize

@@ -15,14 +15,14 @@ module RtmMod
   use shr_kind_mod    , only : r8 => shr_kind_r8
   use shr_sys_mod     , only : shr_sys_flush
   use shr_const_mod   , only : SHR_CONST_PI, SHR_CONST_CDAY
-  use rtm_cpl_indices , only : nt_rtm, rtm_tracers 
   use RtmSpmd         , only : masterproc, npes, iam, mpicom_rof, &
                                MPI_REAL8,MPI_INTEGER,MPI_CHARACTER,MPI_LOGICAL,MPI_MAX
   use RtmVar          , only : re, spval, rtmlon, rtmlat, iulog, ice_runoff, &
                                frivinp_rtm, finidat_rtm, nrevsn_rtm, &
                                nsrContinue, nsrBranch, nsrStartup, nsrest, &
                                inst_index, inst_suffix, inst_name, &
-                               rtm_active, flood_active, effvel_active
+                               rtm_active, flood_active, effvel_active, &
+                               nt_rtm, rtm_tracers 
   use RtmFileUtils    , only : getfil, getavu, relavu
   use RtmTimeManager  , only : timemgr_init, get_nstep, get_curr_date
   use RtmHistFlds     , only : RtmHistFldsInit, RtmHistFldsSet 
@@ -35,7 +35,6 @@ module RtmMod
   use RtmRestFile     , only : RtmRestTimeManager, RtmRestGetFile, RtmRestFileRead, &
                                RtmRestFileWrite, RtmRestFileName
   use RtmIO
-  use mct_mod
   use perf_mod
 !
 ! !PUBLIC TYPES:

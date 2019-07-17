@@ -7,10 +7,9 @@ module rof_import_export
   use shr_sys_mod      , only : shr_sys_abort
   use shr_const_mod    , only : SHR_CONST_REARTH
   use RunoffMod        , only : runoff
-  use RtmVar           , only : ice_runoff, iulog
+  use RtmVar           , only : ice_runoff, iulog, nt_rtm, rtm_tracers 
   use RtmSpmd          , only : masterproc
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
-  use rtm_cpl_indices  , only : nt_rtm, rtm_tracers 
   use rtm_cpl_indices  , only : index_x2r_Flrl_rofsur,index_x2r_Flrl_rofi 
   use rtm_cpl_indices  , only : index_x2r_Flrl_rofgwl,index_x2r_Flrl_rofsub 
   use rtm_cpl_indices  , only : index_x2r_Flrl_irrig

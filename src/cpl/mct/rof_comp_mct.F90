@@ -1,12 +1,11 @@
 module rof_comp_mct
   
-!========================================================================
-! DESCRIPTION:
-! Interface of the active runoff component of CESM 
-! with the main CESM driver. This is a thin interface taking CESM driver information
-! in MCT (Model Coupling Toolkit) format and converting it to use by RTM
+  !----------------------------------------------------------------------------
+  ! This is the MCT cap for RTM
+  !----------------------------------------------------------------------------
 
-  use seq_flds_mod
+  use seq_flds_mod     , only : seq_flds_x2r_fields, seq_flds_r2x_fields
+  use shr_flds_mod     , only : shr_flds_dom_coord, shr_flds_dom_other
   use shr_kind_mod     , only : r8 => shr_kind_r8
   use shr_file_mod     , only : shr_file_setLogUnit, shr_file_setLogLevel, &
                                 shr_file_getLogUnit, shr_file_getLogLevel, &
@@ -23,13 +22,20 @@ module rof_comp_mct
   use RtmVar           , only : rtmlon, rtmlat, ice_runoff, iulog, &
                                 nsrStartup, nsrContinue, nsrBranch, & 
                                 inst_index, inst_suffix, inst_name, RtmVarSet, &
-                                rtm_active, flood_active
+                                rtm_active, flood_active, &
+                                nt_rtm, rtm_tracers
   use RtmSpmd          , only : masterproc, mpicom_rof, iam, RtmSpmdInit
   use RtmMod           , only : Rtmini, Rtmrun
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
-  use rtm_cpl_indices  , only : rtm_cpl_indices_set, nt_rtm, rtm_tracers
-  use rof_import_export
+
+  use rof_import_export, only : rof_import, rtm_export
+  use rtm_cpl_indices  , only : rtm_cpl_indices_set
+  use rtm_cpl_indices  , only : index_x2r_Flrl_rofsur, index_x2r_Flrl_rofi
+  use rtm_cpl_indices  , only : index_x2r_Flrl_rofgwl, index_x2r_Flrl_rofsub
+  use rtm_cpl_indices  , only : index_x2r_Flrl_irrig
+  use rtm_cpl_indices  , only : index_r2x_Forr_rofl, index_r2x_Forr_rofi, index_r2x_Flrr_flood
+  use rtm_cpl_indices  , only : index_r2x_Flrr_volr, index_r2x_Flrr_volrmch
 
   use mct_mod
   use ESMF
@@ -40,26 +46,20 @@ module rof_comp_mct
   private                              ! By default make data private
 !
 ! PUBLIC MEMBER FUNCTIONS:
-
   public :: rof_init_mct               ! rof initialization
   public :: rof_run_mct                ! rof run phase
   public :: rof_final_mct              ! rof finalization/cleanup
 !
 ! PRIVATE MEMBER FUNCTIONS:
-
   private :: rof_SetgsMap_mct         ! Set the river runoff model MCT GS map
   private :: rof_domain_mct           ! Set the river runoff model domain information
 !
 ! PRIVATE DATA MEMBERS:
   real(r8), allocatable :: totrunin(:,:)   ! cell tracer lnd forcing on rtm grid (mm/s)
 
-! REVISION HISTORY:
-! Author: Mariana Vertenstein
 !===============================================================
 contains
 !===============================================================
-
-!========================================================================
 
   subroutine rof_init_mct( EClock, cdata_r, x2r_r, r2x_r, NLFilename)
 
