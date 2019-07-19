@@ -20,11 +20,14 @@ module rof_comp_nuopc
   use RtmVar                , only : rtmlon, rtmlat, iulog
   use RtmVar                , only : nsrStartup, nsrContinue, nsrBranch
   use RtmVar                , only : inst_index, inst_suffix, inst_name, RtmVarSet
-  use RtmSpmd               , only : RtmSpmdInit, masterproc, mpicom_rof, ROFID, iam, npes
-  use RunoffMod             , only : rtmCTL
+  use RtmVar                , only : rtmlon, rtmlat, ice_runoff, iulog, nt_rtm
+  use RtmVar                , only : nsrStartup, nsrContinue, nsrBranch
+  use RtmVar                , only : rtm_active, flood_active
+  use RtmSpmd               , only : RtmSpmdInit, masterproc, mpicom_rof, iam, npes
+  use RunoffMod             , only : runoff
   use RtmMod                , only : Rtmini, Rtmrun
   use RtmTimeManager        , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep
-  use perf_mod              , only : t_startf, t_stopf, t_barrierf
+  use perf_mod              , only : t_startf, t_stopf
   use rof_import_export     , only : advertise_fields, realize_fields
   use rof_import_export     , only : import_fields, export_fields
   use rof_shr_methods       , only : chkerr, state_setscalar, state_getscalar, state_diagnose, alarmInit
@@ -51,6 +54,8 @@ module rof_comp_nuopc
   integer                 :: flds_scalar_index_nx = 0
   integer                 :: flds_scalar_index_ny = 0
   integer                 :: flds_scalar_index_nextsw_cday = 0._r8
+
+  real(r8), allocatable   :: totrunin(:,:)   ! cell tracer lnd forcing on rtm grid (mm/s)
 
   integer     , parameter :: debug = 1
   character(*), parameter :: modName =  "(rof_comp_nuopc)"
@@ -163,16 +168,11 @@ contains
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     !----------------------------------------------------------------------------
-    ! initialize MOSART MPI communicator
+    ! initialize RTM MPI communicator
     !----------------------------------------------------------------------------
 
     ! The following call initializees the module variable mpicom_rof in RtmSpmd
     call RtmSpmdInit(mpicom)
-
-    ! Set ROFID - needed for the mosart code that requires MCT
-    call NUOPC_CompAttributeGet(gcomp, name='MCTID', value=cvalue, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    read(cvalue,*) ROFID  ! convert from string to integer
 
     !----------------------------------------------------------------------------
     ! determine instance information
@@ -441,40 +441,25 @@ contains
          hostname_in=hostname, &
          username_in=username)
 
-    !----------------------
-    ! Initialize RTM
-    !----------------------
+    call Rtmini()
 
-    ! - Read in namelist
-    ! - Initialize time manager
-    ! - Initialize number of tracers
-    ! - Read input data (river direction file) (global)
-    ! - Deriver gridbox edges (global)
-    ! - Determine rtm ocn/land mask (global)
-    ! - Compute total number of basins and runoff ponts
-    ! - Compute river basins, actually compute ocean outlet gridcell
-    ! - Allocate basins to pes
-    ! - Count and distribute cells to rglo2gdc (determine rtmCTL%begr, rtmCTL%endr)
-    ! - Adjust area estimation from DRT algorithm for those outlet grids
-    !     - useful for grid-based representation only
-    !     - need to compute areas where they are not defined in input file
-    ! - Initialize runoff datatype (rtmCTL)
+    ! Initialize memory for input state
 
-    ! TODO: are not handling rof_prognostic = .false. for now, how should this be handled in NUOPC?
-
-    call Rtmini(rtm_active=rof_prognostic, flood_active=flood_present)
+    if (rtm_active) then
+       allocate (totrunin(runoff%begr:runoff%endr,nt_rtm))
+    end if
 
     !--------------------------------
     ! generate the mesh and realize fields
     !--------------------------------
 
     ! determine global index array
-    lsize = rtmCTL%endr - rtmCTL%begr + 1
+    lsize = runoff%endr - runoff%begr + 1
     allocate(gindex(lsize))
     ni = 0
-    do n = rtmCTL%begr,rtmCTL%endr
+    do n = runoff%begr,runoff%endr
        ni = ni + 1
-       gindex(ni) = rtmCTL%gindex(n)
+       gindex(ni) = runoff%gindex(n)
     end do
 
     ! create distGrid from global index array
@@ -605,7 +590,7 @@ contains
 #if (defined _MEMTRACE)
     if(masterproc) then
        lbnum=1
-       call memmon_dump_fort('memmon.out','mosart_comp_nuopc_ModelAdvance:start::',lbnum)
+       call memmon_dump_fort('memmon.out','rtm_comp_nuopc_ModelAdvance:start::',lbnum)
     endif
 #endif
 
@@ -615,17 +600,6 @@ contains
 
     call NUOPC_ModelGet(gcomp, modelClock=clock, importState=importState, exportState=exportState, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
-    !--------------------------------
-    ! Unpack import state from mediator
-    !--------------------------------
-
-    call t_startf ('lc_mosart_import')
-
-    call import_fields(gcomp, rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
-    call t_stopf ('lc_mosart_import')
 
     !--------------------------------
     ! Determine if time to write restart
@@ -660,7 +634,21 @@ contains
     endif
 
     !--------------------------------
-    ! Run RTM
+    ! Unpack import state from mediator
+    !--------------------------------
+
+    call t_startf ('lc_rtm_import')
+
+    ! Initialize memory for input state
+    allocate (totrunin(runoff%begr:runoff%endr,nt_rtm))
+
+    call import_fields(gcomp, totrunin, rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+    call t_stopf ('lc_rtm_import')
+
+    !--------------------------------
+    ! First advance rtm time step
     !--------------------------------
 
     ! Restart File - use nexttimestr rather than currtimestr here since that is the time at the end of
@@ -675,15 +663,21 @@ contains
     call shr_cal_ymd2date(yr_sync, mon_sync, day_sync, ymd_sync)
     write(rdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr_sync, mon_sync, day_sync, tod_sync
 
-    ! Advance mosart time step then run RTM (export data is in rtmCTL and Trunoff data types)
+    ! Advance rtm time step then run RTM (export data is in runoff and Trunoff data types)
     call advance_timestep()
-    call Rtmrun(rstwr, nlend, rdate)
+
+    !--------------------------------
+    ! Run RTM
+    !--------------------------------
+
+    ! input is totrunin, output is runoff
+    call Rtmrun(totrunin, rstwr, nlend, rdate)
 
     !--------------------------------
     ! Pack export state to mediator
     !--------------------------------
 
-    ! (input is rtmCTL%runoff, output is r2x)
+    ! (input is runoff, output is r2x)
     call t_startf ('lc_rof_export')
 
     call export_fields(gcomp, rc)
@@ -705,8 +699,8 @@ contains
     tod = tod
 
     if ( (ymd /= ymd_sync) .and. (tod /= tod_sync) ) then
-       write(iulog,*)' mosart ymd=',ymd     ,'  mosart tod= ',tod
-       write(iulog,*)'   sync ymd=',ymd_sync,'    sync tod= ',tod_sync
+       write(iulog,*)'  rtm ymd=',ymd     ,'  rtm tod= ',tod
+       write(iulog,*)' sync ymd=',ymd_sync,' sync tod= ',tod_sync
        rc = ESMF_FAILURE
        call ESMF_LogWrite(subname//" RTM clock not in sync with Master Sync clock",ESMF_LOGMSG_ERROR)
     end if
@@ -736,7 +730,7 @@ contains
 #if (defined _MEMTRACE)
     if(masterproc) then
        lbnum=1
-       call memmon_dump_fort('memmon.out','mosart_comp_nuopc_ModelAdvance:end::',lbnum)
+       call memmon_dump_fort('memmon.out','rtm_comp_nuopc_ModelAdvance:end::',lbnum)
        call memmon_reset_addr()
     endif
 #endif
@@ -875,8 +869,8 @@ contains
     integer, intent(out) :: rc
 
     ! local variables
-    character(*), parameter :: F00   = "('(mosart_comp_nuopc) ',8a)"
-    character(*), parameter :: F91   = "('(mosart_comp_nuopc) ',73('-'))"
+    character(*), parameter :: F00   = "('(rtm_comp_nuopc) ',8a)"
+    character(*), parameter :: F91   = "('(rtm_comp_nuopc) ',73('-'))"
     character(len=*),parameter  :: subname=trim(modName)//':(ModelFinalize) '
     !-------------------------------------------------------------------------------
 

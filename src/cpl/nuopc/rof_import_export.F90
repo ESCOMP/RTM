@@ -10,7 +10,7 @@ module rof_import_export
   use shr_kind_mod    , only : r8 => shr_kind_r8
   use shr_sys_mod     , only : shr_sys_abort
   use rof_shr_methods , only : chkerr
-  use RunoffMod       , only : runoff, TRunoff
+  use RunoffMod       , only : runoff
   use RtmVar          , only : iulog, nt_rtm, rtm_tracers
   use RtmSpmd         , only : masterproc
   use RtmTimeManager  , only : get_nstep
@@ -77,7 +77,7 @@ contains
     !--------------------------------
 
     call fldlist_add(fldsFrRof_num, fldsFrRof, trim(flds_scalar_name))
-    call fldlist_add(fldsFrRof_num, fldsFrRof, 'Forr_rofl')    
+    call fldlist_add(fldsFrRof_num, fldsFrRof, 'Forr_rofl')
     call fldlist_add(fldsFrRof_num, fldsFrRof, 'Forr_rofi')
     call fldlist_add(fldsFrRof_num, fldsFrRof, 'Flrr_flood')
     call fldlist_add(fldsFrRof_num, fldsFrRof, 'Flrr_volr')
@@ -117,7 +117,7 @@ contains
     type(ESMF_GridComp) , intent(inout) :: gcomp
     type(ESMF_Mesh)     , intent(in)    :: Emesh
     character(len=*)    , intent(in)    :: flds_scalar_name
-    integer             , intent(in)    :: flds_scalar_num 
+    integer             , intent(in)    :: flds_scalar_num
     integer             , intent(out)   :: rc
 
     ! local variables
@@ -155,21 +155,22 @@ contains
 
 !===============================================================================
 
-  subroutine import_fields( gcomp, rc )
+  subroutine import_fields( gcomp, totrunin, rc )
 
     !---------------------------------------------------------------------------
     ! Obtain the runoff input from the mediator and convert from kg/m2s to m3/s
     !---------------------------------------------------------------------------
 
     ! input/output variables
-    type(ESMF_GridComp)  :: gcomp
-    integer, intent(out) :: rc
+    type(ESMF_GridComp)   :: gcomp
+    real(r8), intent(out) :: totrunin( runoff%begr: ,: )
+    integer , intent(out) :: rc
 
     ! Local variables
     type(ESMF_State) :: importState
     integer          :: n,nt
     integer          :: begr, endr
-    integer          :: nliq, nfrz 
+    integer          :: nliq, nfrz
     integer          :: dbrc
     character(len=*), parameter :: subname='(rof_import_export:import_fields)'
     !---------------------------------------------------------------------------
@@ -198,32 +199,30 @@ contains
 
     ! determine output array and scale by unit convertsion
     ! NOTE: the call to state_getimport will convert from input kg/m2s to m3/s
-    
-    call state_getimport(importState, 'Flrl_rofsur', begr, endr, runoff%area, output=runoff%qsur(:,nliq), rc=rc)
+
+    call state_getimport(importState, 'Flrl_rofsur', begr, endr, runoff%area, output=totrunin(:,nliq), rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_rofsub', begr, endr, runoff%area, output=runoff%qsub(:,nliq), rc=rc)
+    call state_getimport(importState, 'Flrl_rofsub', begr, endr, runoff%area, output=totrunin(:,nliq), do_sum=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_rofgwl', begr, endr, runoff%area, output=runoff%qgwl(:,nliq), rc=rc)
+    call state_getimport(importState, 'Flrl_rofgwl', begr, endr, runoff%area, output=totrunin(:,nliq), do_sum=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_rofi', begr, endr, runoff%area, output=runoff%qsur(:,nfrz), rc=rc)
+    call state_getimport(importState, 'Flrl_irrig', begr, endr, runoff%area, output=totrunin(:,nliq), do_sum=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_irrig', begr, endr, runoff%area, output=runoff%qirrig(:), rc=rc)
+    call state_getimport(importState, 'Flrl_irrig', begr, endr, runoff%area, output=runoff%qirrig, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    runoff%qsub(begr:endr, nfrz) = 0.0_r8
-    runoff%qgwl(begr:endr, nfrz) = 0.0_r8
+    call state_getimport(importState, 'Flrl_rofi', begr, endr, runoff%area, output=totrunin(:,nfrz), rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     if (debug > 0 .and. masterproc .and. get_nstep() < 5) then
        do n = begr,endr
-          write(iulog,F01)'import: nstep, n, Flrl_rofsur = ',get_nstep(),n,runoff%qsur(n,nliq)
-          write(iulog,F01)'import: nstep, n, Flrl_rofsub = ',get_nstep(),n,runoff%qsub(n,nliq)
-          write(iulog,F01)'import: nstep, n, Flrl_rofgwl = ',get_nstep(),n,runoff%qgwl(n,nliq)
-          write(iulog,F01)'import: nstep, n, Flrl_rofi   = ',get_nstep(),n,runoff%qsur(n,nfrz)
-          write(iulog,F01)'import: nstep, n, Flrl_irrig  = ',get_nstep(),n,runoff%qirrig(n)
+          write(iulog,F01)'import: nstep, n, totrunin(liq) = ',get_nstep(),n,totrunin(n,nliq)
+          write(iulog,F01)'import: nstep, n, totrunin(frz) = ',get_nstep(),n,totrunin(n,nfrz)
+          write(iulog,F01)'import: nstep, n, qirrig        = ',get_nstep(),n,runoff%qirrig(n)
        end do
     end if
 
@@ -292,57 +291,52 @@ contains
     begr = runoff%begr
     endr = runoff%endr
 
-    allocate(rofl(begr:endr))
-    allocate(rofi(begr:endr))
-    allocate(flood(begr:endr))
-    allocate(volr(begr:endr))
-    allocate(volrmch(begr:endr))
+    allocate(rofl(begr:endr))    ; rofl(:)  = 0._r8
+    allocate(rofi(begr:endr))    ; rofi(:)  = 0._r8
+    allocate(flood(begr:endr))   ; flood(:) = 0._r8
+    allocate(volr(begr:endr))    ; volr(:)  = 0._r8
+    allocate(volrmch(begr:endr)) ; volrmch  = 0._r8
 
     if ( ice_runoff )then
        ! separate liquid and ice runoff
        do n = begr,endr
-          rofl(n) =  runoff%direct(n,nliq) / (runoff%area(n)*0.001_r8)
-          rofi(n) =  runoff%direct(n,nfrz) / (runoff%area(n)*0.001_r8)
           if (runoff%mask(n) >= 2) then
              ! liquid and ice runoff are treated separately - this is what goes to the ocean
-             rofl(n) = rofl(n) + runoff%runoff(n,nliq) / (runoff%area(n)*0.001_r8)
-             rofi(n) = rofi(n) + runoff%runoff(n,nfrz) / (runoff%area(n)*0.001_r8)
+             rofl(n) = runoff%runoff(n,nliq)/(runoff%area(n)*1.0e-6_r8*1000._r8)
+             rofi(n) = runoff%runoff(n,nfrz)/(runoff%area(n)*1.0e-6_r8*1000._r8)
           end if
        end do
     else
-       ! liquid and ice runoff added to liquid runoff, ice runoff is zero
        do n = begr,endr
-          rofl(n) = (runoff%direct(n,nfrz) + runoff%direct(n,nliq)) / (runoff%area(n)*0.001_r8)
-          if (runoff%mask(n) >= 2) then
-             rofl(n) = rofl(n) + (runoff%runoff(n,nfrz) + runoff%runoff(n,nliq)) / (runoff%area(n)*0.001_r8)
-          endif
-          rofi(n) = 0._r8
+          if (runoff%mask(n) == 2) then
+             ! liquid and ice runoff are bundled together to liquid runoff
+             ! and then ice runoff set to zero
+             rofl(n) = (runoff%runoff(n,nfrz)+runoff%runoff(n,nliq)) / (runoff%area(n)*1.0e-6_r8*1000._r8)
+             rofi(n) = 0._r8
+          end if
        end do
     end if
-
-    ! Flooding back to land, sign convention is positive in land->rof direction
-    ! so if water is sent from rof to land, the flux must be negative.
-    ! scs: is there a reason for the wr+wt rather than volr (wr+wt+wh)?
-    ! volr(n) = (Trunoff%wr(n,nliq) + Trunoff%wt(n,nliq)) / runoff%area(n)
-
-    do n = begr, endr
-       flood(n)   = -runoff%flood(n)    / (runoff%area(n)*0.001_r8)
-       volr(n)    =  runoff%volr(n,nliq)/ runoff%area(n)
-       volrmch(n) =  Trunoff%wr(n,nliq) / runoff%area(n)
-    end do
-
     call state_setexport(exportState, 'Forr_rofl', begr, endr, input=rofl, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     call state_setexport(exportState, 'Forr_rofi', begr, endr, input=rofi, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
+    ! Flooding back to land, sign convention is positive in land->rof direction
+    ! so if water is sent from rof to land, the flux must be negative.
+
+    do n = begr, endr
+       flood(n) = -runoff%flood(n) / runoff%area(n)
+    end do
     call state_setexport(exportState, 'Flrr_flood', begr, endr, input=flood, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
+    do n = begr, endr
+       volr(n)    =  runoff%volr(n,nliq)/ runoff%area(n)
+       volrmch(n) =  volr(n)
+    end do
     call state_setexport(exportState, 'Flrr_volr', begr, endr, input=volr, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
     call state_setexport(exportState, 'Flrr_volrmch', begr, endr, input=volrmch, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
@@ -484,7 +478,7 @@ contains
 
   !===============================================================================
 
-  subroutine state_getimport(state, fldname, begr, endr, area, output, rc)
+  subroutine state_getimport(state, fldname, begr, endr, area, output, do_sum, rc)
 
     ! ----------------------------------------------
     ! Map import state field to output array
@@ -493,10 +487,11 @@ contains
     ! input/output variables
     type(ESMF_State)    , intent(in)    :: state
     character(len=*)    , intent(in)    :: fldname
-    integer             , intent(in)    :: begr 
+    integer             , intent(in)    :: begr
     integer             , intent(in)    :: endr
     real(r8)            , intent(in)    :: area(begr:endr)
     real(r8)            , intent(out)   :: output(begr:endr)
+    logical, optional   , intent(in)    :: do_sum
     integer             , intent(out)   :: rc
 
     ! local variables
@@ -520,20 +515,14 @@ contains
        call state_getfldptr(state, trim(fldname), fldptr,  rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-       ! determine output array and scale by unit convertsion
+       ! determine output array
        do g = begr,endr
-          output(g) = fldptr(g-begr+1) * area(g)*0.001_r8
+          if (present(do_sum)) then
+             output(g) = output(g) + fldptr(g-begr+1)
+          else
+             output(g) = fldptr(g-begr+1)
+          end if
        end do
-
-       ! write debug output if appropriate
-       if (masterproc .and. debug > 0 .and. get_nstep() < 5) then
-          do g = begr,endr
-             i = 1 + g - begr
-             if (output(g) /= 0._r8) then
-!                write(iulog,F01)'import: nstep, n, '//trim(fldname)//' = ',get_nstep(),g,output(g)
-             end if
-          end do
-       end if
 
        ! check for nans
        call check_for_nans(fldptr, trim(fldname), begr)
@@ -548,7 +537,7 @@ contains
     use shr_const_mod, only : fillvalue=>SHR_CONST_SPVAL
 
     ! ----------------------------------------------
-    ! Map input array to export state field 
+    ! Map input array to export state field
     ! ----------------------------------------------
 
     ! input/output variables
@@ -586,16 +575,6 @@ contains
        do g = begr,endr
           fldptr(g-begr+1) = input(g)
        end do
-
-       ! write debug output if appropriate
-       if (masterproc .and. debug > 0 .and. get_nstep() < 5) then
-          do g = begr,endr
-             i = 1 + g - begr
-             if (input(g) /= 0._r8) then
-!                write(iulog,F01)'export: nstep, n, '//trim(fldname)//' = ',get_nstep(),i,input(g)
-             end if
-          end do
-       end if
 
        ! check for nans
        call check_for_nans(fldptr, trim(fldname), begr)
