@@ -11,7 +11,7 @@ module rof_import_export
   use shr_sys_mod     , only : shr_sys_abort
   use rof_shr_methods , only : chkerr
   use RunoffMod       , only : runoff
-  use RtmVar          , only : iulog, nt_rtm, rtm_tracers
+  use RtmVar          , only : iulog, nt_rtm, rtm_tracers, rtmlon, rtmlat
   use RtmSpmd         , only : masterproc
   use RtmTimeManager  , only : get_nstep
 
@@ -40,8 +40,9 @@ module rof_import_export
   type (fld_list_type)   :: fldsToRof(fldsMax)
   type (fld_list_type)   :: fldsFrRof(fldsMax)
 
-  integer     ,parameter :: debug = 0 ! internal debug level
-  character(*),parameter :: F01 = "('(rof_import_export) ',a,i5,2x,i8,2x,d21.14)"
+  integer     ,parameter :: debug = 1  ! internal debug level
+  integer     ,parameter :: nmax  = 48 ! number of time steps to write debug output
+  character(*),parameter :: F01 = "('(rof_import_export) ',a,i5,2x,3(i8,2x),d21.9)"
   character(*),parameter :: u_FILE_u = &
        __FILE__
 
@@ -61,7 +62,6 @@ contains
     type(ESMF_State)       :: exportState
     character(ESMF_MAXSTR) :: stdname
     character(ESMF_MAXSTR) :: cvalue
-    integer                :: dbrc
     integer                :: n, num
     character(len=128)     :: fldname
     character(len=*), parameter :: subname='(rof_import_export:advertise_fields)'
@@ -167,16 +167,16 @@ contains
     integer , intent(out) :: rc
 
     ! Local variables
-    type(ESMF_State) :: importState
-    integer          :: n,nt
-    integer          :: begr, endr
-    integer          :: nliq, nfrz
-    integer          :: dbrc
+    type(ESMF_State)  :: importState
+    integer           :: n,nt,ix,iy
+    integer           :: begr, endr
+    integer           :: nliq, nfrz
+    real(r8), pointer :: temp(:,:)
     character(len=*), parameter :: subname='(rof_import_export:import_fields)'
     !---------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
-    call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=dbrc)
+    call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO)
 
     ! Get import state
     call NUOPC_ModelGet(gcomp, importState=importState, rc=rc)
@@ -200,31 +200,40 @@ contains
     ! determine output array and scale by unit convertsion
     ! NOTE: the call to state_getimport will convert from input kg/m2s to m3/s
 
-    call state_getimport(importState, 'Flrl_rofsur', begr, endr, runoff%area, output=totrunin(:,nliq), rc=rc)
+    allocate(temp(begr:endr,3))
+
+    call state_getimport(importState, 'Flrl_rofsur', begr, endr, output=temp(:,1), rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_rofsub', begr, endr, runoff%area, output=totrunin(:,nliq), do_sum=.true., rc=rc)
+    call state_getimport(importState, 'Flrl_rofsub', begr, endr, output=temp(:,2), rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_rofgwl', begr, endr, runoff%area, output=totrunin(:,nliq), do_sum=.true., rc=rc)
+    call state_getimport(importState, 'Flrl_rofgwl', begr, endr, output=temp(:,3), rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_irrig', begr, endr, runoff%area, output=totrunin(:,nliq), do_sum=.true., rc=rc)
+    call state_getimport(importState, 'Flrl_irrig', begr, endr, output=runoff%qirrig, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_irrig', begr, endr, runoff%area, output=runoff%qirrig, rc=rc)
+    do n = begr,endr
+       totrunin(n,nliq) = temp(n,1) + temp(n,2) + temp(n,3) + runoff%qirrig(n)
+    enddo
+
+    call state_getimport(importState, 'Flrl_rofi', begr, endr, output=totrunin(:,nfrz), rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_rofi', begr, endr, runoff%area, output=totrunin(:,nfrz), rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
-    if (debug > 0 .and. masterproc .and. get_nstep() < 5) then
+    if (debug > 0 .and. masterproc .and. get_nstep() < nmax) then
        do n = begr,endr
-          write(iulog,F01)'import: nstep, n, totrunin(liq) = ',get_nstep(),n,totrunin(n,nliq)
-          write(iulog,F01)'import: nstep, n, totrunin(frz) = ',get_nstep(),n,totrunin(n,nfrz)
-          write(iulog,F01)'import: nstep, n, qirrig        = ',get_nstep(),n,runoff%qirrig(n)
+          iy = (n-1)/rtmlon + 1
+          ix = n - (iy-1)*rtmlon
+          write(iulog,F01)'import: nstep, n, ix, iy, Flrl_rofsur   = ',get_nstep(),n,ix,iy,temp(n,1)
+          write(iulog,F01)'import: nstep, n, ix, iy, Flrl_rofsub   = ',get_nstep(),n,ix,iy,temp(n,2)
+          write(iulog,F01)'import: nstep, n, ix, iy, Flrl_rofgwl   = ',get_nstep(),n,ix,iy,temp(n,3)
+          write(iulog,F01)'import: nstep, n, ix, iy, qirrig        = ',get_nstep(),n,ix,iy,runoff%qirrig(n)
+          write(iulog,F01)'import: nstep, n, ix, iy, totrunin(liq) = ',get_nstep(),n,ix,iy,totrunin(n,nliq)
+          write(iulog,F01)'import: nstep, n, ix, iy, totrunin(frz) = ',get_nstep(),n,ix,iy,totrunin(n,nfrz)
        end do
     end if
+    deallocate(temp)
 
   end subroutine import_fields
 
@@ -245,7 +254,7 @@ contains
 
     ! Local variables
     type(ESMF_State)  :: exportState
-    integer           :: n,nt
+    integer           :: n,nt,ix,iy
     integer           :: begr,endr
     integer           :: nliq, nfrz
     real(r8), pointer :: rofl(:)
@@ -259,7 +268,7 @@ contains
     !---------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
-    call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=dbrc)
+    call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO)
 
     ! Get export state
     call NUOPC_ModelGet(gcomp, exportState=exportState, rc=rc)
@@ -318,7 +327,6 @@ contains
     end if
     call state_setexport(exportState, 'Forr_rofl', begr, endr, input=rofl, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
     call state_setexport(exportState, 'Forr_rofi', begr, endr, input=rofi, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
@@ -340,13 +348,15 @@ contains
     call state_setexport(exportState, 'Flrr_volrmch', begr, endr, input=volrmch, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    if (debug > 0 .and. masterproc .and. get_nstep() <  5) then
+    if (debug > 0 .and. masterproc .and. get_nstep() <  nmax) then
        do n = begr,endr
-          write(iulog,F01)'export: nstep, n, Flrr_flood   = ',get_nstep(), n, flood(n)
-          write(iulog,F01)'export: nstep, n, Flrr_volr    = ',get_nstep(), n, volr(n)
-          write(iulog,F01)'export: nstep, n, Flrr_volrmch = ',get_nstep(), n, volrmch(n)
-          write(iulog,F01)'export: nstep, n, Forr_rofl    = ',get_nstep() ,n, rofl(n)
-          write(iulog,F01)'export: nstep, n, Forr_rofi    = ',get_nstep() ,n, rofi(n)
+          iy = (n-1)/rtmlon + 1
+          ix = n - (iy-1)*rtmlon
+          write(iulog,F01)'export: nstep, n, ix, iy, Flrr_flood   = ',get_nstep(), n, ix, iy, flood(n)
+          write(iulog,F01)'export: nstep, n, ix, iy, Flrr_volr    = ',get_nstep(), n, ix, iy, volr(n)
+          write(iulog,F01)'export: nstep, n, ix, iy, Flrr_volrmch = ',get_nstep(), n, ix, iy, volrmch(n)
+          write(iulog,F01)'export: nstep, n, ix, iy, Forr_rofl    = ',get_nstep() ,n, ix, iy, rofl(n)
+          write(iulog,F01)'export: nstep, n, ix, iy, Forr_rofi    = ',get_nstep() ,n, ix, iy, rofi(n)
        end do
     end if
 
@@ -363,7 +373,6 @@ contains
 
     ! local variables
     integer :: rc
-    integer :: dbrc
     character(len=*), parameter :: subname='(rof_import_export:fldlist_add)'
     !-------------------------------------------------------------------------------
 
@@ -372,7 +381,7 @@ contains
     num = num + 1
     if (num > fldsMax) then
        call ESMF_LogWrite(trim(subname)//": ERROR num > fldsMax "//trim(stdname), &
-            ESMF_LOGMSG_ERROR, line=__LINE__, file=__FILE__, rc=dbrc)
+            ESMF_LOGMSG_ERROR, line=__LINE__, file=__FILE__, rc=rc)
        return
     endif
     fldlist(num)%stdname = trim(stdname)
@@ -399,7 +408,6 @@ contains
     integer             , intent(inout) :: rc
 
     ! local variables
-    integer                :: dbrc
     integer                :: n
     type(ESMF_Field)       :: field
     character(len=80)      :: stdname
@@ -413,13 +421,13 @@ contains
        if (NUOPC_IsConnected(state, fieldName=stdname)) then
           if (stdname == trim(flds_scalar_name)) then
              call ESMF_LogWrite(trim(subname)//trim(tag)//" Field = "//trim(stdname)//" is connected on root pe", &
-                  ESMF_LOGMSG_INFO, rc=dbrc)
+                  ESMF_LOGMSG_INFO)
              ! Create the scalar field
              call SetScalarField(field, flds_scalar_name, flds_scalar_num, rc=rc)
              if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, line=__LINE__, file=u_FILE_u)) return
           else
              call ESMF_LogWrite(trim(subname)//trim(tag)//" Field = "//trim(stdname)//" is connected using mesh", &
-                  ESMF_LOGMSG_INFO, rc=dbrc)
+                  ESMF_LOGMSG_INFO)
              ! Create the field
              field = ESMF_FieldCreate(mesh, ESMF_TYPEKIND_R8, name=stdname, meshloc=ESMF_MESHLOC_ELEMENT, rc=rc)
              if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, line=__LINE__, file=u_FILE_u)) return
@@ -431,7 +439,7 @@ contains
        else
           if (stdname /= trim(flds_scalar_name)) then
              call ESMF_LogWrite(subname // trim(tag) // " Field = "// trim(stdname) // " is not connected.", &
-                  ESMF_LOGMSG_INFO, rc=dbrc)
+                  ESMF_LOGMSG_INFO)
              call ESMF_StateRemove(state, (/stdname/), rc=rc)
              if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, line=__LINE__, file=u_FILE_u)) return
           end if
@@ -478,7 +486,7 @@ contains
 
   !===============================================================================
 
-  subroutine state_getimport(state, fldname, begr, endr, area, output, do_sum, rc)
+  subroutine state_getimport(state, fldname, begr, endr, output, do_sum, rc)
 
     ! ----------------------------------------------
     ! Map import state field to output array
@@ -489,7 +497,6 @@ contains
     character(len=*)    , intent(in)    :: fldname
     integer             , intent(in)    :: begr
     integer             , intent(in)    :: endr
-    real(r8)            , intent(in)    :: area(begr:endr)
     real(r8)            , intent(out)   :: output(begr:endr)
     logical, optional   , intent(in)    :: do_sum
     integer             , intent(out)   :: rc
@@ -498,7 +505,6 @@ contains
     integer                     :: g, i
     real(R8), pointer           :: fldptr(:)
     type(ESMF_StateItem_Flag)   :: itemFlag
-    integer                     :: dbrc
     character(len=*), parameter :: subname='(rof_import_export:state_getimport)'
     ! ----------------------------------------------
 
@@ -552,7 +558,6 @@ contains
     integer                     :: g, i
     real(R8), pointer           :: fldptr(:)
     type(ESMF_StateItem_Flag)   :: itemFlag
-    integer                     :: dbrc
     character(len=*), parameter :: subname='(rof_import_export:state_setexport)'
     ! ----------------------------------------------
 

@@ -29,7 +29,7 @@ module rof_comp_mct
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
 
-  use rof_import_export, only : rof_import, rtm_export
+  use rof_import_export, only : rof_import, rof_export
   use rtm_cpl_indices  , only : rtm_cpl_indices_set
   use rtm_cpl_indices  , only : index_x2r_Flrl_rofsur, index_x2r_Flrl_rofi
   use rtm_cpl_indices  , only : index_x2r_Flrl_rofgwl, index_x2r_Flrl_rofsub
@@ -42,7 +42,6 @@ module rof_comp_mct
 !
 ! PUBLIC MEMBER FUNCTIONS:
   implicit none
-  SAVE
   private                              ! By default make data private
 !
 ! PUBLIC MEMBER FUNCTIONS:
@@ -438,8 +437,8 @@ contains
 
     ! lat/lon in degrees,  area in radians^2, mask is 1 (land), 0 (non-land)
     ! Note that in addition land carries around landfrac for the purposes of domain checking
-    call mct_gGrid_init( GGrid=dom_r, CoordChars=trim(seq_flds_dom_coord), &
-      OtherChars=trim(seq_flds_dom_other), lsize=lsize )
+    call mct_gGrid_init( GGrid=dom_r, CoordChars=trim(shr_flds_dom_coord), &
+      OtherChars=trim(shr_flds_dom_other), lsize=lsize )
 
     ! Allocate memory
     allocate(data(lsize))

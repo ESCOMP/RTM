@@ -7,8 +7,9 @@ module rof_import_export
   use shr_sys_mod      , only : shr_sys_abort
   use shr_const_mod    , only : SHR_CONST_REARTH
   use RunoffMod        , only : runoff
-  use RtmVar           , only : ice_runoff, iulog, nt_rtm, rtm_tracers 
+  use RtmVar           , only : ice_runoff, iulog, nt_rtm, rtm_tracers, rtmlon, rtmlat 
   use RtmSpmd          , only : masterproc
+  use RtmTimeManager   , only : get_nstep
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
   use rtm_cpl_indices  , only : index_x2r_Flrl_rofsur,index_x2r_Flrl_rofi 
   use rtm_cpl_indices  , only : index_x2r_Flrl_rofgwl,index_x2r_Flrl_rofsub 
@@ -19,6 +20,10 @@ module rof_import_export
 
   implicit none
   public
+
+  integer     ,parameter :: debug = 1  ! internal debug level
+  integer     ,parameter :: nmax  = 48 ! number of time steps to write debug output
+  character(*),parameter :: F01 = "('(rof_import_export) ',a,i5,2x,3(i8,2x),d21.9)"
 
 contains
 
@@ -33,7 +38,7 @@ contains
     real(r8), intent(out)   :: totrunin( runoff%begr: ,: ) 
     !
     ! LOCAL VARIABLES
-    integer :: n2, n, nt
+    integer :: n2, n, nt, ix, iy
     integer :: begr, endr
     integer :: nliq, nfrz
     character(len=32), parameter :: sub = 'rof_import'
@@ -72,6 +77,20 @@ contains
 
     enddo
 
+    if (debug > 0 .and. masterproc .and. get_nstep() < nmax) then
+       do n = begr,endr
+          n2 = n - begr + 1
+          iy = (n-1)/rtmlon + 1
+          ix = n - (iy-1)*rtmlon
+          write(iulog,F01)'import: nstep, n, ix, iy, Flrl_rofsur   = ',get_nstep(),n,ix,iy,x2r(index_x2r_Flrl_rofsur,n2)
+          write(iulog,F01)'import: nstep, n, ix, iy, Flrl_rofsub   = ',get_nstep(),n,ix,iy,x2r(index_x2r_Flrl_rofsub,n2)
+          write(iulog,F01)'import: nstep, n, ix, iy, Flrl_rofgwl   = ',get_nstep(),n,ix,iy,x2r(index_x2r_Flrl_rofgwl,n2)
+          write(iulog,F01)'import: nstep, n, ix, iy, qirrig        = ',get_nstep(),n,ix,iy,runoff%qirrig(n)
+          write(iulog,F01)'import: nstep, n, ix, iy, totrunin(liq) = ',get_nstep(),n,ix,iy,totrunin(n,nliq)
+          write(iulog,F01)'import: nstep, n, ix, iy, totrunin(frz) = ',get_nstep(),n,ix,iy,totrunin(n,nfrz)
+       end do
+    end if
+
   end subroutine rof_import
 
   !====================================================================================
@@ -86,7 +105,7 @@ contains
     real(r8), intent(inout) :: r2x(:,:)  ! Runoff to coupler export state
     !
     ! LOCAL VARIABLES
-    integer :: ni, n, nt
+    integer :: ni, n, nt, ix, iy
     integer :: nliq, nfrz
     logical :: first_time = .true.
     character(len=32), parameter :: sub = 'rof_export'
@@ -166,9 +185,23 @@ contains
     ni = 0
     do n = runoff%begr, runoff%endr
       ni = ni + 1
-         r2x(index_r2x_Flrr_volr,ni) = runoff%volr(n,1) / (runoff%area(n))
-         r2x(index_r2x_Flrr_volrmch,ni) = r2x(index_r2x_Flrr_volr,ni)  ! main channel not defined in rtm so use total
+      r2x(index_r2x_Flrr_volr,ni) = runoff%volr(n,1) / (runoff%area(n))
+      r2x(index_r2x_Flrr_volrmch,ni) = r2x(index_r2x_Flrr_volr,ni)  ! main channel not defined in rtm so use total
     end do
+
+    if (debug > 0 .and. masterproc .and. get_nstep() <  nmax) then
+       ni = 0
+       do n = runoff%begr,runoff%endr
+          ni = ni + 1
+          iy = (n-1)/rtmlon + 1
+          ix = n - (iy-1)*rtmlon
+          write(iulog,F01)'export: nstep, n, ix, iy, Flrr_flood   = ',get_nstep(),n,ix,iy,r2x(index_r2x_Flrr_flood,ni)
+          write(iulog,F01)'export: nstep, n, ix, iy, Flrr_volr    = ',get_nstep(),n,ix,iy,r2x(index_r2x_Flrr_volr,ni)
+          write(iulog,F01)'export: nstep, n, ix, iy, Flrr_volrmch = ',get_nstep(),n,ix,iy,r2x(index_r2x_Flrr_volrmch,ni)
+          write(iulog,F01)'export: nstep, n, ix, iy, Forr_rofl    = ',get_nstep(),n,ix,iy,r2x(index_r2x_Forr_rofl,n)
+          write(iulog,F01)'export: nstep, n, ix, iy, Forr_rofi    = ',get_nstep(),n,ix,iy,r2x(index_r2x_Forr_rofi,ni)
+       end do
+    end if
 
   end subroutine rof_export
 

@@ -428,6 +428,8 @@ contains
        write(iulog,*)'RTM netcdf river direction file successfully read '
        call shr_sys_flush(iulog)
     endif
+ 
+    call t_stopf('rtmi_grid')
 
     !-------------------------------------------------------
     ! Set dwnstrm_index from rdirc values

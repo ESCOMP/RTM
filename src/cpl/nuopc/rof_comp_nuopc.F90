@@ -634,20 +634,6 @@ contains
     endif
 
     !--------------------------------
-    ! Unpack import state from mediator
-    !--------------------------------
-
-    call t_startf ('lc_rtm_import')
-
-    ! Initialize memory for input state
-    allocate (totrunin(runoff%begr:runoff%endr,nt_rtm))
-
-    call import_fields(gcomp, totrunin, rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
-    call t_stopf ('lc_rtm_import')
-
-    !--------------------------------
     ! First advance rtm time step
     !--------------------------------
 
@@ -663,13 +649,21 @@ contains
     call shr_cal_ymd2date(yr_sync, mon_sync, day_sync, ymd_sync)
     write(rdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr_sync, mon_sync, day_sync, tod_sync
 
-    ! Advance rtm time step then run RTM (export data is in runoff and Trunoff data types)
-    call advance_timestep()
+    !--------------------------------
+    ! Unpack import state from mediator
+    !--------------------------------
+
+    call t_startf ('lc_rtm_import')
+    call import_fields(gcomp, totrunin, rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call t_stopf ('lc_rtm_import')
 
     !--------------------------------
     ! Run RTM
     !--------------------------------
 
+    ! Advance rtm time step (export data is in runoff and Trunoff data types)
+    call advance_timestep()
     ! input is totrunin, output is runoff
     call Rtmrun(totrunin, rstwr, nlend, rdate)
 
@@ -679,10 +673,8 @@ contains
 
     ! (input is runoff, output is r2x)
     call t_startf ('lc_rof_export')
-
     call export_fields(gcomp, rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
     call t_stopf ('lc_rof_export')
 
     !--------------------------------
@@ -694,11 +686,12 @@ contains
     ! RTM is actually 1 coupling intervals ahead of the driver clock
 
     dtime = get_step_size()
-    call get_curr_date( yr, mon, day, tod, offset=-dtime )
+   !call get_curr_date( yr, mon, day, tod, offset=-dtime ) TODO: WHY DOES THIS NOT WORK?
+    call get_curr_date( yr, mon, day, tod )
     ymd = yr*10000 + mon*100 + day
     tod = tod
 
-    if ( (ymd /= ymd_sync) .and. (tod /= tod_sync) ) then
+    if ( (ymd /= ymd_sync) .or. (tod /= tod_sync) ) then
        write(iulog,*)'  rtm ymd=',ymd     ,'  rtm tod= ',tod
        write(iulog,*)' sync ymd=',ymd_sync,' sync tod= ',tod_sync
        rc = ESMF_FAILURE
