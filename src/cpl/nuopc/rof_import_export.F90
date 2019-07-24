@@ -341,7 +341,7 @@ contains
 
     do n = begr, endr
        volr(n)    =  runoff%volr(n,nliq)/ runoff%area(n)
-       volrmch(n) =  volr(n)
+       volrmch(n) =  volr(n) ! main channel not defined in rtm so use total
     end do
     call state_setexport(exportState, 'Flrr_volr', begr, endr, input=volr, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
