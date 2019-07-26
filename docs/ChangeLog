@@ -22,17 +22,7 @@ Testing:
    rtm testlist on hobart and cheyenne (PASS)
 
 ===============================================================
-Tag name:  rtm1_0_68
-Originator(s): erik
-Date: Jun 11, 2019
-One-line Summary: buildlib changes to be compatable with cime5.8
-
-buildlib changes from @jedwards to be compatable with cime5.8.
-Ran testing with cime tag branch_tags/cime5.8.3_chint17-02.
-
-Testing:
-   rtm testlist on hobart and cheyenne (PASS)
-
+Tag name:  rtm1_0_68 -- NOT Moved over
 ===============================================================
 Tag name:  rtm1_0_67
 Originator(s): erik
