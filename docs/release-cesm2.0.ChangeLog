@@ -1,7 +1,7 @@
 ===============================================================
 Tag name:  release-cesm2.0.03
 Originator(s): erik
-Date: jul 26, 2019
+Date: Aug 01, 2019
 One-line Summary: Bring in updates to rtm1_0_69
 
 Update release branch to rtm1_0_69. This is Without the change
@@ -9,6 +9,8 @@ to buildlib in rtm1_0_68, because the cime change that it requires
 isn't going into maint-5.6 cime.
 
 RTM Master Tag This Corresponds To: rtm1_0_69 (with changes)
+
+Also change wallclock time for rtm tests from 0:20 to 00:20:00.
 
 Software Changes since last release: release-cesm2.0.02
   * Remove mosart from some files
@@ -24,6 +26,8 @@ Pull Requests that document the changes (include PR ids):
           where cold starts are fixed
 
 Testing:
+   rtm -- cheyenne_intel PASS
+   rtm -- cheyenne_gnu   PASS
 
 ===============================================================
 Tag name:  release-cesm2.0.02
