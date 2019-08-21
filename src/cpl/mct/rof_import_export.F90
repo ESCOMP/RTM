@@ -21,7 +21,7 @@ module rof_import_export
   implicit none
   public
 
-  integer     ,parameter :: debug = 1  ! internal debug level
+  integer     ,parameter :: debug = 0  ! internal debug level
   integer     ,parameter :: nmax  = 48 ! number of time steps to write debug output
   character(*),parameter :: F01 = "('(rof_import_export) ',a,i5,2x,3(i8,2x),d21.9)"
 
