@@ -1,4 +1,17 @@
 ===============================================================
+Tag name:  rtm1_0_70
+Originator(s): erik
+Date: Nov 08, 2019
+One-line Summary: Rename uses of SHR_KIND_CL to CL for a cime update
+
+    Change wallclock time in tests and change hobart for izumi
+
+    Add Code of Conduct.
+    
+    Have all instances of SHR_KIND_CL use CL that is renamed from SHR_KIND_CL.
+    This is important for a recent cime update.
+
+===============================================================
 Tag name:  rtm1_0_69
 Originator(s): erik
 Date: Jun 03, 2019
