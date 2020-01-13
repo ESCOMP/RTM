@@ -1,4 +1,33 @@
 ===============================================================
+Tag name:  release-cesm2.0.04
+Originator(s): erik
+Date: Jan 13, 2020
+One-line Summary: Bring in updates to rtm1_0_70
+
+Update release branch to rtm1_0_70. This updates
+the code of conduct to the standard UCAR version.
+It also moves testing from hobart to izumi. And it
+changes instances of SHR_KIND_ to lowercase.
+
+RTM Master Tag This Corresponds To: rtm1_0_69 (with changes)
+
+Software Changes since last release: release-cesm2.0.03
+  * Remove mosart from some files
+
+Science Changes since last release: release-cesm2.0.00
+  * None
+
+Changes to User Interface since: release-cesm2.0.03
+  * None
+
+Pull Requests that document the changes (include PR ids):
+
+Testing:
+   rtm -- cheyenne_intel ?
+   rtm -- cheyenne_gnu   ?
+   rtm -- izumi_nag      ?
+
+===============================================================
 Tag name:  release-cesm2.0.03
 Originator(s): erik
 Date: Aug 01, 2019
