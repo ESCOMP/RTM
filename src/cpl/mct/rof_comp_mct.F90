@@ -1,12 +1,13 @@
 module rof_comp_mct
   
-  !----------------------------------------------------------------------------
-  ! This is the MCT cap for RTM
-  !----------------------------------------------------------------------------
+!========================================================================
+! DESCRIPTION:
+! Interface of the active runoff component of CESM 
+! with the main CESM driver. This is a thin interface taking CESM driver information
+! in MCT (Model Coupling Toolkit) format and converting it to use by RTM
 
-  use seq_flds_mod     , only : seq_flds_x2r_fields, seq_flds_r2x_fields
-  use shr_flds_mod     , only : shr_flds_dom_coord, shr_flds_dom_other
-  use shr_kind_mod     , only : r8 => shr_kind_r8, cl=>shr_kind_cl
+  use seq_flds_mod
+  use shr_kind_mod     , only : r8 => shr_kind_r8, CL => shr_kind_cl
   use shr_file_mod     , only : shr_file_setLogUnit, shr_file_setLogLevel, &
                                 shr_file_getLogUnit, shr_file_getLogLevel, &
                                 shr_file_getUnit, shr_file_setIO
@@ -22,43 +23,43 @@ module rof_comp_mct
   use RtmVar           , only : rtmlon, rtmlat, ice_runoff, iulog, &
                                 nsrStartup, nsrContinue, nsrBranch, & 
                                 inst_index, inst_suffix, inst_name, RtmVarSet, &
-                                rtm_active, flood_active, &
-                                nt_rtm, rtm_tracers
+                                rtm_active, flood_active
   use RtmSpmd          , only : masterproc, mpicom_rof, iam, RtmSpmdInit
   use RtmMod           , only : Rtmini, Rtmrun
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
-
-  use rof_import_export, only : rof_import, rof_export
-  use rtm_cpl_indices  , only : rtm_cpl_indices_set
-  use rtm_cpl_indices  , only : index_x2r_Flrl_rofsur, index_x2r_Flrl_rofi
-  use rtm_cpl_indices  , only : index_x2r_Flrl_rofgwl, index_x2r_Flrl_rofsub
-  use rtm_cpl_indices  , only : index_x2r_Flrl_irrig
-  use rtm_cpl_indices  , only : index_r2x_Forr_rofl, index_r2x_Forr_rofi, index_r2x_Flrr_flood
-  use rtm_cpl_indices  , only : index_r2x_Flrr_volr, index_r2x_Flrr_volrmch
+  use rtm_cpl_indices  , only : rtm_cpl_indices_set, nt_rtm, rtm_tracers
+  use rof_import_export
 
   use mct_mod
   use ESMF
 !
 ! PUBLIC MEMBER FUNCTIONS:
   implicit none
+  SAVE
   private                              ! By default make data private
 !
 ! PUBLIC MEMBER FUNCTIONS:
+
   public :: rof_init_mct               ! rof initialization
   public :: rof_run_mct                ! rof run phase
   public :: rof_final_mct              ! rof finalization/cleanup
 !
 ! PRIVATE MEMBER FUNCTIONS:
+
   private :: rof_SetgsMap_mct         ! Set the river runoff model MCT GS map
   private :: rof_domain_mct           ! Set the river runoff model domain information
 !
 ! PRIVATE DATA MEMBERS:
   real(r8), allocatable :: totrunin(:,:)   ! cell tracer lnd forcing on rtm grid (mm/s)
 
+! REVISION HISTORY:
+! Author: Mariana Vertenstein
 !===============================================================
 contains
 !===============================================================
+
+!========================================================================
 
   subroutine rof_init_mct( EClock, cdata_r, x2r_r, r2x_r, NLFilename)
 
@@ -75,33 +76,33 @@ contains
     character(len=*), optional, intent(in)    :: NLFilename ! Namelist filename to read
     !
     ! !LOCAL VARIABLES:
-    integer                          :: ROFID                 ! rof identifyer
-    integer                          :: mpicom_rof            ! mpi communicator
-    type(mct_gsMap),         pointer :: gsMap_rof             ! runoff model MCT GS map
-    type(mct_gGrid),         pointer :: dom_r                 ! runoff model domain
-    type(seq_infodata_type), pointer :: infodata              ! CESM driver level info data
-    integer                          :: lsize                 ! size of attribute vector
-    integer                          :: g,i,j,n               ! indices
-    logical                          :: exists                ! true if file exists
-    integer                          :: nsrest                ! restart type
-    integer                          :: ref_ymd               ! reference date (YYYYMMDD)
-    integer                          :: ref_tod               ! reference time of day (sec)
-    integer                          :: start_ymd             ! start date (YYYYMMDD)
-    integer                          :: start_tod             ! start time of day (sec)
-    integer                          :: stop_ymd              ! stop date (YYYYMMDD)
-    integer                          :: stop_tod              ! stop time of day (sec)
-    logical                          :: brnch_retain_casename ! flag if should retain the case name on a branch start type
-    integer                          :: lbnum                 ! input to memory diagnostic
-    integer                          :: shrlogunit,shrloglev  ! old values for log unit and log level
-    integer                          :: begr, endr
-    character(len=CL)                :: caseid                ! case identifier name
-    character(len=CL)                :: ctitle                ! case description title
-    character(len=CL)                :: starttype             ! start-type (startup, continue, branch, hybrid)
-    character(len=CL)                :: calendar              ! calendar type name
-    character(len=CL)                :: hostname              ! hostname of machine running on
-    character(len=CL)                :: version               ! Model version
-    character(len=CL)                :: username              ! user running the model
-    character(len=CL)                :: model_doi_url         ! Web address for model Digital Object Identifier (DOI)
+    integer :: ROFID                                 ! rof identifyer
+    integer :: mpicom_rof                            ! mpi communicator
+    type(mct_gsMap),         pointer :: gsMap_rof    ! runoff model MCT GS map
+    type(mct_gGrid),         pointer :: dom_r        ! runoff model domain
+    type(seq_infodata_type), pointer :: infodata     ! CESM driver level info data
+    integer :: lsize                                 ! size of attribute vector
+    integer :: g,i,j,n                               ! indices
+    logical :: exists                                ! true if file exists
+    integer :: nsrest                                ! restart type
+    integer :: ref_ymd                               ! reference date (YYYYMMDD)
+    integer :: ref_tod                               ! reference time of day (sec)
+    integer :: start_ymd                             ! start date (YYYYMMDD)
+    integer :: start_tod                             ! start time of day (sec)
+    integer :: stop_ymd                              ! stop date (YYYYMMDD)
+    integer :: stop_tod                              ! stop time of day (sec)
+    logical :: brnch_retain_casename                 ! flag if should retain the case name on a branch start type
+    integer :: lbnum                                 ! input to memory diagnostic
+    integer :: shrlogunit,shrloglev                  ! old values for log unit and log level
+    integer :: begr, endr
+    character(len=CL) :: caseid                      ! case identifier name
+    character(len=CL) :: ctitle                      ! case description title
+    character(len=CL) :: starttype                   ! start-type (startup, continue, branch, hybrid)
+    character(len=CL) :: calendar                    ! calendar type name
+    character(len=CL) :: hostname                    ! hostname of machine running on
+    character(len=CL) :: version                     ! Model version
+    character(len=CL) :: username                    ! user running the model
+    character(len=CL) :: model_doi_url               ! Web address for model Digital Object Identifier (DOI)
     character(len=32), parameter :: sub = 'rof_init_mct'
     character(len=*),  parameter :: format = "('("//trim(sub)//") :',A)"
     !---------------------------------------------------------------------------
@@ -437,8 +438,8 @@ contains
 
     ! lat/lon in degrees,  area in radians^2, mask is 1 (land), 0 (non-land)
     ! Note that in addition land carries around landfrac for the purposes of domain checking
-    call mct_gGrid_init( GGrid=dom_r, CoordChars=trim(shr_flds_dom_coord), &
-      OtherChars=trim(shr_flds_dom_other), lsize=lsize )
+    call mct_gGrid_init( GGrid=dom_r, CoordChars=trim(seq_flds_dom_coord), &
+      OtherChars=trim(seq_flds_dom_other), lsize=lsize )
 
     ! Allocate memory
     allocate(data(lsize))

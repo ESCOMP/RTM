@@ -5,10 +5,10 @@
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
       <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
-      <machine name="hobart" compiler="nag" category="rtm"></machine>
+      <machine name="izumi" compiler="nag" category="rtm"></machine>
     </machines>
     <options>
-      <option name="wallclock">0:20</option>
+      <option name="wallclock">00:20:00</option>
       <option name="comment"  >Restart test without DEBUG on all machines/compilers</option>
     </options>
   </test>
@@ -16,10 +16,10 @@
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
       <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
-      <machine name="hobart" compiler="nag" category="rtm"></machine>
+      <machine name="izumi" compiler="nag" category="rtm"></machine>
     </machines>
     <options>
-      <option name="wallclock">0:20</option>
+      <option name="wallclock">00:20:00</option>
       <option name="comment"  >Run with DEBUG compiler option all machine/compilers</option>
     </options>
   </test>
@@ -27,10 +27,10 @@
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
       <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
-      <machine name="hobart" compiler="nag" category="rtm"></machine>
+      <machine name="izumi" compiler="nag" category="rtm"></machine>
     </machines>
     <options>
-      <option name="wallclock">0:20</option>
+      <option name="wallclock">00:20:00</option>
       <option name="comment"  >Run a Cold-Start with all machine/compilers</option>
     </options>
   </test>
@@ -38,7 +38,7 @@
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
          <options>
-           <option name="wallclock">0:20</option>
+           <option name="wallclock">00:20:00</option>
          </options>
       </machine>
     </machines>
@@ -47,7 +47,7 @@
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
         <options>
-          <option name="wallclock">0:20</option>
+          <option name="wallclock">00:20:00</option>
         </options>
       </machine>
     </machines>
@@ -56,7 +56,7 @@
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
         <options>
-          <option name="wallclock">0:20</option>
+          <option name="wallclock">00:20:00</option>
         </options>
       </machine>
     </machines>
@@ -65,7 +65,7 @@
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
         <options>
-          <option name="wallclock">0:20</option>
+          <option name="wallclock">00:20:00</option>
         </options>
       </machine>
     </machines>
@@ -74,7 +74,7 @@
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
         <options>
-          <option name="wallclock">0:20</option>
+          <option name="wallclock">00:20:00</option>
         </options>
       </machine>
     </machines>
