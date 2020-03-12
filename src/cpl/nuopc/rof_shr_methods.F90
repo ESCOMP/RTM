@@ -1,5 +1,8 @@
 module rof_shr_methods
 
+  ! This module provides methods that are used by the rof_comp_nuopc and rof_import_export modules
+  ! as part of exercising the nuopc cap.
+
   use ESMF         , only : operator(<), operator(/=), operator(+)
   use ESMF         , only : operator(-), operator(*) , operator(>=)
   use ESMF         , only : operator(<=), operator(>), operator(==)
