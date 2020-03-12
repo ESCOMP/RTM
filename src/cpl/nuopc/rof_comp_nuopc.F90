@@ -518,20 +518,6 @@ contains
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
     endif
 
-#ifdef USE_ESMF_METADATA
-    convCIM  = "CIM"
-    purpComp = "Model Component Simulation Description"
-    call ESMF_AttributeAdd(comp, convention=convCIM, purpose=purpComp, rc=rc)
-    call ESMF_AttributeSet(comp, "ShortName", "RTM", convention=convCIM, purpose=purpComp, rc=rc)
-    call ESMF_AttributeSet(comp, "LongName", "RTM River Model", convention=convCIM, purpose=purpComp, rc=rc)
-    call ESMF_AttributeSet(comp, "Description", "RTM River Model", convention=convCIM, purpose=purpComp, rc=rc)
-    call ESMF_AttributeSet(comp, "ReleaseDate", "2017", convention=convCIM, purpose=purpComp, rc=rc)
-    call ESMF_AttributeSet(comp, "ModelType", "River", convention=convCIM, purpose=purpComp, rc=rc)
-    call ESMF_AttributeSet(comp, "Name", "TBD", convention=convCIM, purpose=purpComp, rc=rc)
-    call ESMF_AttributeSet(comp, "EmailAddress", TBD, convention=convCIM, purpose=purpComp, rc=rc)
-    call ESMF_AttributeSet(comp, "ResponsiblePartyRole", "contact", convention=convCIM, purpose=purpComp, rc=rc)
-#endif
-
 #if (defined _MEMTRACE)
     if(masterproc) then
        write(iulog,*) TRIM(Sub) // ':end::'
