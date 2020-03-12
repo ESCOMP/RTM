@@ -1,5 +1,8 @@
 module rof_import_export
 
+  ! This module provides the interface layer to transfer ESMF import/export data to the 
+  ! RTM data structures.
+
   use ESMF            , only : ESMF_GridComp, ESMF_State, ESMF_Mesh, ESMF_StateGet
   use ESMF            , only : ESMF_KIND_R8, ESMF_SUCCESS, ESMF_MAXSTR, ESMF_LOGMSG_INFO
   use ESMF            , only : ESMF_LogWrite, ESMF_LOGMSG_ERROR, ESMF_LogFoundError
