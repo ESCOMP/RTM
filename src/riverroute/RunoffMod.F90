@@ -10,9 +10,8 @@ module RunoffMod
 !
 ! !USES:
   use shr_kind_mod, only : r8 => shr_kind_r8
-  use mct_mod
-  use RtmVar         , only : iulog, spval, ispval
-  use rtm_cpl_indices, only : nt_rtm
+  use shr_sys_mod , only : shr_sys_abort
+  use RtmVar      , only : iulog, spval, ispval, nt_rtm
 
 ! !PUBLIC TYPES:
   implicit none

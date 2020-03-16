@@ -31,10 +31,6 @@ module rtm_cpl_indices
 
   integer, public :: nflds_x2r = 0
 
-  !TODO - nt_rtm and rtm_tracers need to be removed and set by access to the index array
-  integer, parameter, public :: nt_rtm = 2    ! number of tracers
-  character(len=3), parameter, public :: rtm_tracers(nt_rtm) =  (/'LIQ','ICE'/)
-
   ! roff to driver (part of land for now) (optional if RTM is off)
 
   integer, public :: index_r2x_Forr_rofl  = 0   ! rtm->ocn liquid runoff to ocean
@@ -46,12 +42,9 @@ module rtm_cpl_indices
 
 !=======================================================================
 contains
-
 !=======================================================================
 
-
   subroutine rtm_cpl_indices_set( )
-
 
     !-----------------------------------------------------------------------
     ! !DESCRIPTION: 

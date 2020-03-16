@@ -1,4 +1,22 @@
 ===============================================================
+Tag name:  rtm1_0_71
+Originator(s): mvertens, sacks
+Date: March 16, 2020
+One-line Summary: Add NUOPC cap
+
+This tag brings in the necessary changes to rtm to have a new NUOPC cap
+introduced.
+
+Most changes are from Mariana Vertenstein, brought to master by Bill
+Sacks.
+
+These changes are documented in https://github.com/ESCOMP/RTM/pull/20
+
+Testing: rtm test suite (cheyenne & izumi), in the context of a CTSM
+checkout (https://github.com/ESCOMP/CTSM/pull/939). Baseline comparisons
+done against ctsm1.0.dev085.
+
+===============================================================
 Tag name:  rtm1_0_70
 Originator(s): erik
 Date: Nov 08, 2019

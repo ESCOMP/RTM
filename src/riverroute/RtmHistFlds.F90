@@ -11,7 +11,7 @@ module RtmHistFlds
   use shr_kind_mod   , only: r8 => shr_kind_r8
   use RunoffMod      , only : runoff
   use RtmHistFile    , only : RtmHistAddfld, RtmHistPrintflds
-  use rtm_cpl_indices, only : nt_rtm, rtm_tracers  
+  use RtmVar         , only : nt_rtm, rtm_tracers  
 
   implicit none
 !

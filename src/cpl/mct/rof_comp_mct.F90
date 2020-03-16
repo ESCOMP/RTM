@@ -23,12 +23,12 @@ module rof_comp_mct
   use RtmVar           , only : rtmlon, rtmlat, ice_runoff, iulog, &
                                 nsrStartup, nsrContinue, nsrBranch, & 
                                 inst_index, inst_suffix, inst_name, RtmVarSet, &
-                                rtm_active, flood_active
+                                rtm_active, flood_active, nt_rtm, rtm_tracers
   use RtmSpmd          , only : masterproc, mpicom_rof, iam, RtmSpmdInit
   use RtmMod           , only : Rtmini, Rtmrun
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
-  use rtm_cpl_indices  , only : rtm_cpl_indices_set, nt_rtm, rtm_tracers
+  use rtm_cpl_indices  , only : rtm_cpl_indices_set
   use rof_import_export
 
   use mct_mod

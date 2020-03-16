@@ -17,7 +17,6 @@ module RtmIO
   use RunoffMod      , only : runoff
   use RtmVar         , only : spval, ispval, iulog, inst_name
   use perf_mod       , only : t_startf, t_stopf
-  use mct_mod
   use pio
 
 ! !PUBLIC TYPES:
@@ -994,18 +993,15 @@ contains
        if (present(readvar)) readvar = varpresent
 
     elseif (flag == 'write') then
-
+       call ncd_inqvid  (ncid, varname, varid, vardesc)
        if (present(nt))      then
           start(1) = nt
           count(1) = 1
+          temp(1) = data
+          status = pio_put_var(ncid, varid, start, count, temp)
        else
-          start(1) = 1
-          count(1) = 1
+          status = pio_put_var(ncid, varid, data)
        end if
-       call ncd_inqvid  (ncid, varname, varid, vardesc)
-       temp(1) = data
-       status = pio_put_var(ncid, varid, start, count, temp)
-
     endif   ! flag
 
   end subroutine ncd_io_int_var0_nf
