@@ -31,8 +31,8 @@ module rof_comp_nuopc
   use perf_mod              , only : t_startf, t_stopf
   use rof_import_export     , only : advertise_fields, realize_fields
   use rof_import_export     , only : import_fields, export_fields
-  use rof_shr_methods       , only : chkerr, state_setscalar, state_getscalar, state_diagnose, alarmInit
-  use rof_shr_methods       , only : set_component_logging, get_component_instance, log_clock_advance
+  use nuopc_shr_methods       , only : chkerr, state_setscalar, state_getscalar, state_diagnose, alarmInit
+  use nuopc_shr_methods       , only : set_component_logging, get_component_instance, log_clock_advance
 
   implicit none
   private ! except

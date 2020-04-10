@@ -1,6 +1,6 @@
 module rof_import_export
 
-  ! This module provides the interface layer to transfer ESMF import/export data to the 
+  ! This module provides the interface layer to transfer ESMF import/export data to the
   ! RTM data structures.
 
   use ESMF            , only : ESMF_GridComp, ESMF_State, ESMF_Mesh, ESMF_StateGet
@@ -12,7 +12,7 @@ module rof_import_export
   use NUOPC_Model     , only : NUOPC_ModelGet
   use shr_kind_mod    , only : r8 => shr_kind_r8
   use shr_sys_mod     , only : shr_sys_abort
-  use rof_shr_methods , only : chkerr
+  use nuopc_shr_methods , only : chkerr
   use RunoffMod       , only : runoff
   use RtmVar          , only : iulog, nt_rtm, rtm_tracers, rtmlon, rtmlat
   use RtmSpmd         , only : masterproc
