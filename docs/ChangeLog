@@ -1,4 +1,17 @@
 ===============================================================
+Tag name:  rtm1_0_72
+Originator(s): mvertens, erik
+Date: August 06, 2020
+One-line Summary: some nuopc updates
+
+Some nuopc updates from @mvertens. New directory nuopc_cap_share. 
+SetVM is made public in rof_comp_nuopc.F90. ROF is used in rtmIO
+rather than instance name.
+
+These changes are almost identical to the latest nuopc changes 
+for mosart, but not quite the same.
+
+===============================================================
 Tag name:  rtm1_0_71
 Originator(s): mvertens, sacks
 Date: March 16, 2020
