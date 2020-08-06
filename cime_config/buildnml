@@ -206,9 +206,6 @@ def buildnml(case, caseroot, compname):
                 file_dest += inst_string
             shutil.copy(file_src, file_dest)
 
-            for txtfile in glob.glob(os.path.join(confdir, "*txt*")):
-                shutil.copy(txtfile, rundir)
-
 ###############################################################################
 def _main_func():
 

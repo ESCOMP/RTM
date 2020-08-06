@@ -15,7 +15,7 @@ module RtmIO
   use RtmFileUtils   , only : getavu, relavu
   use RtmSpmd        , only : masterproc, mpicom_rof, iam, npes
   use RunoffMod      , only : runoff
-  use RtmVar         , only : spval, ispval, iulog, inst_name
+  use RtmVar         , only : spval, ispval, iulog
   use perf_mod       , only : t_startf, t_stopf
   use pio
 
@@ -151,9 +151,9 @@ contains
     character(len=*),parameter :: subname='ncd_pio_init' ! subroutine name
     !-----------------------------------------------------------------------
 
-    PIO_subsystem => shr_pio_getiosys(inst_name)
-    io_type       =  shr_pio_getiotype(inst_name)
-    io_format    = shr_pio_getioformat(inst_name)
+    PIO_subsystem => shr_pio_getiosys('ROF')
+    io_type       =  shr_pio_getiotype('ROF')
+    io_format    = shr_pio_getioformat('ROF')
 
   end subroutine ncd_pio_init
 

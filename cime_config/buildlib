@@ -29,7 +29,7 @@ def _build_rtm():
         casetools = case.get_value("CASETOOLS")
         gmake_j = case.get_value("GMAKE_J")
         gmake = case.get_value("GMAKE")
-
+        cimeroot = case.get_value("CIMEROOT")
         # create Filepath file
         objroot = case.get_value("OBJROOT")
         filepath_file = os.path.join(objroot, "rof", "obj", "Filepath")
@@ -41,6 +41,8 @@ def _build_rtm():
             paths = [os.path.join(caseroot, "SourceMods", "src.rtm"),
                      os.path.join(srcroot, "components", "rtm", "src", "riverroute"),
                      os.path.join(srcroot, "components", "rtm", "src", "cpl", driver)]
+            if driver == 'nuopc':
+                paths.append(os.path.join(cimeroot,"src","drivers","nuopc","nuopc_cap_share"))
 
             with open(filepath_file, "w") as filepath:
                 filepath.write("\n".join(paths))
