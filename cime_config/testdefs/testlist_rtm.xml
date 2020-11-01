@@ -79,7 +79,7 @@
       </machine>
     </machines>
   </test>
-  <test name="SMS_D_Ld5_Vnuopc" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtmGs" testmods="rtm/default">
+  <test name="SMS_D_Ld5_Vnuopc" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
     </machines>
