@@ -1,4 +1,34 @@
 ===============================================================
+Tag name:  rtm1_0_73
+Originator(s): sacks
+Date: November 01, 2020
+One-line Summary: Change compset in test
+
+In an upcoming CTSM tag, the compset I2000Clm50BgcCropRtmGs will be
+renamed to I2000Clm50BgcCropRtm (while keeping the same meaning as
+before). This tag changes a test to use the new alias, to keep RTM
+compatible with this upcoming CTSM tag.
+
+Note that this change will require the upcoming CTSM tag (probably
+ctsm5.1.dev011) in order to run this test from the rtm test list.
+
+===============================================================
+Tag name:  rtm1_0_72
+Originator(s): mvertens, erik
+Date: August 06, 2020
+One-line Summary: some nuopc updates
+
+Some nuopc updates from @mvertens. New directory nuopc_cap_share. 
+SetVM is made public in rof_comp_nuopc.F90. ROF is used in rtmIO
+rather than instance name.
+
+These changes are almost identical to the latest nuopc changes 
+for mosart, but not quite the same.
+
+Also add nuopc_cap_share to the Filepath for the build.
+"*txt*" files are no longer copied to the $RUNDIR.
+
+===============================================================
 Tag name:  rtm1_0_71
 Originator(s): mvertens, sacks
 Date: March 16, 2020

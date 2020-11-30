@@ -206,8 +206,6 @@ def buildnml(case, caseroot, compname):
                 file_dest += inst_string
             safe_copy(file_src, file_dest)
 
-            for txtfile in glob.iglob(os.path.join(confdir, "*txt*")):
-                safe_copy(txtfile, rundir)
 
 ###############################################################################
 def _main_func():
