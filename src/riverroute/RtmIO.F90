@@ -144,6 +144,7 @@ contains
     ! Initial PIO
     !
     ! !USES:
+    use RtmVar     , only : inst_name
     use shr_pio_mod, only : shr_pio_getiosys, shr_pio_getiotype, shr_pio_getioformat
     ! !ARGUMENTS:
     implicit none
@@ -151,9 +152,9 @@ contains
     character(len=*),parameter :: subname='ncd_pio_init' ! subroutine name
     !-----------------------------------------------------------------------
 
-    PIO_subsystem => shr_pio_getiosys('ROF')
-    io_type       =  shr_pio_getiotype('ROF')
-    io_format    = shr_pio_getioformat('ROF')
+    PIO_subsystem => shr_pio_getiosys(inst_name)
+    io_type       =  shr_pio_getiotype(inst_name)
+    io_format    = shr_pio_getioformat(inst_name)
 
   end subroutine ncd_pio_init
 
