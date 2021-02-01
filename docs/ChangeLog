@@ -1,4 +1,19 @@
 ===============================================================
+Tag name:  rtm1_0_74
+Originator(s): jedwards
+Date: December 22, 2020
+One-line Summary: Minor changes to nuopc cap, etc.
+
+- Change to nuopc build
+
+- Minor changes to buildnml
+
+- Fix inst_name in pio calls
+
+Testing: rtm test suite on cheyenne & izumi, in the context of
+ctsm5.1.dev019. All tests passed and were bit-for-bit with baselines.
+
+===============================================================
 Tag name:  rtm1_0_73
 Originator(s): sacks
 Date: November 01, 2020
