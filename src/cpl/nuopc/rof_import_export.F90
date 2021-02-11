@@ -120,6 +120,8 @@ contains
     use ESMF          , only : ESMF_Mesh, ESMF_MeshGet
     use ESMF          , only : ESMF_Field, ESMF_FieldGet, ESMF_FieldRegridGetArea
     use shr_const_mod , only : shr_const_rearth
+    use shr_mpi_mod   , only : shr_mpi_min, shr_mpi_max
+    use RtmSpmd       , only : masterproc, mpicom_rof
 
     ! input/output variables
     type(ESMF_GridComp) , intent(inout) :: gcomp
@@ -138,6 +140,14 @@ contains
     real(r8), allocatable :: model_areas(:)
     real(r8), pointer     :: dataptr(:)
     real(r8)              :: re = shr_const_rearth*0.001_r8 ! radius of earth (km)
+    real(r8)              :: max_mod2med_areacor
+    real(r8)              :: max_med2mod_areacor
+    real(r8)              :: min_mod2med_areacor
+    real(r8)              :: min_med2mod_areacor
+    real(r8)              :: max_mod2med_areacor_glob
+    real(r8)              :: max_med2mod_areacor_glob
+    real(r8)              :: min_mod2med_areacor_glob
+    real(r8)              :: min_med2mod_areacor_glob
     character(len=*), parameter :: subname='(rof_import_export:realize_fields)'
     !---------------------------------------------------------------------------
 
@@ -178,27 +188,35 @@ contains
     allocate(mesh_areas(numOwnedElements))
     mesh_areas(:) = dataptr(:)
 
-    ! Determine model areas
-    allocate(model_areas(numOwnedElements))
-    n = 0
-    do g = rtmCTL%begr,rtmCTL%endr
-       n = n + 1
-       model_areas(n) = rtmCTL%area(g)*1.0e-6_r8/(re*re)
-    end do
-
     ! Determine flux correction factors (module variables)
+    allocate(model_areas(numOwnedElements))
     allocate (mod2med_areacor(numOwnedElements))
     allocate (med2mod_areacor(numOwnedElements))
-    do n = 1,numOwnedElements
+    n = 0
+    do g = runoff%begr,runoff%endr
+       n = n + 1
+       model_areas(n) = runoff%area(g)*1.0e-6_r8/(re*re)
        mod2med_areacor(n) = model_areas(n) / mesh_areas(n)
-       med2mod_areacor(n) = 1._r8 / mod2med_areacor(n)
-       if (abs(mod2med_areacor(n) - 1._r8) > 1.e-13) then
-          write(6,'(a,i8,2x,d21.14,2x)')' AREACOR mosart: n, abs(mod2med_areacor(n)-1)', &
-               n, abs(mod2med_areacor(n) - 1._r8)
-       end if
+       med2mod_areacor(n) = mesh_areas(n) / mod2med_areacor(n)
     end do
     deallocate(model_areas)
     deallocate(mesh_areas)
+
+    min_mod2med_areacor = minval(mod2med_areacor)
+    max_mod2med_areacor = maxval(mod2med_areacor)
+    min_med2mod_areacor = minval(med2mod_areacor)
+    max_med2mod_areacor = maxval(med2mod_areacor)
+    call shr_mpi_max(max_mod2med_areacor, max_mod2med_areacor_glob, mpicom_rof)
+    call shr_mpi_min(min_mod2med_areacor, min_mod2med_areacor_glob, mpicom_rof)
+    call shr_mpi_max(max_med2mod_areacor, max_med2mod_areacor_glob, mpicom_rof)
+    call shr_mpi_min(min_med2mod_areacor, min_med2mod_areacor_glob, mpicom_rof)
+
+    if (masterproc) then
+       write(iulog,'(2A,2g23.15,A )') trim(subname),' :  min_mod2med_areacor, max_mod2med_areacor ',&
+            min_mod2med_areacor_glob, max_mod2med_areacor_glob, 'RTM'
+       write(iulog,'(2A,2g23.15,A )') trim(subname),' :  min_med2mod_areacor, max_med2mod_areacor ',&
+            min_med2mod_areacor_glob, max_med2mod_areacor_glob, 'RTM'
+    end if
 
   end subroutine realize_fields
 
@@ -242,12 +260,11 @@ contains
        call shr_sys_abort()
     endif
 
-    begr = runoff%begr
-    endr = runoff%endr
-
     ! determine output array and scale by unit convertsion
     ! NOTE: the call to state_getimport will convert from input kg/m2s to m3/s
 
+    begr = runoff%begr
+    endr = runoff%endr
     allocate(temp(begr:endr,3))
 
     call state_getimport(importState, 'Flrl_rofsur', begr, endr, output=temp(:,1), areacor=med2mod_areacor, rc=rc)
@@ -298,7 +315,6 @@ contains
     real(r8), pointer :: volr(:)
     real(r8), pointer :: volrmch(:)
     logical, save     :: first_time = .true.
-    integer           :: dbrc
     character(len=*), parameter :: subname='(rof_import_export:export_fields)'
     !---------------------------------------------------------------------------
 
@@ -506,7 +522,7 @@ contains
   end subroutine fldlist_realize
 
   !===============================================================================
-  subroutine state_getimport(state, fldname, begr, endr, area, output, areacor, rc)
+  subroutine state_getimport(state, fldname, begr, endr, output, areacor, rc)
 
     ! ----------------------------------------------
     ! Map import state field to output array
@@ -520,7 +536,6 @@ contains
     integer             , intent(in)    :: begr
     integer             , intent(in)    :: endr
     real(r8)            , intent(out)   :: output(begr:endr)
-    logical, optional   , intent(in)    :: do_sum
     real(r8), optional  , intent(in)    :: areacor(:)
     integer             , intent(out)   :: rc
 
@@ -544,11 +559,7 @@ contains
        fldptr(:) = fldptr(:) * areacor(:)
     end if
     do g = begr,endr
-       if (present(do_sum)) then
-          output(g) = output(g) + fldptr(g-begr+1)
-       else
-          output(g) = fldptr(g-begr+1)
-       end if
+       output(g) = fldptr(g-begr+1)
     end do
 
     ! check for nans
@@ -557,7 +568,7 @@ contains
   end subroutine state_getimport
 
   !===============================================================================
-  subroutine state_setexport(state, fldname, begr, endr, input, rc)
+  subroutine state_setexport(state, fldname, begr, endr, input, areacor, rc)
 
     ! ----------------------------------------------
     ! Map input array to export state field
