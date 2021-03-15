@@ -267,23 +267,23 @@ contains
     endr = runoff%endr
     allocate(temp(begr:endr,3))
 
-    call state_getimport(importState, 'Flrl_rofsur', begr, endr, output=temp(:,1), areacor=med2mod_areacor, rc=rc)
+    call state_getimport(importState, 'Flrl_rofsur', begr, endr, output=temp(:,1), do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_rofsub', begr, endr, output=temp(:,2), areacor=med2mod_areacor, rc=rc)
+    call state_getimport(importState, 'Flrl_rofsub', begr, endr, output=temp(:,2), do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_rofgwl', begr, endr, output=temp(:,3), areacor=med2mod_areacor, rc=rc)
+    call state_getimport(importState, 'Flrl_rofgwl', begr, endr, output=temp(:,3), do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_irrig', begr, endr, output=runoff%qirrig, areacor=med2mod_areacor, rc=rc)
+    call state_getimport(importState, 'Flrl_irrig', begr, endr, output=runoff%qirrig, do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     do n = begr,endr
        totrunin(n,nliq) = temp(n,1) + temp(n,2) + temp(n,3) + runoff%qirrig(n)
     enddo
 
-    call state_getimport(importState, 'Flrl_rofi', begr, endr, output=totrunin(:,nfrz), areacor=med2mod_areacor, rc=rc)
+    call state_getimport(importState, 'Flrl_rofi', begr, endr, output=totrunin(:,nfrz), do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     deallocate(temp)
@@ -376,9 +376,9 @@ contains
           end if
        end do
     end if
-    call state_setexport(exportState, 'Forr_rofl', begr, endr, input=rofl, areacor=mod2med_areacor, rc=rc)
+    call state_setexport(exportState, 'Forr_rofl', begr, endr, input=rofl, do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call state_setexport(exportState, 'Forr_rofi', begr, endr, input=rofi, areacor=mod2med_areacor, rc=rc)
+    call state_setexport(exportState, 'Forr_rofi', begr, endr, input=rofi, do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     ! Flooding back to land, sign convention is positive in land->rof direction
@@ -387,16 +387,16 @@ contains
     do n = begr, endr
        flood(n) = -runoff%flood(n) / runoff%area(n)
     end do
-    call state_setexport(exportState, 'Flrr_flood', begr, endr, input=flood, areacor=mod2med_areacor, rc=rc)
+    call state_setexport(exportState, 'Flrr_flood', begr, endr, input=flood, do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     do n = begr, endr
        volr(n)    =  runoff%volr(n,nliq)/ runoff%area(n)
        volrmch(n) =  volr(n) ! main channel not defined in rtm so use total
     end do
-    call state_setexport(exportState, 'Flrr_volr', begr, endr, input=volr, areacor=mod2med_areacor, rc=rc)
+    call state_setexport(exportState, 'Flrr_volr', begr, endr, input=volr, do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call state_setexport(exportState, 'Flrr_volrmch', begr, endr, input=volrmch, areacor=mod2med_areacor, rc=rc)
+    call state_setexport(exportState, 'Flrr_volrmch', begr, endr, input=volrmch, do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     deallocate(rofl, rofi, flood, volr, volrmch)
@@ -522,7 +522,7 @@ contains
   end subroutine fldlist_realize
 
   !===============================================================================
-  subroutine state_getimport(state, fldname, begr, endr, output, areacor, rc)
+  subroutine state_getimport(state, fldname, begr, endr, output, do_area_correction, rc)
 
     ! ----------------------------------------------
     ! Map import state field to output array
@@ -536,7 +536,7 @@ contains
     integer             , intent(in)    :: begr
     integer             , intent(in)    :: endr
     real(r8)            , intent(out)   :: output(begr:endr)
-    real(r8), optional  , intent(in)    :: areacor(:)
+    logical             , intent(in)    :: do_area_correction
     integer             , intent(out)   :: rc
 
     ! local variables
@@ -555,8 +555,8 @@ contains
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     ! determine output array
-    if (present(areacor)) then
-       fldptr(:) = fldptr(:) * areacor(:)
+    if (do_area_correction) then
+       fldptr(:) = fldptr(:) * med2mod_areacor(:)
     end if
     do g = begr,endr
        output(g) = fldptr(g-begr+1)
@@ -568,7 +568,7 @@ contains
   end subroutine state_getimport
 
   !===============================================================================
-  subroutine state_setexport(state, fldname, begr, endr, input, areacor, rc)
+  subroutine state_setexport(state, fldname, begr, endr, input, do_area_correction, rc)
 
     ! ----------------------------------------------
     ! Map input array to export state field
@@ -583,7 +583,7 @@ contains
     integer             , intent(in)    :: begr
     integer             , intent(in)    :: endr
     real(r8)            , intent(in)    :: input(begr:endr)
-    real(r8), optional  , intent(in)    :: areacor(:)
+    logical             , intent(in)    :: do_area_correction
     integer             , intent(out)   :: rc
 
     ! local variables
@@ -606,8 +606,8 @@ contains
     do g = begr,endr
        fldptr(g-begr+1) = input(g)
     end do
-    if (present(areacor)) then
-       fldptr(:) = fldptr(:) * areacor(:)
+    if (do_area_correction) then
+       fldptr(:) = fldptr(:) * mod2med_areacor(:)
     end if
 
     ! check for nans
