@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <testlist version="2.0">
 
-  <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
       <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
@@ -12,7 +12,7 @@
       <option name="comment"  >Restart test without DEBUG on all machines/compilers</option>
     </options>
   </test>
-  <test name="SMS_D_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
+  <test name="SMS_D_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
       <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
@@ -23,7 +23,7 @@
       <option name="comment"  >Run with DEBUG compiler option all machine/compilers</option>
     </options>
   </test>
-  <test name="SMS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmColdStart">
+  <test name="SMS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmColdStart">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
       <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
@@ -34,7 +34,7 @@
       <option name="comment"  >Run a Cold-Start with all machine/compilers</option>
     </options>
   </test>
-  <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnIceOff">
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnIceOff">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
          <options>
@@ -43,7 +43,7 @@
       </machine>
     </machines>
   </test>
-  <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
         <options>
@@ -52,7 +52,7 @@
       </machine>
     </machines>
   </test>
-  <test name="ERS_D_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
+  <test name="ERS_D_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
         <options>
@@ -61,7 +61,7 @@
       </machine>
     </machines>
   </test>
-  <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOff">
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOff">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
         <options>
@@ -70,7 +70,7 @@
       </machine>
     </machines>
   </test>
-  <test name="ERS_Ld5" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOff">
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOff">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
         <options>
@@ -79,7 +79,7 @@
       </machine>
     </machines>
   </test>
-  <test name="SMS_D_Ld5_Vnuopc" grid="f10_f10_musgs" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
+  <test name="SMS_D_Ld5_Vnuopc" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
     </machines>
