@@ -1,4 +1,21 @@
 ===============================================================
+Tag name:  rtm1_0_75
+Originator(s): mvertens
+Date: March 16, 2021
+One-line Summary: Implementation of flux area correction factors in nuopc cap
+
+Add in area correction factors for fluxes sent in nuopc cap.
+
+Also remove a debug option to write out coupling fields. Remove do_sum
+option to state_getimport as was unused. Remove state_getfldptr which
+seemed to be unused as well.
+
+Testing:
+SMS_D_Ld5_Vnuopc.f10_f10_mg37.I2000Clm50BgcCropRtm.cheyenne_intel.rtm-default
+in the context of CESM's nuopc_dev branch. (No baseline comparisons done
+for full set of changes.)
+
+===============================================================
 Tag name:  rtm1_0_74
 Originator(s): jedwards
 Date: December 22, 2020
