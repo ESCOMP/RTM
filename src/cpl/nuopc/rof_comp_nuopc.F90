@@ -309,6 +309,7 @@ contains
     character(CL)               :: starttype             ! start-type (startup, continue, branch, hybrid)
     character(CL)               :: stdname, shortname    ! needed for advertise
     logical                     :: brnch_retain_casename ! flag if should retain the case name on a branch start type
+    integer                     :: localPet, localPeCount ! mpi task and thread count variables
     character(CL)               :: cvalue
     character(ESMF_MAXSTR)      :: convCIM, purpComp
     character(len=*), parameter :: subname=trim(modName)//':(InitializeRealize) '
