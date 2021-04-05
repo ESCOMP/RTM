@@ -1,4 +1,17 @@
 ===============================================================
+Tag name:  rtm1_0_76
+Originator(s): jedwards
+Date: April 5, 2021
+One-line Summary: Support for threading with NUOPC/CMEPS
+
+See https://github.com/ESCOMP/RTM/pull/25
+
+Testing:
+Mariana Vertenstein ran
+SMS_D_Ld5_Vnuopc.f10_f10_mg37.I2000Clm50BgcCropRtm.cheyenne_intel.rtm-default;
+this was bit-for-bit against baselines.
+
+===============================================================
 Tag name:  rtm1_0_75
 Originator(s): mvertens
 Date: March 16, 2021
