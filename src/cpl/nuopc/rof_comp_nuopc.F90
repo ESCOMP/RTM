@@ -33,7 +33,7 @@ module rof_comp_nuopc
   use rof_import_export     , only : import_fields, export_fields
   use nuopc_shr_methods       , only : chkerr, state_setscalar, state_getscalar, state_diagnose, alarmInit
   use nuopc_shr_methods       , only : set_component_logging, get_component_instance, log_clock_advance
-
+!$ use omp_lib              , only : omp_set_num_threads
   implicit none
   private ! except
 
@@ -56,7 +56,7 @@ module rof_comp_nuopc
   integer                 :: flds_scalar_index_nx = 0
   integer                 :: flds_scalar_index_ny = 0
   integer                 :: flds_scalar_index_nextsw_cday = 0._r8
-
+  integer                 :: nthrds
   real(r8), allocatable   :: totrunin(:,:)   ! cell tracer lnd forcing on rtm grid (mm/s)
 
   integer     , parameter :: debug = 1
@@ -282,6 +282,7 @@ contains
     type(ESMF_Time)             :: refTime               ! Ref time
     type(ESMF_TimeInterval)     :: timeStep              ! Model timestep
     type(ESMF_CalKind_Flag)     :: esmf_caltype          ! esmf calendar type
+    type(ESMF_VM)               :: vm                    ! esmf virtual machine type
     integer , allocatable       :: gindex(:)             ! global index space on my processor
     integer                     :: ref_ymd               ! reference date (YYYYMMDD)
     integer                     :: ref_tod               ! reference time of day (sec)
@@ -308,6 +309,7 @@ contains
     character(CL)               :: starttype             ! start-type (startup, continue, branch, hybrid)
     character(CL)               :: stdname, shortname    ! needed for advertise
     logical                     :: brnch_retain_casename ! flag if should retain the case name on a branch start type
+    integer                     :: localPet, localPeCount ! mpi task and thread count variables
     character(CL)               :: cvalue
     character(ESMF_MAXSTR)      :: convCIM, purpComp
     character(len=*), parameter :: subname=trim(modName)//':(InitializeRealize) '
@@ -329,6 +331,23 @@ contains
        call memmon_dump_fort('memmon.out','rof_comp_nuopc_InitializeRealize:start::',lbnum)
     endif
 #endif
+    !----------------------
+    ! Obtain threading information
+    !----------------------
+    call ESMF_GridCompGet(gcomp, vm=vm, localpet=localPet, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call ESMF_VMGet(vm, pet=localPet, peCount=localPeCount, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+    if(localPeCount == 1) then
+       call NUOPC_CompAttributeGet(gcomp, "nthreads", value=cvalue, rc=rc)
+       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, line=__LINE__, file=u_FILE_u)) return
+       read(cvalue,*) nthrds
+    else
+       nthrds = localPeCount
+    endif
+
+!$  call omp_set_num_threads(nthrds)
 
     !----------------------
     ! Obtain attribute values
@@ -577,6 +596,7 @@ contains
        call memmon_dump_fort('memmon.out','rtm_comp_nuopc_ModelAdvance:start::',lbnum)
     endif
 #endif
+!$  call omp_set_num_threads(nthrds)
 
     !--------------------------------
     ! Query the Component for its clock, importState and exportState
