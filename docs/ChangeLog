@@ -1,4 +1,15 @@
 ===============================================================
+Tag name:  rtm1_0_77
+Originator(s): erik
+Date: July 16, 2021
+One-line Summary: Change shebang lines and abort if direction file not set
+
+Fixes #26 -- Change shebang lines
+Fixes #22 -- Rtm direction file is a directory
+
+See https://github.com/ESCOMP/RTM/pull/27
+
+===============================================================
 Tag name:  rtm1_0_76
 Originator(s): jedwards
 Date: April 5, 2021
