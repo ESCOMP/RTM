@@ -116,7 +116,7 @@ def _create_namelists(case, confdir, inst_string, infile, nmlgen, data_list_path
     nmlgen.set_value("rtm_tstep", value=rtm_tstep)
 
     if ( nmlgen.get_value( "frivinp_rtm" ) == "UNSET" ):
-       logger.error( "Direction file is NOT set: frivinp_rtm" )
+       raise SystemExit("ERROR: Direction file is NOT set and is required: frivinp_rtm")
 
     #----------------------------------------------------
     # Write output namelist
