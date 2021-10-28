@@ -1,4 +1,15 @@
 ===============================================================
+Tag name:  rtm1_0_78
+Originator(s): erik
+Date: October 27, 2021
+One-line Summary: Change nuopc to default for testlist, don't require direction file if RTM not active
+
+Fixes #28 -- if RTM is not active finitdat_rtm and frivinp_rtm aren't required
+
+Change test list so that nuopc is the default driver, so explicit nuopc tests are
+now run for MCT.
+
+===============================================================
 Tag name:  rtm1_0_77
 Originator(s): erik
 Date: July 16, 2021
