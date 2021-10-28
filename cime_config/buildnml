@@ -119,8 +119,8 @@ def _create_namelists(case, confdir, inst_string, infile, nmlgen, data_list_path
         rtm_tstep = basedt // rof_ncpl
     nmlgen.set_value("rtm_tstep", value=rtm_tstep)
 
-    if ( nmlgen.get_value( "frivinp_rtm" ) == "UNSET" ):
-       raise SystemExit("ERROR: Direction file is NOT set and is required: frivinp_rtm")
+    if ( nmlgen.get_value( "frivinp_rtm" ) == "UNSET" and config["rtm_mode"] != "NULL" ):
+       raise SystemExit("ERROR: Direction file is NOT set and is required when RTM is active: frivinp_rtm")
 
     #----------------------------------------------------
     # Write output namelist
