@@ -16,12 +16,12 @@ module rof_comp_nuopc
   use NUOPC_Model           , only : NUOPC_ModelGet
   use shr_kind_mod          , only : R8=>SHR_KIND_R8, CL=>SHR_KIND_CL
   use shr_sys_mod           , only : shr_sys_abort
-  use shr_file_mod          , only : shr_file_getlogunit, shr_file_setlogunit
+  use shr_log_mod           , only : shr_log_getlogunit, shr_log_setlogunit
   use shr_cal_mod           , only : shr_cal_noleap, shr_cal_gregorian, shr_cal_ymd2date
   use RtmVar                , only : rtmlon, rtmlat, iulog
   use RtmVar                , only : nsrStartup, nsrContinue, nsrBranch
   use RtmVar                , only : inst_index, inst_suffix, inst_name, RtmVarSet
-  use RtmVar                , only : rtmlon, rtmlat, ice_runoff, iulog, nt_rtm
+  use RtmVar                , only : ice_runoff, nt_rtm
   use RtmVar                , only : nsrStartup, nsrContinue, nsrBranch
   use RtmVar                , only : rtm_active, flood_active
   use RtmSpmd               , only : RtmSpmdInit, masterproc, mpicom_rof, iam, npes
@@ -257,7 +257,7 @@ contains
     ! Reset shr logging to original values
     !----------------------------------------------------------------------------
 
-    call shr_file_setLogUnit (shrlogunit)
+    call shr_log_setLogUnit (shrlogunit)
     call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO)
 
   end subroutine InitializeAdvertise
@@ -322,8 +322,8 @@ contains
     ! Reset shr logging to my log file
     !----------------------------------------------------------------------------
 
-    call shr_file_getLogUnit (shrlogunit)
-    call shr_file_setLogUnit (iulog)
+    call shr_log_getLogUnit (shrlogunit)
+    call shr_log_setLogUnit (iulog)
 
 #if (defined _MEMTRACE)
     if (masterproc) then
@@ -525,7 +525,7 @@ contains
     ! Reset shr logging
     !----------------------------------------------------------------------------
 
-    call shr_file_setLogUnit (shrlogunit)
+    call shr_log_setLogUnit (shrlogunit)
 
     call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO)
 
@@ -587,8 +587,8 @@ contains
     rc = ESMF_SUCCESS
     call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO)
 
-    call shr_file_getLogUnit (shrlogunit)
-    call shr_file_setLogUnit (iulog)
+    call shr_log_getLogUnit (shrlogunit)
+    call shr_log_setLogUnit (iulog)
 
 #if (defined _MEMTRACE)
     if(masterproc) then
@@ -722,7 +722,7 @@ contains
     ! Reset shr logging to my original values
     !--------------------------------
 
-    call shr_file_setLogUnit (shrlogunit)
+    call shr_log_setLogUnit (shrlogunit)
 
 #if (defined _MEMTRACE)
     if(masterproc) then
