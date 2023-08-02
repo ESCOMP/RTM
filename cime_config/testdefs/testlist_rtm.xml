@@ -5,18 +5,23 @@
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
       <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
-      <machine name="izumi" compiler="nag" category="rtm"></machine>
+      <machine name="cheyenne" compiler="nvhpc" category="rtm"></machine>
+      <machine name="izumi" compiler="gnu" category="rtm"></machine>
+      <machine name="izumi" compiler="intel" category="rtm"></machine>
     </machines>
     <options>
       <option name="wallclock">00:20:00</option>
-      <option name="comment"  >Restart test without DEBUG on all machines/compilers</option>
+      <option name="comment"  >Restart test without DEBUG on all machines/compilers (except nag because of a CTSM issue)</option>
     </options>
   </test>
   <test name="SMS_D_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
       <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
+      <machine name="cheyenne" compiler="nvhpc" category="rtm"></machine>
       <machine name="izumi" compiler="nag" category="rtm"></machine>
+      <machine name="izumi" compiler="gnu" category="rtm"></machine>
+      <machine name="izumi" compiler="intel" category="rtm"></machine>
     </machines>
     <options>
       <option name="wallclock">00:20:00</option>
@@ -27,57 +32,66 @@
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm"></machine>
       <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
-      <machine name="izumi" compiler="nag" category="rtm"></machine>
+      <machine name="cheyenne" compiler="nvhpc" category="rtm"></machine>
     </machines>
     <options>
       <option name="wallclock">00:20:00</option>
-      <option name="comment"  >Run a Cold-Start with all machine/compilers</option>
+      <option name="comment"  >Run a Cold-Start with main machine all compilers</option>
     </options>
   </test>
   <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnIceOff">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
-         <options>
-           <option name="wallclock">00:20:00</option>
-         </options>
       </machine>
     </machines>
+    <options>
+      <option name="wallclock">00:20:00</option>
+      <option name="comment"  >Run with ice off</option>
+    </options>
   </test>
   <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
-        <options>
-          <option name="wallclock">00:20:00</option>
-        </options>
       </machine>
     </machines>
+    <options>
+      <option name="wallclock">00:20:00</option>
+      <option name="comment"  >Run with flooding on and effective velocity on</option>
+    </options>
   </test>
   <test name="ERS_D_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
     <machines>
-      <machine name="cheyenne" compiler="intel" category="rtm">
-        <options>
-          <option name="wallclock">00:20:00</option>
-        </options>
-      </machine>
+      <machine name="cheyenne" compiler="intel" category="rtm"></machine>
+      <machine name="cheyenne" compiler="gnu" category="rtm"></machine>
+      <machine name="cheyenne" compiler="nvhpc" category="rtm"></machine>
+      <machine name="izumi" compiler="nag" category="rtm"></machine>
+      <machine name="izumi" compiler="gnu" category="rtm"></machine>
+      <machine name="izumi" compiler="intel" category="rtm"></machine>
     </machines>
+    <options>
+      <option name="wallclock">00:20:00</option>
+      <option name="comment"  >Run with flooding on and effective velocity on, DEBUG on, all machines/compilers</option>
+    </options>
   </test>
   <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOff">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
-        <options>
-          <option name="wallclock">00:20:00</option>
-        </options>
       </machine>
     </machines>
+    <options>
+      <option name="wallclock">00:20:00</option>
+      <option name="comment"  >Run with flooding on and effective velocity off</option>
+    </options>
   </test>
   <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOff">
     <machines>
       <machine name="cheyenne" compiler="intel" category="rtm">
-        <options>
-          <option name="wallclock">00:20:00</option>
-        </options>
       </machine>
     </machines>
+    <options>
+      <option name="wallclock">00:20:00</option>
+      <option name="comment"  >Run for RTM off</option>
+    </options>
   </test>
   <test name="SMS_D_Ld5_Vmct" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
     <machines>
