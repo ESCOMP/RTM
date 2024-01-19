@@ -40,6 +40,33 @@
       </machine>
     </machines>
   </test>
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
+    <machines>
+      <machine name="derecho" compiler="intel" category="rtm">
+        <options>
+          <option name="wallclock">00:20:00</option>
+        </options>
+      </machine>
+    </machines>
+  </test>
+  <test name="ERS_D_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
+    <machines>
+      <machine name="derecho" compiler="intel" category="rtm">
+        <options>
+          <option name="wallclock">00:20:00</option>
+        </options>
+      </machine>
+    </machines>
+  </test>
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOff">
+    <machines>
+      <machine name="derecho" compiler="intel" category="rtm">
+        <options>
+          <option name="wallclock">00:20:00</option>
+        </options>
+      </machine>
+    </machines>
+  </test>
   <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOff">
     <machines>
       <machine name="derecho" compiler="intel" category="rtm">
