@@ -1,7 +1,7 @@
 ===============================================================
 Tag name:  rtm1_0_79
 Originator(s): mvertens/erik
-Date: Jan 22, 2024
+Date: Jan 27, 2024
 One-line Summary: Remove MCT from RTM
 
 This tag removes MCT code that is no longer used since it is only in the mct cap.
@@ -14,6 +14,11 @@ Resolves #45 -- failing tests
 Resolves #44 -- lower testing for RTM (remove Izumi tests)
 Resolves #41 -- Move testlist from Cheyenne to Derecho
 Resolves #33 -- Update path to CIME tools needed for buildnml/buildlib
+
+Pull Requests:
+
+ #42 -- Remove MCT
+ #40 -- Update README and test comments
 
 ===============================================================
 Tag name:  rtm1_0_78
