@@ -197,7 +197,7 @@ contains
        n = n + 1
        model_areas(n) = runoff%area(g)*1.0e-6_r8/(re*re)
        mod2med_areacor(n) = model_areas(n) / mesh_areas(n)
-       med2mod_areacor(n) = mesh_areas(n) / mod2med_areacor(n)
+       med2mod_areacor(n) = mesh_areas(n) / model_areas(n)
     end do
     deallocate(model_areas)
     deallocate(mesh_areas)
@@ -267,25 +267,30 @@ contains
     endr = runoff%endr
     allocate(temp(begr:endr,3))
 
-    call state_getimport(importState, 'Flrl_rofsur', begr, endr, output=temp(:,1), do_area_correction=.true., rc=rc)
+    call state_getimport(importState, 'Flrl_rofsur', begr, endr, runoff%area, output=temp(:,1), do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_rofsub', begr, endr, output=temp(:,2), do_area_correction=.true., rc=rc)
+    call state_getimport(importState, 'Flrl_rofsub', begr, endr, runoff%area, output=temp(:,2), do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_rofgwl', begr, endr, output=temp(:,3), do_area_correction=.true., rc=rc)
+    call state_getimport(importState, 'Flrl_rofgwl', begr, endr, runoff%area, output=temp(:,3), do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call state_getimport(importState, 'Flrl_irrig', begr, endr, output=runoff%qirrig, do_area_correction=.true., rc=rc)
+    call state_getimport(importState, 'Flrl_irrig', begr, endr, runoff%area, output=runoff%qirrig, do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     do n = begr,endr
        totrunin(n,nliq) = temp(n,1) + temp(n,2) + temp(n,3) + runoff%qirrig(n)
     enddo
 
-    call state_getimport(importState, 'Flrl_rofi', begr, endr, output=totrunin(:,nfrz), do_area_correction=.true., rc=rc)
+    call state_getimport(importState, 'Flrl_rofi', begr, endr, runoff%area, output=totrunin(:,nfrz), do_area_correction=.true., rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
+
+    ! convert to mm/s for rtmmod
+    do n = begr,endr
+       totrunin(n,:) = totrunin(n,:) /(0.001 * runoff%area(n))
+    enddo
     deallocate(temp)
 
   end subroutine import_fields
@@ -522,7 +527,7 @@ contains
   end subroutine fldlist_realize
 
   !===============================================================================
-  subroutine state_getimport(state, fldname, begr, endr, output, do_area_correction, rc)
+  subroutine state_getimport(state, fldname, begr, endr, area, output, do_area_correction, rc)
 
     ! ----------------------------------------------
     ! Map import state field to output array
@@ -535,8 +540,9 @@ contains
     character(len=*)    , intent(in)    :: fldname
     integer             , intent(in)    :: begr
     integer             , intent(in)    :: endr
-    real(r8)            , intent(out)   :: output(begr:endr)
+    real(r8)            , intent(in)    :: area(begr:endr)
     logical             , intent(in)    :: do_area_correction
+    real(r8)            , intent(out)   :: output(begr:endr)
     integer             , intent(out)   :: rc
 
     ! local variables
@@ -554,12 +560,12 @@ contains
     call ESMF_FieldGet(lfield, farrayPtr=fldptr, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    ! determine output array
+    ! determine output array and scale by unit convertsion
     if (do_area_correction) then
        fldptr(:) = fldptr(:) * med2mod_areacor(:)
     end if
     do g = begr,endr
-       output(g) = fldptr(g-begr+1)
+       output(g) = fldptr(g-begr+1) * area(g)*0.001_r8
     end do
 
     ! check for nans
