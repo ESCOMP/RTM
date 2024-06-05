@@ -289,7 +289,7 @@ contains
 
     ! convert to mm/s for rtmmod
     do n = begr,endr
-       totrunin(n,:) = totrunin(n,:) /(0.001 * runoff%area(n))
+       totrunin(n,:) = totrunin(n,:) /(0.001_r8 * runoff%area(n))
     enddo
     deallocate(temp)
 
