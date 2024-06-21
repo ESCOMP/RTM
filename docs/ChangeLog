@@ -1,4 +1,18 @@
 ===============================================================
+Tag name:  rtm1_0_80
+Originator(s): swensosc
+Date: Jun 21, 2024
+One-line Summary: fix area scaling to correct RTM river flux to MOM6
+
+Fix how area is applied to input runoff for rtm
+
+Resolves #50
+
+Pull Requests:
+
+ #51
+
+===============================================================
 Tag name:  rtm1_0_79
 Originator(s): mvertens/erik
 Date: Jan 27, 2024
