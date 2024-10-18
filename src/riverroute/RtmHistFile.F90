@@ -542,12 +542,10 @@ contains
 
     ! Set time averaging flag based on masterlist setting or
     ! override the default averaging flag with namelist setting
-    ! 'I' (instantaneous) not permitted at this stage because we place 'I'
-    ! fields on their own separate history tape; see "Override" below
     select case (avgflag)
     case (' ')
        tape(t)%hlist(n)%avgflag = masterlist(f)%avgflag(t)
-    case ('A','X','M')
+    case ('A','I','X','M')
        tape(t)%hlist(n)%avgflag = avgflag
     case default
        write(iulog,*) trim(subname),' ERROR: unknown avgflag=', avgflag
