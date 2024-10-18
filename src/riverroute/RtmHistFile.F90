@@ -188,7 +188,7 @@ contains
 
     ! DESCRIPTION:
     !
-    ! Finalize and clean up memory,  Called from rof_final_mct
+    ! Finalize and clean up memory,  Called from RtmFinalizeMemory
     !
 
     ! !ARGUMENTS:
