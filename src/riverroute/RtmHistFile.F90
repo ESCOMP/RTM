@@ -552,6 +552,10 @@ contains
        call shr_sys_abort()
     end select
 
+    ! Override this tape's avgflag if nhtfrq == 1
+    if (tape(t)%nhtfrq == 1) then  ! output is instantaneous
+       rtmhist_avgflag_pertape(t) = 'I'
+    end if
     ! Override this field's avgflag if the namelist has set this tape to
     ! - instantaneous
     avgflag_temp = rtmhist_avgflag_pertape(t)
