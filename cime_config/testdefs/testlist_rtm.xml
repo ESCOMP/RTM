@@ -1,7 +1,25 @@
 <?xml version="1.0"?>
 <testlist version="2.0">
 
-  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
+  <test name="ERS_D_Ld5" grid="f10_f10_mg37" compset="I1850Clm45Sp" testmods="rtm/default">
+    <machines>
+      <machine name="derecho" compiler="intel" category="rtm"></machine>
+    </machines>
+    <options>
+      <option name="wallclock">00:20:00</option>
+      <option name="comment"  >Restart test with DEBUG on</option>
+    </options>
+  </test>
+  <test name="ERS_D_Ld5" grid="f10_f10_mg37" compset="I2000Clm50SpRtmFl" testmods="rtm/default">
+    <machines>
+      <machine name="derecho" compiler="intel" category="rtm"></machine>
+    </machines>
+    <options>
+      <option name="wallclock">00:20:00</option>
+      <option name="comment"  >Restart test with DEBUG on</option>
+    </options>
+  </test>
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm60SpNoAnthro" testmods="rtm/default">
     <machines>
       <machine name="derecho" compiler="intel" category="rtm"></machine>
       <machine name="derecho" compiler="gnu" category="rtm"></machine>
@@ -11,7 +29,7 @@
       <option name="comment"  >Restart test without DEBUG on all machines/compilers (except nag because of a CTSM issue)</option>
     </options>
   </test>
-  <test name="SMS_D_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/default">
+  <test name="SMS_D_Ld5" grid="f10_f10_mg37" compset="I2000Clm60SpNoAnthro" testmods="rtm/default">
     <machines>
       <machine name="derecho" compiler="intel" category="rtm"></machine>
       <machine name="derecho" compiler="gnu" category="rtm"></machine>
@@ -21,7 +39,7 @@
       <option name="comment"  >Run with DEBUG compiler option all machine/compilers</option>
     </options>
   </test>
-  <test name="SMS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmColdStart">
+  <test name="SMS_Ld5" grid="f10_f10_mg37" compset="I2000Clm60SpNoAnthro" testmods="rtm/rtmColdStart">
     <machines>
       <machine name="derecho" compiler="intel" category="rtm"></machine>
       <machine name="derecho" compiler="gnu" category="rtm"></machine>
@@ -31,7 +49,7 @@
       <option name="comment"  >Run a Cold-Start with main machine all compilers</option>
     </options>
   </test>
-  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnIceOff">
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm60SpNoAnthro" testmods="rtm/rtmOnIceOff">
     <machines>
       <machine name="derecho" compiler="intel" category="rtm">
          <options>
@@ -44,7 +62,7 @@
       <option name="comment"  >Run with ice off</option>
     </options>
   </test>
-  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm60SpNoAnthro" testmods="rtm/rtmOnFloodOnEffvelOn">
     <machines>
       <machine name="derecho" compiler="intel" category="rtm">
         <options>
@@ -57,7 +75,7 @@
       <option name="comment"  >Run with flooding on and effective velocity on</option>
     </options>
   </test>
-  <test name="ERS_D_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOn">
+  <test name="ERS_D_Ld5" grid="f10_f10_mg37" compset="I2000Clm60SpNoAnthro" testmods="rtm/rtmOnFloodOnEffvelOn">
     <machines>
       <machine name="derecho" compiler="intel" category="rtm">
         <options>
@@ -70,7 +88,7 @@
       <option name="comment"  >Run with flooding on and effective velocity on, DEBUG on, all machines/compilers</option>
     </options>
   </test>
-  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOnFloodOnEffvelOff">
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm60SpNoAnthro" testmods="rtm/rtmOnFloodOnEffvelOff">
     <machines>
       <machine name="derecho" compiler="intel" category="rtm">
         <options>
@@ -83,7 +101,7 @@
       <option name="comment"  >Run with flooding on and effective velocity off</option>
     </options>
   </test>
-  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm50BgcCropRtm" testmods="rtm/rtmOff">
+  <test name="ERS_Ld5" grid="f10_f10_mg37" compset="I2000Clm60SpNoAnthro" testmods="rtm/rtmOff">
     <machines>
       <machine name="derecho" compiler="intel" category="rtm">
         <options>
