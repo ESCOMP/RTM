@@ -992,7 +992,7 @@ end function is_end_curr_month
 
 logical function is_first_step()
 
-  ! Return true on first step of any run.
+  ! Return true on first step of startup and hybrid runs.
    character(len=*), parameter :: sub = 'rtm::is_first_step'
    integer :: rc
    integer :: nstep
