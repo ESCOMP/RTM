@@ -188,7 +188,7 @@ contains
 
     ! DESCRIPTION:
     !
-    ! Finalize and clean up memory,  Called from rof_final_mct
+    ! Finalize and clean up memory,  Called from RtmFinalizeMemory
     !
 
     ! !ARGUMENTS:
@@ -514,6 +514,7 @@ contains
     integer :: begrof          ! per-proc beginning land runoff index
     integer :: endrof          ! per-proc ending land runoff index
     integer :: numrtm          ! total number of rtm cells on all procs
+    character(len=1) :: avgflag_temp  ! local copy of rtmhist_avgflag_pertape(t)
     character(len=*),parameter :: subname = 'htape_addfld'
     !-------------------------------------------------------
 
@@ -551,6 +552,16 @@ contains
        call shr_sys_abort()
     end select
 
+    ! Override this tape's avgflag if nhtfrq == 1
+    if (tape(t)%nhtfrq == 1) then  ! output is instantaneous
+       rtmhist_avgflag_pertape(t) = 'I'
+    end if
+    ! Override this field's avgflag if the namelist has set this tape to
+    ! - instantaneous
+    avgflag_temp = rtmhist_avgflag_pertape(t)
+    if (avgflag_temp == 'I') then
+       tape(t)%hlist(n)%avgflag = avgflag_temp
+    end if
 
   end subroutine htape_addfld
 
@@ -678,7 +689,6 @@ contains
     character(len=256) :: name     ! name of attribute
     character(len=256) :: units    ! units of attribute
     character(len=256) :: str      ! global attribute string
-    character(len=  1) :: avgflag  ! time averaging flag
     character(len=*),parameter :: subname = 'htape_create'
     !-----------------------------------------------------
 
@@ -821,6 +831,7 @@ contains
     integer :: dtime                      ! timestep size
     integer :: yr,mon,day,nbsec           ! year,month,day,seconds components of a date
     integer :: hours,minutes,secs         ! hours,minutes,seconds of hh:mm:ss
+    character(len= 12) :: step_or_bounds  ! string used in long_name of several time variables
     character(len= 10) :: basedate        ! base date (yyyymmdd)
     character(len=  8) :: basesec         ! base seconds
     character(len=  8) :: cdate           ! system date
@@ -857,8 +868,18 @@ contains
 
        dim1id(1) = time_dimid
        str = 'days since ' // basedate // " " // basesec
-       call ncd_defvar(nfid(t), 'time', tape(t)%ncprec, 1, dim1id, varid, &
-            long_name='time',units=str)
+       if (tape(t)%hlist(1)%avgflag /= 'I') then  ! NOT instantaneous fields tape
+          step_or_bounds = 'time_bounds'
+          long_name = 'time at exact middle of ' // step_or_bounds
+          call ncd_defvar(nfid(t), 'time', tape(t)%ncprec, 1, dim1id, varid, &
+               long_name=long_name, units=str)
+          call ncd_putatt(nfid(t), varid, 'bounds', 'time_bounds')
+       else  ! instantaneous fields tape
+          step_or_bounds = 'time step'
+          long_name = 'time at end of ' // step_or_bounds
+          call ncd_defvar(nfid(t), 'time', tape(t)%ncprec, 1, dim1id, varid, &
+               long_name=long_name, units=str)
+       end if
        cal = get_calendar()
        if (      trim(cal) == NO_LEAP_C   )then
           caldesc = "noleap"
@@ -866,29 +887,34 @@ contains
           caldesc = "gregorian"
        end if
        call ncd_putatt(nfid(t), varid, 'calendar', caldesc)
-       call ncd_putatt(nfid(t), varid, 'bounds', 'time_bounds')
 
        dim1id(1) = time_dimid
+       long_name = 'current date (YYYYMMDD) at end of ' // step_or_bounds
        call ncd_defvar(nfid(t) , 'mcdate', ncd_int, 1, dim1id , varid, &
-          long_name = 'current date (YYYYMMDD)')
+          long_name = long_name)
        call ncd_putatt(nfid(t), varid, 'calendar', caldesc)
+       long_name = 'current seconds of current date at end of ' // step_or_bounds
        call ncd_defvar(nfid(t) , 'mcsec' , ncd_int, 1, dim1id , varid, &
-          long_name = 'current seconds of current date', units='s')
+          long_name = long_name, units='s')
        call ncd_putatt(nfid(t), varid, 'calendar', caldesc)
+       long_name = 'current day (from base day) at end of ' // step_or_bounds
        call ncd_defvar(nfid(t) , 'mdcur' , ncd_int, 1, dim1id , varid, &
-          long_name = 'current day (from base day)')
+          long_name = long_name)
        call ncd_putatt(nfid(t), varid, 'calendar', caldesc)
+       long_name = 'current seconds of current day at end of ' // step_or_bounds
        call ncd_defvar(nfid(t) , 'mscur' , ncd_int, 1, dim1id , varid, &
-          long_name = 'current seconds of current day')
+          long_name = long_name)
        call ncd_putatt(nfid(t), varid, 'calendar', caldesc)
        call ncd_defvar(nfid(t) , 'nstep' , ncd_int, 1, dim1id , varid, &
           long_name = 'time step')
 
        dim2id(1) = nbnd_dimid;  dim2id(2) = time_dimid
-       call ncd_defvar(nfid(t), 'time_bounds', ncd_double, 2, dim2id, varid, &
-          long_name = 'time interval endpoints', &
-          units=str)
-       call ncd_putatt(nfid(t), varid, 'calendar', caldesc)
+       if (tape(t)%hlist(1)%avgflag /= 'I') then  ! NOT instantaneous fields tape
+          call ncd_defvar(nfid(t), 'time_bounds', ncd_double, 2, dim2id, varid, &
+             long_name = 'time interval endpoints', &
+             units=str)
+          call ncd_putatt(nfid(t), varid, 'calendar', caldesc)
+       end if
 
        dim2id(1) = strlen_dimid;  dim2id(2) = time_dimid
        call ncd_defvar(nfid(t), 'date_written', ncd_char, 2, dim2id, varid)
@@ -917,12 +943,15 @@ contains
        call ncd_io('mscur' , mscur , 'write', nfid(t), nt=tape(t)%ntimes)
        call ncd_io('nstep' , nstep , 'write', nfid(t), nt=tape(t)%ntimes)
 
-       time = mdcur + mscur/secspday
+       timedata(1) = tape(t)%begtime  ! beginning time
+       timedata(2) = mdcur + mscur / secspday  ! end time
+       if (tape(t)%hlist(1)%avgflag /= 'I') then  ! NOT instantaneous fields tape
+          time = (timedata(1) + timedata(2)) * 0.5_r8
+          call ncd_io('time_bounds', timedata, 'write', nfid(t), nt=tape(t)%ntimes)
+       else
+          time = timedata(2)
+       end if
        call ncd_io('time'  , time  , 'write', nfid(t), nt=tape(t)%ntimes)
-
-       timedata(1) = tape(t)%begtime
-       timedata(2) = time
-       call ncd_io('time_bounds', timedata, 'write', nfid(t), nt=tape(t)%ntimes)
 
        call getdatetime (cdate, ctime)
        call ncd_io('date_written', cdate, 'write', nfid(t), nt=tape(t)%ntimes)
@@ -1015,9 +1044,6 @@ contains
     ! Loop over active history tapes, create new history files if necessary
     ! and write data to history files if end of history interval.
     do t = 1, ntapes
-
-       ! Skip nstep=0 if monthly average
-       if (nstep==0 .and. tape(t)%nhtfrq==0) cycle
 
        ! Determine if end of history interval
        tape(t)%is_endhist = .false.

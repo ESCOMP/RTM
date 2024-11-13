@@ -3,7 +3,6 @@ module RtmFinalizeAll
 !
 ! gateway to other Rtm routines to clean up memory.  Called from:
 !
-! rof_comp_mct::rof_final_mct
 ! rof_comp_esmf::rof_final_esmf
 !
 

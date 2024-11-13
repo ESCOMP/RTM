@@ -992,7 +992,7 @@ end function is_end_curr_month
 
 logical function is_first_step()
 
-  ! Return true on first step of initial run only.
+  ! Return true on first step of startup and hybrid runs.
    character(len=*), parameter :: sub = 'rtm::is_first_step'
    integer :: rc
    integer :: nstep
@@ -1001,7 +1001,7 @@ logical function is_first_step()
    call ESMF_ClockGet( tm_clock, advanceCount=step_no, rc=rc )
    call chkrc(rc, sub//': error return from ESMF_ClockGet')
    nstep = step_no
-   is_first_step = (nstep == 0)
+   is_first_step = (nstep == 1)
 
 end function is_first_step
 

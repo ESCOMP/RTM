@@ -23,13 +23,13 @@ module RtmMod
                                nsrContinue, nsrBranch, nsrStartup, nsrest, &
                                inst_index, inst_suffix, inst_name, &
                                rtm_active, flood_active, effvel_active, &
-                               nt_rtm, rtm_tracers 
+                               nt_rtm, rtm_tracers
   use RtmFileUtils    , only : getfil, getavu, relavu
   use RtmTimeManager  , only : timemgr_init, get_nstep, get_curr_date
-  use RtmHistFlds     , only : RtmHistFldsInit, RtmHistFldsSet 
+  use RtmHistFlds     , only : RtmHistFldsInit, RtmHistFldsSet
   use RtmHistFile     , only : RtmHistUpdateHbuf, RtmHistHtapesWrapup, RtmHistHtapesBuild, &
                                rtmhist_ndens, rtmhist_mfilt, rtmhist_nhtfrq,     &
-                               rtmhist_avgflag_pertape, rtmhist_avgflag_pertape, & 
+                               rtmhist_avgflag_pertape, rtmhist_avgflag_pertape, &
                                rtmhist_fincl1, rtmhist_fincl2, rtmhist_fincl3,   &
                                rtmhist_fexcl1, rtmhist_fexcl2, rtmhist_fexcl3,   &
                                max_tapes, max_namlen
@@ -84,10 +84,10 @@ module RtmMod
 
   character(len=256) :: flood_mode
   character(len=256) :: rtm_mode
-  character(len=256) :: rtm_effvel    
+  character(len=256) :: rtm_effvel
 
-  character(len=256) :: nlfilename_rof = 'rof_in' 
-  character(len=256) :: nlfilename_lnd = 'lnd_in' 
+  character(len=256) :: nlfilename_rof = 'rof_in'
+  character(len=256) :: nlfilename_lnd = 'lnd_in'
 !
 !EOP
 !-----------------------------------------------------------------------
@@ -158,16 +158,15 @@ contains
     real(r8) :: dtover,dtovermax              ! ts calc temporaries
     type(file_desc_t) :: ncid                 ! netcdf file id
     integer  :: dimid                         ! netcdf dimension identifier
-    integer  :: nroflnd                       ! local number of land runoff 
+    integer  :: nroflnd                       ! local number of land runoff
     integer  :: nrofocn                       ! local number of ocn runoff
     integer  :: pid,np,npmin,npmax,npint      ! log loop control
-    integer  :: na,nb,ns                      ! mct sizes
     integer  :: ni,no,go                      ! tmps
-    integer ,allocatable  :: rgdc2glo(:)          ! temporary for initialization
-    integer ,allocatable  :: rglo2gdc(:)          ! temporary for initialization
-    integer ,allocatable  :: gmask(:)             ! global mask
+    integer ,allocatable  :: rgdc2glo(:)      ! temporary for initialization
+    integer ,allocatable  :: rglo2gdc(:)      ! temporary for initialization
+    integer ,allocatable  :: gmask(:)         ! global mask
     logical           :: found                ! if variable found on rdirc file
-    character(len=256):: fnamer               ! name of netcdf restart file 
+    character(len=256):: fnamer               ! name of netcdf restart file
     character(len=256):: pnamer               ! full pathname of netcdf restart file
     character(len=256):: locfn                ! local file name
     integer           :: begro,endro          ! local start/stop indices
@@ -291,7 +290,7 @@ contains
          write(iulog,*) '   RTM :: use default effective velocity (4.0) '
       endif
     endif
-    
+
     if (rtm_active) then
        if (frivinp_rtm == ' ') then
           call shr_sys_abort( subname//' ERROR: rtm_mode ACTIVE, but frivinp_rtm NOT set' )
@@ -311,7 +310,7 @@ contains
        write(iulog,*) subname,': ERROR rtm step invalid',rtm_tstep
        call shr_sys_abort( subname//' ERROR: rtm_tstep invalid' )
     endif
-       
+
     do i = 1, max_tapes
        if (rtmhist_nhtfrq(i) == 0) then
           rtmhist_mfilt(i) = 1
@@ -321,7 +320,7 @@ contains
     end do
 
     !-------------------------------------------------------
-    ! Initialize rtm time manager 
+    ! Initialize rtm time manager
     !-------------------------------------------------------
 
     ! Intiialize RTM pio
@@ -329,13 +328,13 @@ contains
 
     ! Obtain restart file if appropriate
     if ((nsrest == nsrStartup .and. finidat_rtm /= ' ') .or. &
-        (nsrest == nsrContinue) .or. & 
+        (nsrest == nsrContinue) .or. &
         (nsrest == nsrBranch  )) then
            call RtmRestGetfile( file=fnamer, path=pnamer )
-    endif       
+    endif
 
     ! Initialize time manager
-    if (nsrest == nsrStartup) then  
+    if (nsrest == nsrStartup) then
        call timemgr_init(dtime_in=rtm_tstep)
     else
        call RtmRestTimeManager(file=fnamer)
@@ -393,12 +392,12 @@ contains
        call shr_sys_abort()
     end if
 
-    allocate(tempr(rtmlon,rtmlat))  
+    allocate(tempr(rtmlon,rtmlat))
     call ncd_io(ncid=ncid, varname='RTM_FLOW_DIRECTION', flag='read', data=tempr, readvar=found)
     if ( .not. found ) call shr_sys_abort( trim(subname)//' ERROR: RTM_FLOW_DIRECTION NOT on rdirc file' )
     do j=1,rtmlat
       do i=1,rtmlon
-         
+
          !-------------------------------------------------------
          ! Put in a check for a negative rdirc value and abort.
          !-------------------------------------------------------
@@ -420,7 +419,7 @@ contains
        runoff%rlat(j) = tempr(1,j)
        rlatc(j) = tempr(1,j)
     end do
-    deallocate(tempr)             
+    deallocate(tempr)
 
     call ncd_pio_closefile(ncid)
 
@@ -428,14 +427,14 @@ contains
        write(iulog,*)'RTM netcdf river direction file successfully read '
        call shr_sys_flush(iulog)
     endif
- 
+
     call t_stopf('rtmi_grid')
 
     !-------------------------------------------------------
     ! Set dwnstrm_index from rdirc values
     !-------------------------------------------------------
 
-    ! The following assumes that there is no runoff  
+    ! The following assumes that there is no runoff
     ! south of j=1 or north of j=rtmlat
     ! This is true for rdirc.05
     ! Determine dwnstrmm_index from rtm river flow direction (0-8)
@@ -474,9 +473,9 @@ contains
     ! Determine rtm ocn/land mask (global, all procs)
     !-------------------------------------------------------
 
-    !  0=none, 
-    !  1=land, 
-    !  2=ocean outflow, 
+    !  0=none,
+    !  1=land,
+    !  2=ocean outflow,
     ! -1=reroute over ocean to ocean outflow points
 
     call t_startf('rtmi_decomp')
@@ -496,7 +495,7 @@ contains
        if (nr /= 0) then         ! n is always land if dwnstrm_index exists
           if (rdirc(n) > 0) then
              gmask(n) = 1
-          else if (rdirc(n) < 0) then 
+          else if (rdirc(n) < 0) then
              gmask(n) = -1
           end if
        end if
@@ -529,7 +528,7 @@ contains
              n = dwnstrm_index(n)
              g = g + 1
           end do
-          if (gmask(n) == 2) then           ! found ocean outlet 
+          if (gmask(n) == 2) then           ! found ocean outlet
              iocn(nr) = n                   ! set ocean outlet or nr to n
              nocn(n) = nocn(n) + 1          ! one more land cell for n
           elseif (abs(gmask(n)) == 1) then  ! no ocean outlet, warn user, ignore cell
@@ -537,7 +536,7 @@ contains
                g,nr,gmask(nr),dwnstrm_index(nr), &
                n,gmask(n),dwnstrm_index(n)
              call shr_sys_abort()
-          else 
+          else
              write(iulog,*) 'rtmini ERROR downstream cell is non-ocean,non-land', &
                g,nr,gmask(nr),dwnstrm_index(nr), &
                n,gmask(n),dwnstrm_index(n)
@@ -557,7 +556,7 @@ contains
     call t_startf('rtmi_dec_distr')
 
     !--- pocn is the pe that gets the basin associated with ocean outlet nr
-    !--- nop is a running count of the number of rtm cells/pe 
+    !--- nop is a running count of the number of rtm cells/pe
 
     nbas = 0
     nrtm = 0
@@ -687,7 +686,7 @@ contains
     do nr = 1,rtmlon*rtmlat
        if (pocn(nr) >= 0) then
           rglo2gdc(nr) = nrs(pocn(nr)) + nba(pocn(nr))
-          nba(pocn(nr)) = nba(pocn(nr)) + 1          
+          nba(pocn(nr)) = nba(pocn(nr)) + 1
        endif
     enddo
     do n = 0,npes-1
@@ -783,7 +782,7 @@ contains
     sfluxin(:,:) = 0._r8
 
     !-------------------------------------------------------
-    ! Allocate runoff datatype 
+    ! Allocate runoff datatype
     !-------------------------------------------------------
 
     call RunoffInit(begr, endr, numr)
@@ -802,7 +801,7 @@ contains
        nr = rglo2gdc(n)
        if (nr /= 0) then
           numr = numr + 1
-          rgdc2glo(nr) = n         
+          rgdc2glo(nr) = n
           runoff%mask(nr) = gmask(n)
        endif
     end do
@@ -912,7 +911,7 @@ contains
     if (masterproc) write(iulog,*) 'Rtmini rtm area  ',runoff%totarea
 
     !-------------------------------------------------------
-    ! Determine downstream distance 
+    ! Determine downstream distance
     !-------------------------------------------------------
 
     ! Instead of reading a distance file calculate the downstream distance
@@ -986,7 +985,7 @@ contains
 
     ! The call below opens and closes the file
     if ((nsrest == nsrStartup .and. finidat_rtm /= ' ') .or. &
-        (nsrest == nsrContinue) .or. & 
+        (nsrest == nsrContinue) .or. &
         (nsrest == nsrBranch  )) then
           call RtmRestFileRead( file=fnamer )
           fluxout(:,:) = runoff%fluxout(:,:)
@@ -1100,23 +1099,23 @@ contains
     endif
 
     ! Remove water from rtm and send back to clm
-    ! Just consider land points and only remove liquid water 
+    ! Just consider land points and only remove liquid water
     ! runoff%flood needs to be a flux - in units of mm/s
     ! totrunin is a flux (mm/s)
 
     call t_startf('RTMflood')
-    nt = 1 
+    nt = 1
     do nr = runoff%begr,runoff%endr
        ! initialize runoff%flood to zero
        runoff%flood(nr) = 0._r8
        if (flood_active .and. runoff%mask(nr) == 1) then
-          if (runoff%volr(nr,nt) > runoff%fthresh(nr)) then 
+          if (runoff%volr(nr,nt) > runoff%fthresh(nr)) then
              ! determine flux that is sent back to the land
              ! need to convert to mm/s to be consistent with totrunin units
              runoff%flood(nr) = &
                   1000._r8*(runoff%volr(nr,nt)-runoff%fthresh(nr)) / &
                   (delt_rtm*runoff%area(nr))
-             ! runoff%flood will be sent back to land - so must subtract this 
+             ! runoff%flood will be sent back to land - so must subtract this
              ! from the input runoff from land
              ! tcraig, comment - this seems like an odd approach, you
              !   might create negative forcing.  why not take it out of
@@ -1130,7 +1129,7 @@ contains
        endif
     enddo
     call t_stopf('RTMflood')
-    
+
     ! BUDGET, flood out, just liquid water term
     if (budget_check) then
        call t_startf('RTMbudget')
@@ -1333,7 +1332,7 @@ contains
     call shr_sys_flush(iulog)
 
     call t_stopf('RTMrun')
-     
+
   end subroutine Rtmrun
 
   !=======================================================================
@@ -1349,37 +1348,37 @@ contains
     !-----------------------------------------------------------------------
     ! Uses
     use pio
-    use RtmVar          , only : spval 
+    use RtmVar          , only : spval
     use shr_log_mod     , only : errMsg => shr_log_errMsg
 
-    ! Subroutine arguments 
+    ! Subroutine arguments
     ! in mode arguments
     character(len=*), intent(in) :: frivinp
     integer ,         intent(in) :: begr, endr, nt_rtm
     logical ,         intent(in) :: is_rtmflood_on  !control flooding
-    logical ,         intent(in) :: is_effvel_on    !control eff. velocity 
+    logical ,         intent(in) :: is_effvel_on    !control eff. velocity
     integer ,         intent(in) :: gindex( begr: )  ! global index [begr:endr]
     integer ,         intent(in) :: lnumr            ! local number of cells
 
     ! out mode arguments
     real(r8), intent(out) :: fthresh( begr: )  ! Rtm water flood threshold
                                                ! [begr:endr]
-    real(r8), intent(out) :: evel( begr: , 1: )! effective velocity [begr:endr, nt_rtm] 
+    real(r8), intent(out) :: evel( begr: , 1: )! effective velocity [begr:endr, nt_rtm]
 
     ! Local dynamically alloc'd variables
-    real(r8) , allocatable :: rslope(:)   
+    real(r8) , allocatable :: rslope(:)
     real(r8) , allocatable :: max_volr(:)
     real(r8) , allocatable :: tempr1(:,:),tempr2(:,:) ! temporary buffer for netcdf read
 
-    integer(kind=pio_offset_kind), pointer   :: compdof(:) ! computational degrees of freedom for pio 
+    integer(kind=pio_offset_kind), pointer   :: compdof(:) ! computational degrees of freedom for pio
     integer :: nt,n,cnt,nr           ! indices
     logical :: readvar               ! read variable in or not
     integer :: ier                   ! status variable
-    integer :: dids(2)               ! variable dimension ids 
+    integer :: dids(2)               ! variable dimension ids
     integer :: dsizes(2)             ! variable global sizes
     type(file_desc_t)  :: ncid       ! pio file desc
-    type(var_desc_t)   :: vardesc1   ! pio variable desc 
-    type(var_desc_t)   :: vardesc2   ! pio variable desc 
+    type(var_desc_t)   :: vardesc1   ! pio variable desc
+    type(var_desc_t)   :: vardesc2   ! pio variable desc
     type(io_desc_t)    :: iodesc     ! pio io desc
     character(len=256) :: locfn      ! local file name
 
@@ -1401,7 +1400,7 @@ contains
     min_ev4_5(:) = 0.05_r8  ! minimum downstream velocity (m/s)
 
     !----------------------
-    ! if either is_rtmflood_on = .true. or is_effvel_on is .true. then do 
+    ! if either is_rtmflood_on = .true. or is_effvel_on is .true. then do
     ! read slope and max_volr out of rdric file.  Below we make the distinction
     ! between using SLOPE (only when is_effvel_on=.true.) and MAX_VOLR (which is
     ! always used when is_rtmflood_on is .true.).
@@ -1447,17 +1446,17 @@ contains
        enddo
        call pio_initdecomp(pio_subsystem, pio_double, dsizes, compdof, iodesc)
        deallocate(compdof)
-   
+
        ! Read data
        call pio_read_darray(ncid, vardesc1, iodesc, rslope, ier)
        call pio_read_darray(ncid, vardesc2, iodesc, max_volr, ier)
-   
+
        ! Cleanup and close file
        call pio_freedecomp(ncid, iodesc)
        call pio_closefile(ncid)
 
     endif
-   
+
     ! done reading rdirc file, now set fthresh and effvel
     if (is_rtmflood_on) then
        do nt = 1,nt_rtm
@@ -1472,7 +1471,7 @@ contains
        do nt = 1,nt_rtm
           do n = begr, endr
              ! modify velocity based on gridcell average slope (Manning eqn)
-             evel(n,nt) = max(min_ev4_5(nt),effvel4_5(nt)*sqrt(max(0._r8,rslope(n)))) 
+             evel(n,nt) = max(min_ev4_5(nt),effvel4_5(nt)*sqrt(max(0._r8,rslope(n))))
           end do
        end do
     else
@@ -1491,7 +1490,7 @@ contains
 
     if (masterproc) write(iulog,*) subname //':: Success '
 
-  end subroutine RtmFloodInit 
+  end subroutine RtmFloodInit
 
   !=======================================================================
   !
@@ -1510,7 +1509,7 @@ contains
      if (allocated(sfluxin)) deallocate(sfluxin)
      if (allocated(ddist))   deallocate(ddist)
      if (allocated(evel))    deallocate(evel)
-     
+
   end subroutine RtmFinalize
   !=======================================================================
 
