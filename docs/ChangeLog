@@ -1,4 +1,48 @@
 ===============================================================
+Tag name:  rtm1_0_83
+Originator(s): slevis
+Date: Nov 12, 2024
+One-line Summary: Stop running 0th timestep
+
+For consistency with CAM and CTSM.
+
+Resolves #
+Relates to CTSM issue ESCOMP/CTSM#925 and PR ESCOMP/CTSM#2084
+
+Pull Requests:
+
+ #37
+
+===============================================================
+Tag name:  rtm1_0_82
+Originator(s): slevis
+Date: Nov 11, 2024
+One-line Summary: Change time to equal the middle of time_bounds
+
+For consistency with CAM and CTSM and for more intuitive history output.
+
+Resolves #
+Relates to issue #32 but does not resolve the separation of instantaneous variables onto separate history files.
+
+Pull Requests:
+
+ #39
+
+===============================================================
+Tag name:  rtm1_0_81
+Originator(s): ekluzek
+Date: Nov 8, 2024
+One-line Summary: Update testlist_rtm
+
+We are keeping RTM for the use of the NoAnthro tests for Clm60, and for continuing to test the Clm45 compsets where RTM was the standard ROF model being used. There's also a Clm50 compset with RTM for the FLOOD option in RTM. Since, FLOOD is currently only working in RTM, we should continue testing it. It's also good to have at least 1850 and 2000 and possibly HIST. Since, nothing changes for RTM for transient cases, it's probably sufficient to have 1850 tests.
+
+Resolves #54
+
+Pull Requests:
+
+ #55
+
+===============================================================
 Tag name:  rtm1_0_80
 Originator(s): swensosc
 Date: Jun 21, 2024
