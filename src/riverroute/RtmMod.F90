@@ -100,13 +100,14 @@ contains
 ! !IROUTINE: Rtmini
 !
 ! !INTERFACE:
-  subroutine Rtmini()
+  subroutine Rtmini( currTime )
 !
 ! !DESCRIPTION:
 ! Initialize RTM grid, mask, decomp
 !
 ! !USES:
   use RunoffMod       , only : RunoffInit, runoff
+  use ESMF            , only : ESMF_Time
 !
 ! !ARGUMENTS:
     implicit none
@@ -118,6 +119,7 @@ contains
 ! Author: Sam Levis
 ! Update: T Craig, Dec 2006
 !
+    type(ESMF_Time), intent(IN) :: currTime              ! Current time
 !
 ! !LOCAL VARIABLES:
 !EOP
@@ -334,9 +336,8 @@ contains
     endif
 
     ! Initialize time manager
-    if (nsrest == nsrStartup) then
-       call timemgr_init(dtime_in=rtm_tstep)
-    else
+    call timemgr_init(dtime_in=rtm_tstep, curr_date_in=currTime )
+    if (nsrest /= nsrStartup) then
        call RtmRestTimeManager(file=fnamer)
     end if
 

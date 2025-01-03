@@ -7,7 +7,6 @@ module RtmRestFile
 !
 ! !DESCRIPTION:
 ! Reads from or writes to/ the RTM restart file.
-!
 ! !USES:
   use shr_kind_mod  , only : r8 => shr_kind_r8
   use shr_sys_mod   , only : shr_sys_abort
@@ -20,7 +19,7 @@ module RtmRestFile
                              nt_rtm, rtm_tracers
   use RtmHistFile   , only : RtmHistRestart
   use RtmFileUtils  , only : relavu, getavu, opnfil, getfil
-  use RtmTimeManager, only : timemgr_restart, get_nstep, get_curr_date, is_last_step
+  use RtmTimeManager, only : timemgr_restart, get_nstep, get_curr_date, is_last_step, get_prev_date
   use RunoffMod     , only : runoff
   use RtmIO
   use RtmDateTime
@@ -235,39 +234,47 @@ contains
 !-----------------------------------------------------------------------
 
   subroutine restFile_read_pfile( pnamer )
-
     ! !DESCRIPTION:
     ! Setup restart file and perform necessary consistency checks
+    !!USES:
+    use mpi, only : MPI_CHARACTER
+    use RtmSpmd, only : mpicom_rof
 
     ! !ARGUMENTS:
     implicit none
     character(len=*), intent(out) :: pnamer ! full path of restart file
 
     ! !LOCAL VARIABLES:
-    integer :: i                  ! indices
-    integer :: nio                ! restart unit
-    integer :: status             ! substring check status
-    character(len=256) :: locfn   ! Restart pointer file name
-    !--------------------------------------------------------
-
-    ! Obtain the restart file from the restart pointer file.
-    ! For restart runs, the restart pointer file contains the full pathname
-    ! of the restart file. For branch runs, the namelist variable
-    ! [nrevsn_rtm] contains the full pathname of the restart file.
-    ! New history files are always created for branch runs.
+    integer :: nio                 ! restart unit
+    integer :: ier                 ! error return from fortran open
+    integer :: i                   ! indices
+    integer :: yr, mon, day, tod   ! Year, month, day of month, and time-of-day
+    character(len=17) :: timestamp ! Simulation timestamp for current date
+    character(len=256) :: locfn    ! Restart pointer file name
+    !-------------------------------------
 
     if (masterproc) then
-       write(iulog,*) 'Reading restart pointer file....'
+       call get_curr_date(yr, mon, day, tod)
+       write(timestamp,'(".",i4.4,"-",i2.2,"-",i2.2,"-",i5.5)'),yr,mon,day,tod
+       locfn = './'// trim(rpntfil)//trim(inst_suffix)//timestamp
+
+       write(iulog,*) 'Reading restart pointer file: '//trim(locfn)
+       open (newunit=nio, file=trim(locfn), status='old', form='formatted', iostat=ier)
+       if (ier /= 0) then
+          locfn = './'// trim(rpntfil)//trim(inst_suffix)
+          open (newunit=nio, file=trim(locfn), status='old', form='formatted', iostat=ier)
+          if (ier /= 0) then
+             write(iulog,'(a,i8)')'(restFile_read_pfile): failed to open file '//trim(locfn)//' ierr=',ier
+             call shr_sys_abort()
+          end if
+       endif
+       read (nio,'(a256)') pnamer
+       close(nio)
     endif
 
-    nio = getavu()
-    locfn = './'// trim(rpntfil)//trim(inst_suffix)
-    call opnfil (locfn, nio, 'f')
-    read (nio,'(a256)') pnamer
-    call relavu (nio)
-
+    call mpi_bcast (pnamer, len(pnamer), MPI_CHARACTER, 0, mpicom_rof, ier)
     if (masterproc) then
-       write(iulog,*) 'Reading restart data.....'
+       write(iulog,'(a)') 'Reading restart data: ',trim(pnamer)
        write(iulog,'(72a1)') ("-",i=1,60)
     end if
 
@@ -286,21 +293,28 @@ contains
     !
     ! !LOCAL VARIABLES:
     integer :: m                    ! index
-    integer :: nio                  ! restart pointer file
+    integer :: nio                  ! restart pointer file unit number
     character(len=256) :: filename  ! local file name
+    integer :: ier                  ! error return from fortran open
+    integer :: yr, mon, day, tod    ! Year, month, day, time-of-day
+    character(len=17) :: timestamp  ! Simulation current time-stamp as string
 
     if (masterproc) then
-       nio = getavu()
-       filename= './'// trim(rpntfil)//trim(inst_suffix)
-       call opnfil( filename, nio, 'f' )
+       call get_curr_date(yr, mon, day, tod)
+       write(timestamp,'(".",i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr, mon, day, tod
+       filename= './'// trim(rpntfil)//trim(inst_suffix)//timestamp
+       open (newunit=nio, file=trim(filename), status='unknown', form='formatted', iostat=ier)
+       if (ier /= 0) then
+          write(iulog,'(a,i8)')'(restFile_write_pfile): failed to open file '//trim(filename)//' ierr=',ier
+          call shr_sys_abort()
+       end if
 
        write(nio,'(a)') fnamer
-       call relavu( nio )
-       write(iulog,*)'Successfully wrote local restart pointer file'
+       close( nio )
+       write(iulog,*)'Successfully wrote local restart pointer file: '//trim(filename)
     end if
 
   end subroutine restFile_write_pfile
-
 
 !-----------------------------------------------------------------------
 

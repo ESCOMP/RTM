@@ -14,8 +14,8 @@ module RtmTimeManager
 
    public ::&
       timemgr_setup,            &! setup startup values
-      timemgr_init,             &! time manager initialization
-      timemgr_restart,          &! read/write time manager restart info and restart time manager
+      timemgr_init,             &! time manager initialization, always called
+      timemgr_restart,          &! read/write time manager restart info and make sure synchronized with time
       timemgr_finalize,         &! calls ESMF_ClockDestroy to clean up ESMF clock memory
       advance_timestep,         &! increment timestep number
       get_clock,                &! get the clock from the time-manager
@@ -105,11 +105,11 @@ subroutine timemgr_setup( calendar_in, start_ymd_in, start_tod_in, ref_ymd_in, &
   integer         , optional, intent(IN) :: ref_tod_in        ! Reference time of day (sec)
   integer         , optional, intent(IN) :: stop_ymd_in       ! Stop date        (YYYYMMDD)
   integer         , optional, intent(IN) :: stop_tod_in       ! Stop time of day (sec)
-  character(len=*), parameter :: sub = 'rtm::set_timemgr_init'
+  character(len=*), parameter :: sub = 'rtm::timemgr_setup'
 
   ! timemgr_set is called in timemgr_init and timemgr_restart
   if ( timemgr_set ) then
-     call shr_sys_abort( sub//":: timemgr_init or timemgr_restart already called" )
+     call shr_sys_abort( sub//":: timemgr_init already called" )
   end if
   if (present(calendar_in) ) calendar  = trim(calendar_in)
   if (present(start_ymd_in)) start_ymd = start_ymd_in
@@ -124,11 +124,12 @@ end subroutine timemgr_setup
 
 !=========================================================================================
 
-subroutine timemgr_init( dtime_in )
+subroutine timemgr_init( dtime_in, curr_date_in )
 
   ! Initialize the ESMF time manager from the sync clock
   !
-  integer, intent(in) :: dtime_in         ! Time-step (sec)
+  integer, intent(in) :: dtime_in               ! ` Time-step (sec)
+  type(ESMF_Time), intent(in), optional :: curr_date_in   !  Current time from coupler``
   !
   integer         :: rc                    ! return code
   integer         :: yr, mon, day, tod     ! Year, month, day, and second as integers
@@ -161,8 +162,11 @@ subroutine timemgr_init( dtime_in )
   start_date = TimeSetymd( start_ymd, start_tod, "start_date" )
 
   ! Initialize current date
-  curr_date = start_date
-
+  if(present(curr_date_in)) then
+     curr_date = curr_date_in
+  else
+     curr_date = start_date
+  endif
   ! Initalize stop date.
   stop_date = TimeSetymd( 99991231, stop_tod, "stop_date" )
 
@@ -269,7 +273,6 @@ end subroutine init_clock
 
 function TimeSetymd( ymd, tod, desc )
 
-
   ! Set the time by an integer as YYYYMMDD and integer seconds in the day
   !
   integer, intent(in) :: ymd            ! Year, month, day YYYYMMDD
@@ -347,6 +350,13 @@ subroutine timemgr_restart(ncid, flag)
   character(len=135) :: varname
   character(len=len(calendar)) :: cal
   character(len=*), parameter :: sub = 'timemgr_restart'
+  !
+  !
+  if ( .not. timemgr_set ) then
+     call shr_sys_abort( sub//":: timemgr_init MUST be called first" )
+  end if
+  !
+  ! Read/Write/Define restart time from restart file
   !
   if (flag == 'write') then
      rst_calendar  = calendar
@@ -509,31 +519,32 @@ subroutine timemgr_restart(ncid, flag)
 
 
   if (flag == 'read') then
+      !
+      ! On read make sure restart read in agrees with the system clock sent in
+      !
+      ! Compare the timestep to restart file
+      if(dtime .ne. rst_step_sec) then
+         call shr_sys_abort( sub//'ERROR: dtime does not match restart file rst_step_sec')
+      endif
+      if(start_ymd .ne. rst_start_ymd) then
+         call shr_sys_abort( sub//'ERROR: start_ymd does not match restart file rst_start_ymd')
+      endif
+      if(start_tod .ne. rst_start_tod) then
+         call shr_sys_abort( sub//'ERROR: start_tod does not match restart file rst_start_tod')
+      endif
 
-     ! Restart the ESMF time manager using the synclock for ending date.
-     call timemgr_spmdbcast( )
-     
-     ! Initialize calendar from restart info
-     call init_calendar()
-     
-     ! Initialize the timestep from restart info
-     dtime = rst_step_sec
-     
-     ! Initialize start date from restart info
-     start_date = TimeSetymd( rst_start_ymd, rst_start_tod, "start_date" )
-     
-     ! Initialize current date from restart info
-     curr_date = TimeSetymd( rst_curr_ymd, rst_curr_tod, "curr_date" )
-     
-     ! Initialize stop date from sync clock or namelist input
-     stop_date = TimeSetymd( 99991231, stop_tod, "stop_date" )
-     
-     call ESMF_TimeIntervalSet( step_size, s=dtime, rc=rc )
-     call chkrc(rc, sub//': error return from ESMF_TimeIntervalSet: setting step_size')
-     
-     call ESMF_TimeIntervalSet( day_step_size, d=1, rc=rc )
-     call chkrc(rc, sub//': error return from ESMF_TimeIntervalSet: setting day_step_size')
-     
+      if(ref_ymd .ne. rst_ref_ymd) then
+         call shr_sys_abort( sub//'ERROR: ref_ymd does not match restart file rst_ref_ymd')
+      endif
+      if(ref_tod .ne. rst_ref_tod) then
+         call shr_sys_abort( sub//'ERROR: ref_tod does not match restart file rst_ref_tod')
+      endif
+
+      call ESMF_TimeIntervalSet( step_size, s=dtime, rc=rc )
+      call chkrc(rc, sub//': error return from ESMF_TimeIntervalSet: setting step_size')
+      call ESMF_TimeIntervalSet( day_step_size, d=1, rc=rc )
+      call chkrc(rc, sub//': error return from ESMF_TimeIntervalSet: setting day_step_size')
+
      if    ( stop_ymd /= uninit_int ) then
         current = TimeSetymd( stop_ymd, stop_tod, "stop_date" )
         if ( current < stop_date ) stop_date = current
@@ -569,20 +580,9 @@ subroutine timemgr_restart(ncid, flag)
         call shr_sys_abort
      end if
      
-     ! Initialize ref date from restart info
-     ref_date = TimeSetymd( rst_ref_ymd, rst_ref_tod, "ref_date" )
-     
-     ! Initialize clock 
-     call init_clock( start_date, ref_date, curr_date, stop_date )
-     
      ! Set flag that this is the first timestep of the restart run.
      tm_first_restart_step = .true.
      
-     ! Print configuration summary to log file (stdout).
-     if (masterproc) call timemgr_print()
-
-     timemgr_set = .true.
-
   end if
 
 end subroutine timemgr_restart
