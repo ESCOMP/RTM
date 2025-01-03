@@ -158,7 +158,7 @@ contains
     !-------------------------------------
 
     ! Read file
-    if (masterproc) write(iulog,*) 'Reading restart Timemanger'
+    if (masterproc) write(iulog,*) 'Reading restart Timemanager: '//trim(file)
     call ncd_pio_openfile (ncid, trim(file), 0)
     call timemgr_restart(ncid, flag='read')
     call ncd_pio_closefile(ncid)
