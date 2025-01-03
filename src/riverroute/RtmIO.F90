@@ -176,13 +176,22 @@ contains
     character(len=*),parameter :: subname='ncd_pio_openfile' ! subroutine name
     !-----------------------------------------------------------------------
 
-    ierr = pio_openfile(pio_subsystem, file, io_type, fname, mode)
+    if ( fname(1:1) == " " )then
+       call shr_sys_abort(subname//'ERROR: input filename is blank')
+    end if
+    if ( len_trim(fname) >= 256 )then
+       write(iulog,*) 'Input filename ', trim(fname)
+       call shr_sys_abort(subname//'ERROR: input filename is too long')
+    end if
+    if ( masterproc ) write(iulog,*) 'Attempt to open file :', trim(fname)
+    ierr = pio_openfile(pio_subsystem, file, io_type, trim(fname), mode)
 
     if(ierr/= PIO_NOERR) then
-       call shr_sys_abort(subname//'ERROR: Failed to open file')
+       call shr_sys_abort(subname//'ERROR: Failed to open file'//trim(fname))
     else if(pio_iotask_rank(pio_subsystem)==0) then
-       write(iulog,*) 'Opened existing file ', trim(fname), file%fh
+       if ( masterproc ) write(iulog,*) 'Successfully opened existing file ', trim(fname), file%fh
     end if
+    call shr_sys_flush(iulog)
 
   end subroutine ncd_pio_openfile
 
