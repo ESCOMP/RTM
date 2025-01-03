@@ -328,16 +328,17 @@ contains
     ! Intiialize RTM pio
     call ncd_pio_init()
 
+    ! Initialize time manager
+    call timemgr_init(dtime_in=rtm_tstep, curr_date_in=currTime )
+
     ! Obtain restart file if appropriate
     if ((nsrest == nsrStartup .and. finidat_rtm /= ' ') .or. &
         (nsrest == nsrContinue) .or. &
         (nsrest == nsrBranch  )) then
            call RtmRestGetfile( file=fnamer, path=pnamer )
     endif
-
-    ! Initialize time manager
-    call timemgr_init(dtime_in=rtm_tstep, curr_date_in=currTime )
-    if (nsrest /= nsrStartup) then
+    ! Read restart file if not a startup type
+    if (nsrest /= nsrStartup )then
        call RtmRestTimeManager(file=fnamer)
     end if
 
