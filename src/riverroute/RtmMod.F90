@@ -24,7 +24,7 @@ module RtmMod
                                inst_index, inst_suffix, inst_name, &
                                rtm_active, flood_active, effvel_active, &
                                nt_rtm, rtm_tracers
-  use RtmFileUtils    , only : getfil, getavu, relavu
+  use RtmFileUtils    , only : getfil
   use RtmTimeManager  , only : timemgr_init, get_nstep, get_curr_date
   use RtmHistFlds     , only : RtmHistFldsInit, RtmHistFldsSet
   use RtmHistFile     , only : RtmHistUpdateHbuf, RtmHistHtapesWrapup, RtmHistHtapesBuild, &
@@ -212,9 +212,8 @@ contains
                //trim(nlfilename_rof)
           call shr_sys_abort()
        end if
-       unitn = getavu()
        write(iulog,*) 'Read in rtm_inparm namelist from: ', trim(nlfilename_rof)
-       open( unitn, file=trim(nlfilename_rof), status='old' )
+       open( newunit=unitn, file=trim(nlfilename_rof), status='old' )
        ier = 1
        do while ( ier /= 0 )
           read(unitn, rtm_inparm, iostat=ier)
@@ -222,7 +221,7 @@ contains
              call shr_sys_abort( subname//' encountered end-of-file on rtm_inparm read' )
           endif
        end do
-       call relavu( unitn )
+       close( unitn )
    end if
 
     call mpi_bcast (rtm_tstep,   1, MPI_INTEGER, 0, mpicom_rof, ier)

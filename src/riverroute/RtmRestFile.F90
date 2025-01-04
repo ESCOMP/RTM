@@ -18,7 +18,7 @@ module RtmRestFile
                              ctitle, version, username, hostname, conventions, source, &
                              nt_rtm, rtm_tracers
   use RtmHistFile   , only : RtmHistRestart
-  use RtmFileUtils  , only : relavu, getavu, opnfil, getfil
+  use RtmFileUtils  , only : getfil
   use RtmTimeManager, only : timemgr_restart, get_nstep, get_curr_date, is_last_step, get_prev_date
   use RunoffMod     , only : runoff
   use RtmIO

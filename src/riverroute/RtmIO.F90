@@ -11,8 +11,6 @@ module RtmIO
 ! !USES:
   use shr_kind_mod   , only : r8 => shr_kind_r8, i8=>shr_kind_i8, shr_kind_cl, r4=>shr_kind_r4
   use shr_sys_mod    , only : shr_sys_flush, shr_sys_abort
-  use shr_file_mod   , only : shr_file_getunit, shr_file_freeunit
-  use RtmFileUtils   , only : getavu, relavu
   use RtmSpmd        , only : masterproc, mpicom_rof, iam, npes
   use RunoffMod      , only : runoff
   use RtmVar         , only : spval, ispval, iulog
