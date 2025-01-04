@@ -10,6 +10,7 @@ Have the restart pointer filenames for RTM with the simulation time-stamp in the
 Also remove use of shr_file_mod throughout the code.
 
 Resolves: ESCOMP/RTM#53
+
 Resolves: ESCOMP/RTM#46
 
 PR
