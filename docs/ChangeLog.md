@@ -9,6 +9,8 @@ Have the restart pointer filenames for RTM with the simulation time-stamp in the
 
 Also remove use of shr_file_mod throughout the code.
 
+Change the ChangeLog file into a markdown file and start using some markdown syntax.
+
 Resolves: ESCOMP/RTM#53
 
 Resolves: ESCOMP/RTM#46
