@@ -7,10 +7,13 @@
 
 Have the restart pointer filenames for RTM with the simulation time-stamp in them. Make it backwards compatible to using filenames without the simulation time-stamp as well. This changes time-manager setup from reading in the restart time from the restart file -- to using the current time sent from the coupler. Previously you would EITHER call timemgr_init OR timemgr_restart. Now, you always call timemgr_init -- and only call timemgr_restart for a restart case, with most of what it does is to make sure the time on the restart file agrees with the time sent from the coupler.
 
-Resolves: #53 #46
+Also remove use of shr_file_mod throughout the code.
+
+Resolves: ESCOMP/RTM#53
+Resolves: ESCOMP/RTM#46
 
 PR
-#57
+ESCOMP/RTM#57
 
 <hr>
 
