@@ -329,7 +329,7 @@ contains
     call ncd_pio_init()
 
     ! Initialize time manager
-    call timemgr_init(dtime_in=rtm_tstep, curr_date_in=currTime )
+    call timemgr_init(dtime_in=rtm_tstep, curr_date=currTime )
 
     ! Obtain restart file if appropriate
     if ((nsrest == nsrStartup .and. finidat_rtm /= ' ') .or. &
