@@ -461,7 +461,7 @@ contains
          hostname_in=hostname, &
          username_in=username)
 
-    call Rtmini()
+    call Rtmini( currTime )
 
     ! Initialize memory for input state
 
@@ -605,25 +605,9 @@ contains
     call NUOPC_ModelGet(gcomp, modelClock=clock, importState=importState, exportState=exportState, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    !--------------------------------
-    ! Determine if time to write restart
-    !--------------------------------
-
-    call ESMF_ClockGetAlarm(clock, alarmname='alarm_restart', alarm=alarm, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
-    if (ESMF_AlarmIsRinging(alarm, rc=rc)) then
-       if (ChkErr(rc,__LINE__,u_FILE_u)) return
-       rstwr = .true.
-       call ESMF_AlarmRingerOff( alarm, rc=rc )
-       if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    else
-       rstwr = .false.
-    endif
-
-    !--------------------------------
-    ! Determine if time to stop
-    !--------------------------------
+    !---------------------------------------------------------------------------------------------
+    ! Determine if time to stop, do this before the restart alarm in case it needs the stop alarm
+    !---------------------------------------------------------------------------------------------
 
     call ESMF_ClockGetAlarm(clock, alarmname='alarm_stop', alarm=alarm, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -637,6 +621,21 @@ contains
        nlend = .false.
     endif
 
+    !----------------------------------------------------------
+    ! Determine if time to write restart, after the stop alarm
+    !-----------------------------------------------------------
+
+    call ESMF_ClockGetAlarm(clock, alarmname='alarm_restart', alarm=alarm, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+    if (ESMF_AlarmIsRinging(alarm, rc=rc)) then
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       rstwr = .true.
+       call ESMF_AlarmRingerOff( alarm, rc=rc )
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    else
+       rstwr = .false.
+    endif
     !--------------------------------
     ! First advance rtm time step
     !--------------------------------

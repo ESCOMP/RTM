@@ -11,8 +11,6 @@ module RtmIO
 ! !USES:
   use shr_kind_mod   , only : r8 => shr_kind_r8, i8=>shr_kind_i8, shr_kind_cl, r4=>shr_kind_r4
   use shr_sys_mod    , only : shr_sys_flush, shr_sys_abort
-  use shr_file_mod   , only : shr_file_getunit, shr_file_freeunit
-  use RtmFileUtils   , only : getavu, relavu
   use RtmSpmd        , only : masterproc, mpicom_rof, iam, npes
   use RunoffMod      , only : runoff
   use RtmVar         , only : spval, ispval, iulog
@@ -176,13 +174,22 @@ contains
     character(len=*),parameter :: subname='ncd_pio_openfile' ! subroutine name
     !-----------------------------------------------------------------------
 
-    ierr = pio_openfile(pio_subsystem, file, io_type, fname, mode)
+    if ( fname(1:1) == " " )then
+       call shr_sys_abort(subname//'ERROR: input filename is blank')
+    end if
+    if ( len_trim(fname) >= 256 )then
+       write(iulog,*) 'Input filename ', trim(fname)
+       call shr_sys_abort(subname//'ERROR: input filename is too long')
+    end if
+    if ( masterproc ) write(iulog,*) 'Attempt to open file :', trim(fname)
+    ierr = pio_openfile(pio_subsystem, file, io_type, trim(fname), mode)
 
     if(ierr/= PIO_NOERR) then
-       call shr_sys_abort(subname//'ERROR: Failed to open file')
+       call shr_sys_abort(subname//'ERROR: Failed to open file'//trim(fname))
     else if(pio_iotask_rank(pio_subsystem)==0) then
-       write(iulog,*) 'Opened existing file ', trim(fname), file%fh
+       if ( masterproc ) write(iulog,*) 'Successfully opened existing file ', trim(fname), file%fh
     end if
+    call shr_sys_flush(iulog)
 
   end subroutine ncd_pio_openfile
 
