@@ -1,5 +1,22 @@
 <hr>
 
+# Tag name:  rtm1_0_85
+### Originator(s): samrabin
+### Date: Jan 14, 2025
+### One-line Summary: Standardize time metadata
+
+Standardizes a dimension name of output variable time_bounds, as well as attributes for that plus mcdate, mcsec, mdcur, and mscur.
+
+Contributors: Adam Phillips, Erik Kluzek
+
+Resolves ESCOMP/RTM#31
+Contributes to https://github.com/ESCOMP/CTSM/issues/1693
+
+PR ESCOMP/RTM#35
+Contributes to https://github.com/ESCOMP/CTSM/pull/2052
+
+<hr>
+
 # Tag name:  rtm1_0_84
 ### Originator(s): ekluzek
 ### Date: Jan 03, 2025
