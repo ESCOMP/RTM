@@ -4,6 +4,7 @@
   <test name="ERS_D_Ld5" grid="f10_f10_mg37" compset="I2000Clm45Sp" testmods="rtm/default">
     <machines>
       <machine name="derecho" compiler="intel" category="rtm"></machine>
+      <machine name="izumi" compiler="nag" category="rtm"></machine>
     </machines>
     <options>
       <option name="wallclock">00:20:00</option>

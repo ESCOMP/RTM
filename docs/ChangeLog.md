@@ -1,5 +1,19 @@
 <hr>
 
+# Tag name:  rtm1_0_86
+### Originator(s): samrabin
+### Date: Jan 16, 2025
+### One-line Summary: Fix izumi_nag compile
+
+Fix so can compile and run on izumi_nag. Also add a single test to the rtm testsuite for izumi_nag
+
+Resolves ESCOMP/RTM#60
+Resolves ESCOMP/RTM#59
+
+PR ESCOMP/RTM#58
+
+<hr>
+
 # Tag name:  rtm1_0_85
 ### Originator(s): samrabin
 ### Date: Jan 14, 2025
