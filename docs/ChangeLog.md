@@ -1,5 +1,18 @@
 <hr>
 
+# Tag name:  rtm1_0_87
+### Originator(s): slevis
+### Date: Jul l, 2025
+### One-line Summary: Separate instantaneous and non-inst. history files
+
+This is the rtm equivalent of ESCOMP/CTSM#2445.
+
+Resolves ESCOMP/RTM#32
+
+PR ESCOMP/RTM#61
+
+<hr>
+
 # Tag name:  rtm1_0_86
 ### Originator(s): samrabin
 ### Date: Jan 16, 2025
