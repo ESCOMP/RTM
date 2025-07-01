@@ -80,8 +80,8 @@ contains
          ptr_rof=runoff%dvolrdtocn_nt2, default='inactive')
 
     call RtmHistAddfld (fname='RTMFLOOD', units='m3/s',  &
-         avgflag='A', long_name='RTM flooding flux', &
-         ptr_rof=runoff%flood, default='inactive')
+         avgflag='I', long_name='RTM flooding flux', &
+         ptr_rof=runoff%flood)
 
     call RtmHistAddfld (fname='QIRRIG', units='mm/s',  &
          avgflag='A', long_name='Irrigation flux from land', &
