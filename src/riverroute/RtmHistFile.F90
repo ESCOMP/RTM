@@ -136,7 +136,7 @@ module RtmHistFile
 
   type history_tape
      integer  :: nflds(max_split_files)        ! number of active fields on file
-     integer  :: ntimes(max_split_files)       ! current number of time samples on tape
+     integer  :: ntimes(max_split_files)       ! current number of time samples on tape; although ntimes is an array, all its values are the same
      integer  :: mfilt                         ! maximum number of time samples per tape
      integer  :: nhtfrq                        ! number of time samples per tape
      integer  :: ncprec                        ! netcdf output precision
