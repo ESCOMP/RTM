@@ -79,6 +79,10 @@ contains
          avgflag='A', long_name='RTM ocean change of storage: '//trim(rtm_tracers(2)), &
          ptr_rof=runoff%dvolrdtocn_nt2, default='inactive')
 
+    ! RTM and MOSART (unlike the CLM) do not have the history_tape_in_use
+    ! capability, so both models throw an error when h0i is empty. For this
+    ! reason RTM and MOSART always need at least one instantaneous field so
+    ! that h0i will not be empty.
     call RtmHistAddfld (fname='RTMFLOOD', units='m3/s',  &
          avgflag='I', long_name='RTM flooding flux', &
          ptr_rof=runoff%flood)
