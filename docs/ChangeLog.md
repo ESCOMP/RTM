@@ -2,7 +2,7 @@
 
 # Tag name:  rtm1_0_87
 ### Originator(s): slevis
-### Date: Jul l, 2025
+### Date: Jul 03, 2025
 ### One-line Summary: Separate instantaneous and non-inst. history files
 
 This is the rtm equivalent of ESCOMP/CTSM#2445.
