@@ -1,5 +1,16 @@
 <hr>
 
+# Tag name:  rtm1_0_88
+### Originator(s): slevis
+### Date: Jul 14, 2025
+### One-line Summary: Fix RTM h0i file metadata
+
+Resolves ESCOMP/RTM#63 h0i files end up with the same metadata as h0a files
+
+PR ESCOMP/RTM#64
+
+<hr>
+
 # Tag name:  rtm1_0_87
 ### Originator(s): slevis
 ### Date: Jul 03, 2025
