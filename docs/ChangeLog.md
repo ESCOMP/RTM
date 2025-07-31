@@ -1,5 +1,16 @@
 <hr>
 
+# Tag name:  rtm1_0_89
+### Originator(s): slevis
+### Date: Jul 31, 2025
+### One-line Summary: Add write_restart_at_endofrun functionality to rtm same as in clm
+
+Resolves ESCOMP/RTM#65 RTM missing logic needed to write restarts at end of run when write_restart_at_endofrun is TRUE
+
+PR ESCOMP/RTM#66
+
+<hr>
+
 # Tag name:  rtm1_0_88
 ### Originator(s): slevis
 ### Date: Jul 14, 2025
