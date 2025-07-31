@@ -61,6 +61,9 @@ module rof_comp_nuopc
 
   integer     , parameter :: debug = 1
   character(*), parameter :: modName =  "(rof_comp_nuopc)"
+
+  logical :: write_restart_at_endofrun = .false.
+
   character(*), parameter :: u_FILE_u = &
        __FILE__
 
@@ -312,6 +315,8 @@ contains
     integer                     :: localPet, localPeCount ! mpi task and thread count variables
     character(CL)               :: cvalue
     character(ESMF_MAXSTR)      :: convCIM, purpComp
+    logical                     :: isPresent  ! If attribute is present
+    logical                     :: isSet      ! If attribute is present and also set
     character(len=*), parameter :: subname=trim(modName)//':(InitializeRealize) '
     !---------------------------------------------------------------------------
 
@@ -413,6 +418,12 @@ contains
        calendar = shr_cal_gregorian
     else
        call shr_sys_abort( subname//'ERROR:: bad calendar for ESMF' )
+    end if
+
+    call NUOPC_CompAttributeGet(gcomp, name="write_restart_at_endofrun", value=cvalue, isPresent=isPresent, isSet=isSet, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    if (isPresent .and. isSet) then
+       if (trim(cvalue) .eq. '.true.') write_restart_at_endofrun = .true.
     end if
 
     !----------------------
@@ -625,16 +636,19 @@ contains
     ! Determine if time to write restart, after the stop alarm
     !-----------------------------------------------------------
 
-    call ESMF_ClockGetAlarm(clock, alarmname='alarm_restart', alarm=alarm, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
-    if (ESMF_AlarmIsRinging(alarm, rc=rc)) then
-       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    rstwr = .false.
+    if (nlend .and. write_restart_at_endofrun) then
        rstwr = .true.
-       call ESMF_AlarmRingerOff( alarm, rc=rc )
-       if (ChkErr(rc,__LINE__,u_FILE_u)) return
     else
-       rstwr = .false.
+       call ESMF_ClockGetAlarm(clock, alarmname='alarm_restart', alarm=alarm, rc=rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+       if (ESMF_AlarmIsRinging(alarm, rc=rc)) then
+          if (ChkErr(rc,__LINE__,u_FILE_u)) return
+          rstwr = .true.
+          call ESMF_AlarmRingerOff( alarm, rc=rc )
+          if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       endif
     endif
     !--------------------------------
     ! First advance rtm time step
