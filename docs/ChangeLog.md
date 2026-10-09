@@ -8,6 +8,7 @@
 Resolves ESCOMP/RTM#68 Remove CLM45 compset from testing as CTSM is deprecating and removing it from compsets
 
 PR ESCOMP/RTM#69
+Corresponds to ESCOMP/MOSART#131
 Relates to ESCOMP/CTSM#4234
 
 <hr>
