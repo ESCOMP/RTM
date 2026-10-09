@@ -1,5 +1,17 @@
 <hr>
 
+# Tag name:  rtm1_0_90
+### Originator(s): slevis
+### Date: Oct 09, 2026
+### One-line Summary: Move g17/g37 grids to t233/t201
+
+Resolves ESCOMP/RTM#68 Remove CLM45 compset from testing as CTSM is deprecating and removing it from compsets
+
+PR ESCOMP/RTM#69
+Relates to ESCOMP/CTSM#4234
+
+<hr>
+
 # Tag name:  rtm1_0_89
 ### Originator(s): slevis
 ### Date: Jul 31, 2025
