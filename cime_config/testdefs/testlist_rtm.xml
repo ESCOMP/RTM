@@ -1,16 +1,6 @@
 <?xml version="1.0"?>
 <testlist version="2.0">
 
-  <test name="ERS_D_Ld5" grid="f10_f10_mt201" compset="I2000Clm45Sp" testmods="rtm/default">
-    <machines>
-      <machine name="derecho" compiler="intel" category="rtm"></machine>
-      <machine name="izumi" compiler="nag" category="rtm"></machine>
-    </machines>
-    <options>
-      <option name="wallclock">00:20:00</option>
-      <option name="comment"  >Restart test with DEBUG on</option>
-    </options>
-  </test>
   <test name="ERS_D_Ld5" grid="f10_f10_mt201" compset="I2000Clm50SpRtmFl" testmods="rtm/default">
     <machines>
       <machine name="derecho" compiler="intel" category="rtm"></machine>
